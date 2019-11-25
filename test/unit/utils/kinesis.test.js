@@ -40,6 +40,7 @@ describe('utils/kinesis.js', () => {
               },
             },
           ],
+          publishResponse: {},
         });
       })
       .done(done);

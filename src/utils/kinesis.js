@@ -10,7 +10,7 @@ export const toBatchUow = (batch) => ({ batch });
 export const publishEvents = (debug, streamName = process.env.STREAM_NAME, eventField = 'event') => (batchUow) => {
   const connector = new Publisher(debug, streamName);
   const p = connector.publish(batchUow.batch.map((uow) => uow[eventField]))
-    .then(() => batchUow)
+    .then((publishResponse) => ({ ...batchUow, publishResponse }))
     .catch(rejectWithFault(batchUow));
 
   return _(p);
