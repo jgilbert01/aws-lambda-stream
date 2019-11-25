@@ -5,3 +5,4 @@ export const now = () => Date.now();
 export * from './dynamodb';
 export * from './kinesis';
 export * from './faults';
+export * from './handler';
