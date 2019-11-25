@@ -36,6 +36,7 @@ module.exports = {
     "no-use-before-define": 0,
     "no-useless-escape": 0,
     "class-methods-use-this": 0,
+    "implicit-arrow-linebreak": 0,
   },
   "globals": {}
 };
