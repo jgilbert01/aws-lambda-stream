@@ -7,7 +7,7 @@ config.setPromisesDependency(Promise);
 class Connector {
   constructor(debug, streamName = process.env.STREAM_NAME, timeout = process.env.KINESIS_TIMEOUT || process.env.TIMEOUT || 1000) {
     this.debug = debug;
-    this.streamName = streamName;
+    this.streamName = streamName || 'undefined';
     this.stream = new Kinesis({
       httpOptions: {
         timeout,
