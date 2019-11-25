@@ -23,7 +23,7 @@ describe('utils/dynamodb.js', () => {
       description: 'This is thing one.',
       discriminator: 'thing',
       latched: true,
-      ttl: 1543046400,
+      ttl: ttl(1540454400000, 30),
       timestamp: 1540454400000,
     })).to.deep.equal({
       ExpressionAttributeNames: {
