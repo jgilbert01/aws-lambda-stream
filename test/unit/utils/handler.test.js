@@ -1,21 +1,21 @@
 import 'mocha';
-import sinon from 'sinon';
+import { expect } from 'chai';
 
 import _ from 'highland';
 
 import { toCallback, toPromise } from '../../../src/utils/handler';
 
 describe('utils/handler.js', () => {
-  afterEach(sinon.restore);
-
-  it('should handle with promise', () => {
+  it('should handle with promise', async () => {
     const handlerWithPromise = async (event, context) =>
       _(event.Records)
         .through(toPromise);
 
-    return handlerWithPromise({
+    const result = await handlerWithPromise({
       Records: ['r11', 'r12'],
     }, {});
+
+    expect(result).to.equal('Success');
   });
 
   it('should handle with callback', (done) => {
@@ -23,9 +23,12 @@ describe('utils/handler.js', () => {
       _(event.Records)
         .through(toCallback(cb));
 
-    return handlerWithCallback({
+    handlerWithCallback({
       Records: ['r21', 'r22'],
-    }, {}, done);
+    }, {}, (err, result) => {
+      expect(result).to.equal('Success');
+      done(err);
+    });
   });
 
   it('should handle with promise reject', () => {
@@ -43,7 +46,7 @@ describe('utils/handler.js', () => {
       _.fromError(new Error('Callback Error'))
         .through(toCallback(cb));
 
-    return handlerWithCallback({}, {}, (err) => {
+    handlerWithCallback({}, {}, (err) => {
       if (err) done();
       if (!err) done('failed');
     });
