@@ -23,7 +23,7 @@ export const faulty = (funct) => (uow) => { // eslint-disable-line consistent-re
   }
 };
 
-export const faultyAsync = (funct) => (uow) => // eslint-disable-line consistent-return
+export const faultyAsync = (funct) => (uow) =>
   _(
     funct(uow)
       .catch(rejectWithFault),
