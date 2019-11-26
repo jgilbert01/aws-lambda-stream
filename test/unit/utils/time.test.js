@@ -1,9 +1,10 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
+
 import { now } from '../../../src/utils';
 
-describe('utils', () => {
+describe('utils/time', () => {
   afterEach(sinon.restore);
 
   it('should get now timestamp', () => {

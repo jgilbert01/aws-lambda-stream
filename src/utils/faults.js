@@ -1,3 +1,4 @@
+import _ from 'highland';
 import Promise from 'bluebird';
 
 export const throwFault = (uow) => (err) => {
@@ -21,3 +22,9 @@ export const faulty = (funct) => (uow) => { // eslint-disable-line consistent-re
     throwFault(uow)(e);
   }
 };
+
+export const faultyAsync = (funct) => (uow) => // eslint-disable-line consistent-return
+  _(
+    funct(uow)
+      .catch(rejectWithFault),
+  );
