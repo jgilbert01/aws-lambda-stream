@@ -4,9 +4,6 @@ import Publisher from '../connectors/kinesis';
 
 import { rejectWithFault } from './faults';
 
-// used after highland batch step
-export const toBatchUow = (batch) => ({ batch });
-
 export const publishEvents = (debug, streamName = process.env.STREAM_NAME, eventField = 'event') => (batchUow) => {
   const connector = new Publisher(debug, streamName);
   const p = connector.publish(batchUow.batch.map((uow) => uow[eventField]))

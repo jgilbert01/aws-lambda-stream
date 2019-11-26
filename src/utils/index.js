@@ -1,8 +1,7 @@
-export const debug = require('debug'); // eslint-disable-line global-require
-
-export const now = () => Date.now();
-
+export * from './batch';
 export * from './dynamodb';
 export * from './kinesis';
 export * from './faults';
 export * from './handler';
+export * from './print';
+export * from './time';
