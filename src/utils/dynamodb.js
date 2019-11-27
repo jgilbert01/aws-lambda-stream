@@ -28,7 +28,7 @@ export const timestampCondition = (fieldName = 'timestamp') => ({
 });
 
 export const update = (debug, tableName = process.env.ENTITY_TABLE_NAME, updateRequestField = 'updateRequest') => (uow) => {
-  const connector = new Connector(debug, tableName);
+  const connector = new Connector(uow.debug || debug, tableName);
   const p = connector.update(uow[updateRequestField])
     .then((updateResponse) => ({ ...uow, updateResponse }))
     .catch(rejectWithFault(uow));

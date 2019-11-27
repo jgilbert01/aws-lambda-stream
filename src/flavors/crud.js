@@ -1,5 +1,5 @@
 import {
-  printStartPipeline, printEndPipeline, debug,
+  printStartPipeline, printEndPipeline,
   faulty, faultyAsync,
   toBatchUow, unBatchUow, publishEvents,
 } from '../utils';
@@ -8,7 +8,7 @@ import { filterOnEventType, filterOnContent } from '../filters';
 
 export const crud = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   .filter(onEventType(rule))
-  .tap(printStartPipeline(rule.id))
+  .tap(printStartPipeline)
 
   .filter(onContent(rule))
 
@@ -21,7 +21,7 @@ export const crud = (rule) => (s) => s // eslint-disable-line import/prefer-defa
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
   .flatMap(unBatchUow)
-  .tap(printEndPipeline(rule.id));
+  .tap(printEndPipeline);
 
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
@@ -38,4 +38,4 @@ const toEvent = (rule) => faultyAsync((uow) =>
       }))));
 
 const publish = (rule) =>
-  publishEvents(debug(rule.id), rule.streamName || process.env.STREAM_NAME);
+  publishEvents(null, rule.streamName || process.env.STREAM_NAME);
