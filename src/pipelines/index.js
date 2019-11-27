@@ -2,14 +2,14 @@ import _ from 'highland';
 
 import { faults, flushFaults } from '../faults';
 
-import { debug } from '../utils';
+import { debug as d } from '../utils';
 
-const log = debug('pipelines');
+const debug = d('pl');
 
 let thePipelines = {};
 
 export const initialize = (pipelines) => {
-  log('initialize: %j', Object.keys(pipelines));
+  debug('initialize: %j', Object.keys(pipelines));
   thePipelines = pipelines;
 };
 
@@ -24,7 +24,7 @@ export const initializeFrom = (rules, pipelines = {}) => rules.reduce(
 export const execute = (head, includeFaultHandler = true) => {
   const keys = Object.keys(thePipelines);
 
-  log('execute: %j', keys);
+  debug('execute: %j', keys);
 
   if (includeFaultHandler) {
     // after pre processoring
@@ -43,7 +43,7 @@ export const execute = (head, includeFaultHandler = true) => {
     const last = lines.length - 1;
 
     lines.slice(0, last).forEach((p, i) => {
-      log('FORK: %s', p.name);
+      debug('FORK: %s', p.name);
       const os = head.observe();
 
       lines[i] = os
@@ -51,16 +51,18 @@ export const execute = (head, includeFaultHandler = true) => {
         .map((uow) => ({
           pipeline: p.name,
           ...uow,
+          debug: d(`pl:${p.name}`),
         }))
         .through(p);
     });
 
-    log('FORK: %s', lines[last].name);
+    debug('FORK: %s', lines[last].name);
     const p = lines[last];
     lines[last] = head
       .map((uow) => ({
         pipeline: p.name,
         ...uow,
+        debug: d(`pl:${p.name}`),
       }))
       .through(lines[last]);
   }

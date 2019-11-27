@@ -5,7 +5,7 @@ import Publisher from '../connectors/kinesis';
 import { rejectWithFault } from './faults';
 
 export const publishEvents = (debug, streamName = process.env.STREAM_NAME, eventField = 'event') => (batchUow) => {
-  const connector = new Publisher(debug, streamName);
+  const connector = new Publisher(batchUow.batch[0].debug || debug, streamName);
   const p = connector.publish(batchUow.batch.map((uow) => uow[eventField]))
     .then((publishResponse) => ({ ...batchUow, publishResponse }))
     .catch(rejectWithFault(batchUow));
