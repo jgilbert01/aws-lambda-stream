@@ -19,6 +19,30 @@ describe('from/dynamodb.js', () => {
           sk: 'thing',
           discriminator: 'thing',
           name: 'n1',
+          // insert in the current region will not have the aws:rep:updateregion field
+        },
+      },
+      // dynamodb stream emits an extra update event as it adorns the 'aws:rep' global table metadata
+      // so this extra event should be skipped
+      {
+        timestamp: 1572832690,
+        keys: {
+          hk: '1',
+          sk: 'thing',
+        },
+        newImage: {
+          'hk': '1',
+          'sk': 'thing',
+          'discriminator': 'thing',
+          'name': 'n1',
+          'aws:rep:updateregion': 'us-west-2',
+        },
+        oldImage: {
+          hk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'n1',
+          // as mentioned above there was no aws:rep:updateregion field on the insert event
         },
       },
     ]);
@@ -96,16 +120,45 @@ describe('from/dynamodb.js', () => {
           sk: 'thing',
         },
         newImage: {
-          hk: '1',
-          sk: 'thing',
-          discriminator: 'thing',
-          name: 'n1',
+          'hk': '1',
+          'sk': 'thing',
+          'discriminator': 'thing',
+          'name': 'n1',
+          // the current region
+          'aws:rep:updateregion': 'us-west-2',
         },
         oldImage: {
+          'hk': '1',
+          'sk': 'thing',
+          'discriminator': 'thing',
+          'name': 'N1',
+          // previously updated in another region
+          'aws:rep:updateregion': 'us-east-1',
+        },
+      },
+      // replicated records emit events as well
+      // this replica event should be skipped
+      {
+        timestamp: 1572832990,
+        keys: {
           hk: '1',
           sk: 'thing',
-          discriminator: 'thing',
-          name: 'N1',
+        },
+        newImage: {
+          'hk': '1',
+          'sk': 'thing',
+          'discriminator': 'thing',
+          'name': 'n1',
+          // not the current region
+          'aws:rep:updateregion': 'us-east-1',
+        },
+        oldImage: {
+          'hk': '1',
+          'sk': 'thing',
+          'discriminator': 'thing',
+          'name': 'N1',
+          // previously updated in current region
+          'aws:rep:updateregion': 'us-west-2',
         },
       },
     ]);
@@ -133,31 +186,37 @@ describe('from/dynamodb.js', () => {
                 },
               },
               NewImage: {
-                hk: {
+                'hk': {
                   S: '1',
                 },
-                sk: {
+                'sk': {
                   S: 'thing',
                 },
-                discriminator: {
+                'discriminator': {
                   S: 'thing',
                 },
-                name: {
+                'name': {
                   S: 'n1',
+                },
+                'aws:rep:updateregion': {
+                  S: 'us-west-2',
                 },
               },
               OldImage: {
-                hk: {
+                'hk': {
                   S: '1',
                 },
-                sk: {
+                'sk': {
                   S: 'thing',
                 },
-                discriminator: {
+                'discriminator': {
                   S: 'thing',
                 },
-                name: {
+                'name': {
                   S: 'N1',
+                },
+                'aws:rep:updateregion': {
+                  S: 'us-east-1',
                 },
               },
               SequenceNumber: '0',
@@ -174,16 +233,18 @@ describe('from/dynamodb.js', () => {
             },
             raw: {
               new: {
-                hk: '1',
-                sk: 'thing',
-                discriminator: 'thing',
-                name: 'n1',
+                'hk': '1',
+                'sk': 'thing',
+                'discriminator': 'thing',
+                'name': 'n1',
+                'aws:rep:updateregion': 'us-west-2',
               },
               old: {
-                hk: '1',
-                sk: 'thing',
-                discriminator: 'thing',
-                name: 'N1',
+                'hk': '1',
+                'sk': 'thing',
+                'discriminator': 'thing',
+                'name': 'N1',
+                'aws:rep:updateregion': 'us-east-1',
               },
             },
           },
@@ -201,9 +262,28 @@ describe('from/dynamodb.js', () => {
           sk: 'thing',
         },
         oldImage: {
+          'hk': '1',
+          'sk': 'thing',
+          'name': 'N1',
+          // deleted in current region
+          'aws:rep:updateregion': 'us-west-2',
+        },
+      },
+      // replicated records emit events as well
+      // this replica event should be skipped
+      {
+        timestamp: 1572832990,
+        keys: {
           hk: '1',
           sk: 'thing',
-          name: 'N1',
+        },
+        oldImage: {
+          'hk': '1',
+          'sk': 'thing',
+          'discriminator': 'thing',
+          'name': 'N1',
+          // deleted in another region
+          'aws:rep:updateregion': 'us-east-1',
         },
       },
     ]);
@@ -232,14 +312,17 @@ describe('from/dynamodb.js', () => {
               },
               NewImage: undefined,
               OldImage: {
-                hk: {
+                'hk': {
                   S: '1',
                 },
-                sk: {
+                'sk': {
                   S: 'thing',
                 },
-                name: {
+                'name': {
                   S: 'N1',
+                },
+                'aws:rep:updateregion': {
+                  S: 'us-west-2',
                 },
               },
               SequenceNumber: '0',
@@ -257,9 +340,10 @@ describe('from/dynamodb.js', () => {
             raw: {
               new: undefined,
               old: {
-                hk: '1',
-                sk: 'thing',
-                name: 'N1',
+                'hk': '1',
+                'sk': 'thing',
+                'name': 'N1',
+                'aws:rep:updateregion': 'us-west-2',
               },
             },
           },

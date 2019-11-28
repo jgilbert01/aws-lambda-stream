@@ -9,6 +9,12 @@ export const fromDynamodb = (event) => // eslint-disable-line import/prefer-defa
   // prepare the event stream
   _(event.Records)
 
+    //--------------------------------
+    // global table support
+    .filter(outReplicas)
+    .filter(outGlobalTableExtraModify)
+    //--------------------------------
+
     .map(faulty((record) =>
       // create a unit-of-work for each event
       // so we can correlate related work for error handling
@@ -51,3 +57,31 @@ const calculateEventTypeSuffix = (record) => (
     REMOVE: 'deleted',
   }[record.eventName]
 );
+
+//--------------------------------------------
+// global table support - version: 2017.11.29
+//--------------------------------------------
+
+export const outReplicas = (record) => {
+  const image = record.dynamodb.NewImage || record.dynamodb.OldImage;
+
+  // is this a global table event
+  if (image['aws:rep:updateregion']) {
+    // only process events from the current region
+    return image['aws:rep:updateregion'].S === process.env.AWS_REGION;
+  }
+
+  return true;
+};
+
+// dynamodb stream emits extra events as it adorns the 'aws:rep' global table metadata
+export const outGlobalTableExtraModify = (record) => {
+  const { NewImage, OldImage } = record.dynamodb;
+
+  if (NewImage && NewImage['aws:rep:updateregion'] && OldImage && !OldImage['aws:rep:updateregion']) {
+    // skip
+    return false;
+  }
+
+  return true;
+};
