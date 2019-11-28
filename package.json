@@ -32,6 +32,7 @@
     "test": {
       "command": "nyc mocha --require babel-register --recursive \"./test/helper.js\" \"./test/unit/**/*.test.js\"",
       "env": {
+        "AWS_REGION": "us-west-2",
         "NODE_ENV": "test"
       }
     }
