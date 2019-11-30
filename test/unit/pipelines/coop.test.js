@@ -9,7 +9,7 @@ import {
   fromKinesis, toKinesisRecords, now,
 } from '../../../src';
 
-describe('pipelines/coop-example', () => {
+describe.skip('pipelines/coop-example', () => {
   it('should show pipeline cooperation', (done) => {
     const FACTOR = 1;
     const PARALLEL = 2;

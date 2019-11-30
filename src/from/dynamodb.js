@@ -50,13 +50,30 @@ const calculateEventTypePrefix = (record) => {
   return discriminator.S.toLowerCase();
 };
 
-const calculateEventTypeSuffix = (record) => (
-  {
+const calculateEventTypeSuffix = (record) => {
+  const suffix = ({
     INSERT: 'created',
     MODIFY: 'updated',
     REMOVE: 'deleted',
-  }[record.eventName]
-);
+  }[record.eventName]);
+
+  if (suffix === 'updated') {
+    const { NewImage, OldImage } = record.dynamodb;
+
+    if ((NewImage && NewImage.deleted) || (OldImage && OldImage.deleted)) {
+      if (NewImage && NewImage.deleted && NewImage.deleted.BOOL) {
+        return 'deleted';
+      } else {
+        /* istanbul ignore else */
+        if (OldImage && OldImage.deleted && OldImage.deleted.BOOL) { // eslint-disable-line no-lonely-if
+          return 'undeleted';
+        }
+      }
+    }
+  }
+
+  return suffix;
+};
 
 //--------------------------------------------
 // global table support - version: 2017.11.29

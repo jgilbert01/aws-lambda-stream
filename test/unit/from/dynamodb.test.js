@@ -5,6 +5,8 @@ import { fromDynamodb } from '../../../src/from/dynamodb';
 
 import { toDynamodbRecords } from '../../../src/utils/dynamodb';
 
+import { ttl } from '../../../src/utils';
+
 describe('from/dynamodb.js', () => {
   it('should parse INSERT record', (done) => {
     const events = toDynamodbRecords([
@@ -344,6 +346,338 @@ describe('from/dynamodb.js', () => {
                 'sk': 'thing',
                 'name': 'N1',
                 'aws:rep:updateregion': 'us-west-2',
+              },
+            },
+          },
+        });
+      })
+      .done(done);
+  });
+
+  it('should parse soft delete record', (done) => {
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832690,
+        keys: {
+          hk: '1',
+          sk: 'thing',
+        },
+        newImage: {
+          hk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'n1',
+          // the soft delete info
+          deleted: true,
+          ttl: ttl(1572832690000, 2),
+        },
+        oldImage: {
+          hk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'N1',
+        },
+      },
+    ]);
+
+    fromDynamodb(events)
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({
+          record: {
+            eventID: '0',
+            eventName: 'MODIFY',
+            eventSource: 'aws:dynamodb',
+            awsRegion: 'us-west-2',
+            dynamodb: {
+              ApproximateCreationDateTime: 1572832690,
+              Keys: {
+                hk: {
+                  S: '1',
+                },
+                sk: {
+                  S: 'thing',
+                },
+              },
+              NewImage: {
+                hk: {
+                  S: '1',
+                },
+                sk: {
+                  S: 'thing',
+                },
+                discriminator: {
+                  S: 'thing',
+                },
+                name: {
+                  S: 'n1',
+                },
+                deleted: {
+                  BOOL: true,
+                },
+                ttl: {
+                  N: '1573005490',
+                },
+              },
+              OldImage: {
+                hk: {
+                  S: '1',
+                },
+                sk: {
+                  S: 'thing',
+                },
+                discriminator: {
+                  S: 'thing',
+                },
+                name: {
+                  S: 'N1',
+                },
+              },
+              SequenceNumber: '0',
+              StreamViewType: 'NEW_AND_OLD_IMAGES',
+            },
+          },
+          event: {
+            id: '0',
+            type: 'thing-deleted',
+            partitionKey: '1',
+            timestamp: 1572832690000,
+            tags: {
+              region: 'us-west-2',
+            },
+            raw: {
+              new: {
+                hk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'n1',
+                deleted: true,
+                ttl: 1573005490,
+              },
+              old: {
+                hk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'N1',
+              },
+            },
+          },
+        });
+      })
+      .done(done);
+  });
+
+  it('should parse soft undelete record', (done) => {
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832690,
+        keys: {
+          hk: '1',
+          sk: 'thing',
+        },
+        newImage: {
+          hk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'n1',
+          // clear the soft delete info
+          deleted: null,
+          ttl: null,
+        },
+        oldImage: {
+          hk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'N1',
+          deleted: true,
+          ttl: 1573005490,
+        },
+      },
+    ]);
+
+    fromDynamodb(events)
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({
+          record: {
+            eventID: '0',
+            eventName: 'MODIFY',
+            eventSource: 'aws:dynamodb',
+            awsRegion: 'us-west-2',
+            dynamodb: {
+              ApproximateCreationDateTime: 1572832690,
+              Keys: {
+                hk: {
+                  S: '1',
+                },
+                sk: {
+                  S: 'thing',
+                },
+              },
+              NewImage: {
+                hk: {
+                  S: '1',
+                },
+                sk: {
+                  S: 'thing',
+                },
+                discriminator: {
+                  S: 'thing',
+                },
+                name: {
+                  S: 'n1',
+                },
+                deleted: {
+                  NULL: true,
+                },
+                ttl: {
+                  NULL: true,
+                },
+              },
+              OldImage: {
+                hk: {
+                  S: '1',
+                },
+                sk: {
+                  S: 'thing',
+                },
+                discriminator: {
+                  S: 'thing',
+                },
+                name: {
+                  S: 'N1',
+                },
+                deleted: {
+                  BOOL: true,
+                },
+                ttl: {
+                  N: '1573005490',
+                },
+              },
+              SequenceNumber: '0',
+              StreamViewType: 'NEW_AND_OLD_IMAGES',
+            },
+          },
+          event: {
+            id: '0',
+            type: 'thing-undeleted',
+            partitionKey: '1',
+            timestamp: 1572832690000,
+            tags: {
+              region: 'us-west-2',
+            },
+            raw: {
+              new: {
+                hk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'n1',
+                deleted: null,
+                ttl: null,
+              },
+              old: {
+                hk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'N1',
+                deleted: true,
+                ttl: 1573005490,
+              },
+            },
+          },
+        });
+      })
+      .done(done);
+  });
+
+  it('should parse REMOVE record for expired soft delete', (done) => {
+    // by default we will assume it is ok, even beneficial,
+    // to publish an additional deleted event after the ttl expiration
+    // otherwise just filter them in your pipeline
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1573005490,
+        keys: {
+          hk: '1',
+          sk: 'thing',
+        },
+        oldImage: {
+          hk: '1',
+          sk: 'thing',
+          name: 'N1',
+          // the soft delete info
+          deleted: true,
+          ttl: 1573005490,
+        },
+      },
+    ]);
+
+    fromDynamodb(events)
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({
+          record: {
+            eventID: '0',
+            eventName: 'REMOVE',
+            eventSource: 'aws:dynamodb',
+            awsRegion: 'us-west-2',
+            dynamodb: {
+              ApproximateCreationDateTime: 1573005490,
+              Keys: {
+                hk: {
+                  S: '1',
+                },
+                sk: {
+                  S: 'thing',
+                },
+              },
+              NewImage: undefined,
+              OldImage: {
+                hk: {
+                  S: '1',
+                },
+                sk: {
+                  S: 'thing',
+                },
+                name: {
+                  S: 'N1',
+                },
+                deleted: {
+                  BOOL: true,
+                },
+                ttl: {
+                  N: '1573005490',
+                },
+              },
+              SequenceNumber: '0',
+              StreamViewType: 'NEW_AND_OLD_IMAGES',
+            },
+          },
+          event: {
+            id: '0',
+            type: 'thing-deleted',
+            partitionKey: '1',
+            timestamp: 1573005490000,
+            tags: {
+              region: 'us-west-2',
+            },
+            raw: {
+              new: undefined,
+              old: {
+                hk: '1',
+                sk: 'thing',
+                name: 'N1',
+                deleted: true,
+                ttl: 1573005490,
               },
             },
           },
