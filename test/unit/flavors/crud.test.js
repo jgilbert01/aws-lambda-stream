@@ -6,6 +6,7 @@ import {
   initialize, execute, initializeFrom,
   toDynamodbRecords, fromDynamodb,
   Publisher,
+  envTags,
 } from '../../../src';
 
 import { crud } from '../../../src/flavors/crud';
@@ -72,6 +73,7 @@ describe('flavors/crud.js', () => {
         expect(collected[0].event.tags).to.deep.equal({
           region: 'us-west-2',
           field1: 'v1',
+          ...envTags({ pipeline: 'crud1' }),
         });
       })
       .done(done);

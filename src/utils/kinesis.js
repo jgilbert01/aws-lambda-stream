@@ -5,6 +5,8 @@ import Publisher from '../connectors/kinesis';
 import { rejectWithFault } from './faults';
 
 export const publishEvents = (debug, streamName = process.env.STREAM_NAME, eventField = 'event') => (batchUow) => {
+  batchUow = adornStandardTags(batchUow, eventField);
+
   const connector = new Publisher(batchUow.batch[0].debug || debug, streamName);
   const p = connector.publish(batchUow.batch.map((uow) => uow[eventField]))
     .then((publishResponse) => ({ ...batchUow, publishResponse }))
@@ -12,6 +14,28 @@ export const publishEvents = (debug, streamName = process.env.STREAM_NAME, event
 
   return _(p);
 };
+
+export const adornStandardTags = (batchUow, eventField) => ({
+  batch: batchUow.batch.map((uow) => ({
+    ...uow,
+    event: {
+      ...uow[eventField],
+      tags: {
+        ...envTags(uow),
+        ...uow[eventField].tags,
+      },
+    },
+  })),
+});
+
+export const envTags = (uow) => ({
+  account: process.env.ACCOUNT_NAME || 'undefined',
+  region: process.env.AWS_REGION || /* istanbul ignore next */ 'undefined',
+  stage: process.env.SERVERLESS_STAGE || 'undefined',
+  source: process.env.SERVERLESS_PROJECT || 'undefined',
+  functionname: process.env.AWS_LAMBDA_FUNCTION_NAME || 'undefined',
+  pipeline: uow.pipeline || 'undefined',
+});
 
 // testing
 export const toKinesisRecords = (events) => ({
