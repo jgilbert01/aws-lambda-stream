@@ -2,6 +2,7 @@ import _ from 'highland';
 
 import Publisher from '../connectors/kinesis';
 
+import { skipTag } from '../filters';
 import { rejectWithFault } from './faults';
 
 export const publishEvents = (debug, streamName = process.env.STREAM_NAME, eventField = 'event') => (batchUow) => {
@@ -22,6 +23,7 @@ export const adornStandardTags = (batchUow, eventField) => ({
       ...uow[eventField],
       tags: {
         ...envTags(uow),
+        ...skipTag(),
         ...uow[eventField].tags,
       },
     },
