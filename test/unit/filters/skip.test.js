@@ -7,7 +7,8 @@ import { outSkip, skipTag } from '../../../src/filters/skip';
 
 describe('filters/skip.js', () => {
   afterEach(() => {
-    delete process.env.NODE_ENV;
+    // set back to state specified in package.json
+    process.env.NODE_ENV = 'test';
   });
 
   it('should set skip tag', () => {
@@ -16,6 +17,7 @@ describe('filters/skip.js', () => {
   });
 
   it('should not set skip tag', () => {
+    delete process.env.NODE_ENV;
     expect(skipTag()).to.deep.equal({ skip: undefined });
 
     process.env.NODE_ENV = 'other';
