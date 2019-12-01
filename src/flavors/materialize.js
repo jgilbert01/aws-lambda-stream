@@ -6,9 +6,11 @@ import {
   update,
 } from '../utils';
 
-import { filterOnEventType, filterOnContent } from '../filters';
+import { filterOnEventType, filterOnContent, outSkip } from '../filters';
 
 export const materialize = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
+  .filter(outSkip)
+
   .filter(onEventType(rule))
   .tap(printStartPipeline)
 

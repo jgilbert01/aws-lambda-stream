@@ -10,6 +10,7 @@ import {
 } from '../../../src';
 
 import { crud } from '../../../src/flavors/crud';
+import { skipTag } from '../../../src/filters';
 
 describe('flavors/crud.js', () => {
   beforeEach(() => {
@@ -74,6 +75,7 @@ describe('flavors/crud.js', () => {
           region: 'us-west-2',
           field1: 'v1',
           ...envTags({ pipeline: 'crud1' }),
+          ...skipTag(),
         });
       })
       .done(done);
