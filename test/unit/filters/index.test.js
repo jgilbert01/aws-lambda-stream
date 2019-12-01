@@ -3,7 +3,7 @@ import { expect } from 'chai';
 
 import { filterOnEventType, filterOnContent } from '../../../src/filters';
 
-describe('filters', () => {
+describe('filters/index.js', () => {
   it('should filter by type', () => {
     const rule = {
       eventType: 't1',
