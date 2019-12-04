@@ -24,4 +24,5 @@ export const filterOnContent = (rule, uow) => {
   }
 };
 
+export * from './latch';
 export * from './skip';
