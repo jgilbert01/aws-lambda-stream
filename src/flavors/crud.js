@@ -4,9 +4,11 @@ import {
   toBatchUow, unBatchUow, publishEvents,
 } from '../utils';
 
-import { filterOnEventType, filterOnContent } from '../filters';
+import { filterOnEventType, filterOnContent, outLatched } from '../filters';
 
 export const crud = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
+  .filter(outLatched)
+
   .filter(onEventType(rule))
   .tap(printStartPipeline)
 
