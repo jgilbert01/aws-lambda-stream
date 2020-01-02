@@ -50,11 +50,11 @@ describe('filters/latch.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         newImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           // no latched field
         },
@@ -63,11 +63,11 @@ describe('filters/latch.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '2',
+          pk: '2',
           sk: 'thing',
         },
         newImage: {
-          hk: '2',
+          pk: '2',
           sk: 'thing',
           // latch
           latched: true,
@@ -92,16 +92,16 @@ describe('filters/latch.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         newImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           // no latched field
         },
         oldImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           // was previously latched
           latched: true,
@@ -111,17 +111,17 @@ describe('filters/latch.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '2',
+          pk: '2',
           sk: 'thing',
         },
         newImage: {
-          hk: '2',
+          pk: '2',
           sk: 'thing',
           // latch
           latched: true,
         },
         oldImage: {
-          hk: '2',
+          pk: '2',
           sk: 'thing',
           // was not previously latched
         },
@@ -145,11 +145,11 @@ describe('filters/latch.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         oldImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           // no latched field
         },
@@ -158,11 +158,11 @@ describe('filters/latch.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '2',
+          pk: '2',
           sk: 'thing',
         },
         oldImage: {
-          hk: '2',
+          pk: '2',
           sk: 'thing',
           // latch
           latched: true,

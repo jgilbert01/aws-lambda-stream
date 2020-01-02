@@ -61,7 +61,7 @@ describe('utils/dynamodb.js', () => {
     const uows = [{
       updateRequest: {
         Key: {
-          hk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+          pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
           sk: 'thing',
         },
       },
@@ -76,7 +76,7 @@ describe('utils/dynamodb.js', () => {
         expect(collected.length).to.equal(1);
         expect(stub).to.have.been.calledWith({
           Key: {
-            hk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+            pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
             sk: 'thing',
           },
         });

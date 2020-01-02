@@ -28,11 +28,11 @@ describe('flavors/crud.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         newImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           discriminator: 'thing',
           name: 'Thing One',
@@ -44,11 +44,11 @@ describe('flavors/crud.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'other',
         },
         newImage: {
-          hk: '1',
+          pk: '1',
           sk: 'other',
           discriminator: 'other',
           name: 'Other One',
@@ -84,7 +84,7 @@ describe('flavors/crud.js', () => {
 
 const toEvent = (uow) => ({
   thing: {
-    id: uow.event.raw.new.hk,
+    id: uow.event.raw.new.pk,
     name: uow.event.raw.new.name,
     description: uow.event.raw.new.description,
   },

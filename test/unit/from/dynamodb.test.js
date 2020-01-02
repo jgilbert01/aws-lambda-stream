@@ -13,11 +13,11 @@ describe('from/dynamodb.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         newImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           discriminator: 'thing',
           name: 'n1',
@@ -29,18 +29,18 @@ describe('from/dynamodb.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         newImage: {
-          'hk': '1',
+          'pk': '1',
           'sk': 'thing',
           'discriminator': 'thing',
           'name': 'n1',
           'aws:rep:updateregion': 'us-west-2',
         },
         oldImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           discriminator: 'thing',
           name: 'n1',
@@ -64,7 +64,7 @@ describe('from/dynamodb.js', () => {
             dynamodb: {
               ApproximateCreationDateTime: 1572832690,
               Keys: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -72,7 +72,7 @@ describe('from/dynamodb.js', () => {
                 },
               },
               NewImage: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -100,7 +100,7 @@ describe('from/dynamodb.js', () => {
             },
             raw: {
               new: {
-                hk: '1',
+                pk: '1',
                 sk: 'thing',
                 discriminator: 'thing',
                 name: 'n1',
@@ -118,11 +118,11 @@ describe('from/dynamodb.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         newImage: {
-          'hk': '1',
+          'pk': '1',
           'sk': 'thing',
           'discriminator': 'thing',
           'name': 'n1',
@@ -130,7 +130,7 @@ describe('from/dynamodb.js', () => {
           'aws:rep:updateregion': 'us-west-2',
         },
         oldImage: {
-          'hk': '1',
+          'pk': '1',
           'sk': 'thing',
           'discriminator': 'thing',
           'name': 'N1',
@@ -143,11 +143,11 @@ describe('from/dynamodb.js', () => {
       {
         timestamp: 1572832990,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         newImage: {
-          'hk': '1',
+          'pk': '1',
           'sk': 'thing',
           'discriminator': 'thing',
           'name': 'n1',
@@ -155,7 +155,7 @@ describe('from/dynamodb.js', () => {
           'aws:rep:updateregion': 'us-east-1',
         },
         oldImage: {
-          'hk': '1',
+          'pk': '1',
           'sk': 'thing',
           'discriminator': 'thing',
           'name': 'N1',
@@ -180,7 +180,7 @@ describe('from/dynamodb.js', () => {
             dynamodb: {
               ApproximateCreationDateTime: 1572832690,
               Keys: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -188,7 +188,7 @@ describe('from/dynamodb.js', () => {
                 },
               },
               NewImage: {
-                'hk': {
+                'pk': {
                   S: '1',
                 },
                 'sk': {
@@ -205,7 +205,7 @@ describe('from/dynamodb.js', () => {
                 },
               },
               OldImage: {
-                'hk': {
+                'pk': {
                   S: '1',
                 },
                 'sk': {
@@ -235,14 +235,14 @@ describe('from/dynamodb.js', () => {
             },
             raw: {
               new: {
-                'hk': '1',
+                'pk': '1',
                 'sk': 'thing',
                 'discriminator': 'thing',
                 'name': 'n1',
                 'aws:rep:updateregion': 'us-west-2',
               },
               old: {
-                'hk': '1',
+                'pk': '1',
                 'sk': 'thing',
                 'discriminator': 'thing',
                 'name': 'N1',
@@ -260,11 +260,11 @@ describe('from/dynamodb.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         oldImage: {
-          'hk': '1',
+          'pk': '1',
           'sk': 'thing',
           'name': 'N1',
           // deleted in current region
@@ -276,11 +276,11 @@ describe('from/dynamodb.js', () => {
       {
         timestamp: 1572832990,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         oldImage: {
-          'hk': '1',
+          'pk': '1',
           'sk': 'thing',
           'discriminator': 'thing',
           'name': 'N1',
@@ -305,7 +305,7 @@ describe('from/dynamodb.js', () => {
             dynamodb: {
               ApproximateCreationDateTime: 1572832690,
               Keys: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -314,7 +314,7 @@ describe('from/dynamodb.js', () => {
               },
               NewImage: undefined,
               OldImage: {
-                'hk': {
+                'pk': {
                   S: '1',
                 },
                 'sk': {
@@ -342,7 +342,7 @@ describe('from/dynamodb.js', () => {
             raw: {
               new: undefined,
               old: {
-                'hk': '1',
+                'pk': '1',
                 'sk': 'thing',
                 'name': 'N1',
                 'aws:rep:updateregion': 'us-west-2',
@@ -359,11 +359,11 @@ describe('from/dynamodb.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         newImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           discriminator: 'thing',
           name: 'n1',
@@ -372,7 +372,7 @@ describe('from/dynamodb.js', () => {
           ttl: ttl(1572832690000, 2),
         },
         oldImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           discriminator: 'thing',
           name: 'N1',
@@ -395,7 +395,7 @@ describe('from/dynamodb.js', () => {
             dynamodb: {
               ApproximateCreationDateTime: 1572832690,
               Keys: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -403,7 +403,7 @@ describe('from/dynamodb.js', () => {
                 },
               },
               NewImage: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -423,7 +423,7 @@ describe('from/dynamodb.js', () => {
                 },
               },
               OldImage: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -450,7 +450,7 @@ describe('from/dynamodb.js', () => {
             },
             raw: {
               new: {
-                hk: '1',
+                pk: '1',
                 sk: 'thing',
                 discriminator: 'thing',
                 name: 'n1',
@@ -458,7 +458,7 @@ describe('from/dynamodb.js', () => {
                 ttl: 1573005490,
               },
               old: {
-                hk: '1',
+                pk: '1',
                 sk: 'thing',
                 discriminator: 'thing',
                 name: 'N1',
@@ -475,11 +475,11 @@ describe('from/dynamodb.js', () => {
       {
         timestamp: 1572832690,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         newImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           discriminator: 'thing',
           name: 'n1',
@@ -488,7 +488,7 @@ describe('from/dynamodb.js', () => {
           ttl: null,
         },
         oldImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           discriminator: 'thing',
           name: 'N1',
@@ -513,7 +513,7 @@ describe('from/dynamodb.js', () => {
             dynamodb: {
               ApproximateCreationDateTime: 1572832690,
               Keys: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -521,7 +521,7 @@ describe('from/dynamodb.js', () => {
                 },
               },
               NewImage: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -541,7 +541,7 @@ describe('from/dynamodb.js', () => {
                 },
               },
               OldImage: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -574,7 +574,7 @@ describe('from/dynamodb.js', () => {
             },
             raw: {
               new: {
-                hk: '1',
+                pk: '1',
                 sk: 'thing',
                 discriminator: 'thing',
                 name: 'n1',
@@ -582,7 +582,7 @@ describe('from/dynamodb.js', () => {
                 ttl: null,
               },
               old: {
-                hk: '1',
+                pk: '1',
                 sk: 'thing',
                 discriminator: 'thing',
                 name: 'N1',
@@ -604,11 +604,11 @@ describe('from/dynamodb.js', () => {
       {
         timestamp: 1573005490,
         keys: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
         },
         oldImage: {
-          hk: '1',
+          pk: '1',
           sk: 'thing',
           name: 'N1',
           // the soft delete info
@@ -633,7 +633,7 @@ describe('from/dynamodb.js', () => {
             dynamodb: {
               ApproximateCreationDateTime: 1573005490,
               Keys: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -642,7 +642,7 @@ describe('from/dynamodb.js', () => {
               },
               NewImage: undefined,
               OldImage: {
-                hk: {
+                pk: {
                   S: '1',
                 },
                 sk: {
@@ -673,7 +673,7 @@ describe('from/dynamodb.js', () => {
             raw: {
               new: undefined,
               old: {
-                hk: '1',
+                pk: '1',
                 sk: 'thing',
                 name: 'N1',
                 deleted: true,

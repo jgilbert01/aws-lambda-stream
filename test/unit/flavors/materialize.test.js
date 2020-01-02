@@ -43,7 +43,7 @@ describe('flavors/materialize.js', () => {
         expect(collected[0].event.type).to.equal('m1');
         expect(collected[0].updateRequest).to.deep.equal({
           Key: {
-            hk: '1',
+            pk: '1',
             sk: 'thing',
           },
           ExpressionAttributeNames: {
@@ -74,7 +74,7 @@ describe('flavors/materialize.js', () => {
 
 const toUpdateRequest = (uow) => ({
   Key: {
-    hk: uow.event.thing.id,
+    pk: uow.event.thing.id,
     sk: 'thing',
   },
   ...updateExpression({
