@@ -23,7 +23,7 @@ export const fromDynamodb = (event) => // eslint-disable-line import/prefer-defa
         event: {
           id: record.eventID,
           type: `${calculateEventTypePrefix(record)}-${calculateEventTypeSuffix(record)}`,
-          partitionKey: record.dynamodb.Keys.hk.S,
+          partitionKey: record.dynamodb.Keys.pk.S,
           timestamp: record.dynamodb.ApproximateCreationDateTime * 1000,
           tags: {
             region: record.awsRegion,

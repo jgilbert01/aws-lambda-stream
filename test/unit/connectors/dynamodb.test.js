@@ -23,7 +23,7 @@ describe('connectors/dynamodb.js', () => {
     const UPDATE_REQUEST = {
       // TableName: 'my-service-entities',
       Key: {
-        hk: '1',
+        pk: '1',
         sk: 'thing',
       },
       ExpressionAttributeNames: {
@@ -55,7 +55,7 @@ describe('connectors/dynamodb.js', () => {
 
     expect(spy).to.have.been.calledWith({
       TableName: 'my-service-entities',
-      Key: { hk: '1', sk: 'thing' },
+      Key: { pk: '1', sk: 'thing' },
       ExpressionAttributeNames: {
         '#description': 'description',
         '#discriminator': 'discriminator',
