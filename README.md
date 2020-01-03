@@ -140,16 +140,141 @@ const toEvent = (uow) => ({
 TODO
 
 ## Faults
-TODO
+When there is an unhandled error in a Kinesis stream processor, Lambda will continuously retry the function until the problem is either resolved or the event(s) in question expire(s). For transient errors, such as throttling, this may be the best course of action, because the problem may self-heal. However, if there is a poison event then we want to set it asside by publishing a `fault` event, so that the other events can be processed. I refer to this as the Stream Circuit Breaker pattern.
+
+Here is the definition of the `fault` event.
+
+```javascript
+const FAULT_EVENT_TYPE: string = 'fault';
+
+interface FaultEvent extends Event {
+    err: {
+        name: string;
+        message: string;
+        stack: string;
+    };
+    uow: UnitOfWork;
+}
+```
+
+* `err` - contains the error information
+* `uow` - contains the state of the `uow` when the error happens
+
+When an error is thrown in a Highland.js stream, the error will skip over all the remaining steps until it is either catch by an [errors](https://highlandjs.org/#errors) step or it reaches the end of the stream and all processing stops with the error.
+
+When you want to handle a poison event and raise a `fault` event then simply catch the error, adorn the current `uow` and rethrow the error. Several utilities are provided to assist: `throwFault`, `rejectWithFault`. `faulty` and `faultyAsync`.
+
+Here is an example of using `throwFault`.
+
+```javascript
+try {
+  ...
+} catch (err) {
+    throwFault(err);
+}
+
+export const throwFault = (uow) => (err) => {
+  // adorn the troubled uow
+  // for processing in the errors handler
+  err.uow = uow;
+  throw err;
+};
+```
+
+Then we need to setup the `faults` errors function and the `flushFaults` stream.
+
+```javascript
+    ...
+    .errors(faults)
+    .through(flushFaults)
+    .through(toPromise);
+```
+
+The `faults` function tests to see if the err has a `uow` adorned. If so then it buffers a `fault` event. The `flushFaults` stream will published all the `fault` events once all events in the batch have been processed. This ensures that the `fault` events are not prematurely published in case an unhandle error occurs later in the batch.
+
+Fault handling is included when using the `pipelines` feature (see below).
+
+>Note that I plan to open-source a `fault-monitor` service and the `aws-lambda-stream-cli`. The monitor stores the fault events in S3.  The `cli` supports `resubmitting` the poison events to the function that raised the `fault`.
 
 ## Pipelines
 TODO
 
+```javascript
+import { initialize, execute, fromKinesis } from 'aws-lambda-stream';
+
+import pipeline1 from './pipeline1';
+import pipeline2 from './pipeline2';
+
+const PIPELINES = {
+  pipeline1,
+  pipeline2,
+};
+
+export const handler = async (event) => {
+  initialize(PIPELINES);
+
+  return execute(fromKinesis(event))
+    .through(toPromise);
+};
+```
+
+Here is an example of a pipeline. They are functions that receive a forked stream as input and add the desired steps.
+
+```javascript
+export default const pipeline1 = (s) => s
+  .filter(onEventType)
+  .tap(uow => uow.debug);
+```
+
 ## Flavors
-TODO
+Many of the pipelines we write follow the exact same steps and only the filters and data mapping details are different. We can package these pipeline _flavors_ into reusable pipelines that can be configured with rules.
+
+The following _flavors_ are included and you can package your own into libaries.
+* `materialize` - used in listener functions to materialize an event into a DynamoDB single table
+* `crud` - used in trigger functions to publish events to Kinesis as entities are maintained in a DynamoDB single table
+* more to be ported soon
+
+Here is an example of initializing pipelines from rules. Note that you can initialize one-of pipelines along side rule-driven pipelines.
+
+```javascript
+import { initializeFrom } from 'aws-lambda-stream';
+
+const PIPELINES = {
+  pipeline1,
+  pipeline2,
+  ...initializeFrom(RULES),
+};
+```
+
+Here are some example rules. The `id`, `pipeline`, and `eventType` fields are required. The remaining fields are defined by the specified pipeline flavor. You can define functions inline, but it is best to implement and unit test them separately.
+
+```javascript
+import { materialize } from 'aws-lambda-stream/flavors/materialize';
+
+const RULES = [
+  {
+    id: 'p1',
+    pipeline: materialize,
+    eventType: /thing-created|updated/,
+    toUpdateRequest,
+  },
+  {
+    id: 'p2',
+    pipeline: materialize,
+    eventType: 'thing-deleted',
+    toUpdateRequest: toSoftDeleteUpdateRequest,
+  },
+  {
+    id: 'p3',
+    pipeline: materialize,
+    eventType: ['something-created', 'something-updated'],
+    toUpdateRequest: (uow) => ({ ... }),
+  },
+];
+```
 
 ## Logging
-TODO
+The [debug](https://www.npmjs.com/package/debug) library is used for logging. When using pipelines, each pipeline is given its own instance and it is attached to the `uow` for easy access. They are named after the pipelines with a `pl:` prefix. Various print utilities are provided, such as: `printStartPipeline` and `printEndPipeline`.
 
 ## Kinesis Support
 TODO
