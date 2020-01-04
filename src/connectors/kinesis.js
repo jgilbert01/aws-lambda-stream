@@ -21,18 +21,6 @@ class Connector {
     });
   }
 
-  publish(events) {
-    const params = {
-      Records: events.map((e) => ({
-        Data: Buffer.from(JSON.stringify(e)),
-        PartitionKey: e.partitionKey,
-      })),
-    };
-
-    return this.putRecords(params);
-  }
-
-
   putRecords(inputParams) {
     const params = {
       StreamName: this.streamName,
