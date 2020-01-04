@@ -81,7 +81,7 @@ const publishFaultEvents = (batch) => {
   const streamName = process.env.FAULT_STREAM_NAME
     || process.env.STREAM_NAME;
 
-  const p = new Publisher(streamName).publish(batch)
+  const p = new Publisher({ streamName }).publish(batch)
     .then(() => batch);
   // NOTE: no error handling to eliminate infinite loop
 
