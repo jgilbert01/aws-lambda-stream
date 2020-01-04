@@ -22,11 +22,12 @@ describe('pipelines/index.js', () => {
     };
 
     initialize({
-      p1: (s) => s
+      p1: (opt) => (s) => s
+        // .tap(() => console.log('opt: %s', opt))
         // .tap(console.log)
         .map(count),
-      p2: (s) => s.map(count),
-      p3: (s) => s.map(count),
+      p2: (opt) => (s) => s.map(count),
+      p3: (opt) => (s) => s.map(count),
     });
 
     const events = toKinesisRecords([{
@@ -45,7 +46,7 @@ describe('pipelines/index.js', () => {
 
   it('should propagate pipeline errors', (done) => {
     initialize({
-      px1: (s) => s
+      px1: (opt) => (s) => s
         .map((uow) => {
           const e = Error('simulated error');
           e.uow = uow;
@@ -79,7 +80,7 @@ describe('pipelines/index.js', () => {
 
   it('should propagate head errors', (done) => {
     initialize({
-      px2: (s) => s,
+      px2: (opt) => (s) => s,
     });
 
     const events = toKinesisRecords([{
@@ -118,8 +119,8 @@ describe('pipelines/index.js', () => {
     const err = new Error('unhandled head error');
 
     initialize({
-      px3: (s) => s,
-      px4: (s) => s,
+      px3: (opt) => (s) => s,
+      px4: (opt) => (s) => s,
     });
 
     const events = toKinesisRecords([{
@@ -156,6 +157,8 @@ describe('pipelines/index.js', () => {
         pipeline: (rule) => (s) => s,
       },
     ]);
+
+    initialize(pipelines);
 
     // console.log(pipelines);
 

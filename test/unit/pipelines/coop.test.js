@@ -18,21 +18,21 @@ describe.skip('pipelines/coop-example', () => {
     const events = generate(100 * FACTOR);
 
     initialize({
-      odd: (s) => s
+      odd: (opt) => (s) => s
         .filter(filterOdd)
         .map(mapOdd)
         .batch(BATCH_SIZE[0])
         .map(daoActionOdd)
         .parallel(PARALLEL),
 
-      even: (s) => s
+      even: (opt) => (s) => s
         .filter(filterEven)
         .map(mapEven)
         .batch(BATCH_SIZE[1])
         .map(daoActionEven)
         .parallel(PARALLEL),
 
-      all: (s) => s
+      all: (opt) => (s) => s
         .map(mapAll)
         .batch(BATCH_SIZE[2])
         .map(daoActionAll)
