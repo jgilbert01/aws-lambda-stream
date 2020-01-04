@@ -9,7 +9,7 @@ import {
   envTags,
 } from '../../../src';
 
-import { crud } from '../../../src/flavors/crud';
+import crud from '../../../src/flavors/crud';
 import { skipTag } from '../../../src/filters';
 
 describe('flavors/crud.js', () => {

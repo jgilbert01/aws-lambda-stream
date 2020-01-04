@@ -6,7 +6,7 @@ import {
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
 
-export const crud = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
+const crud = (rule) => (s) => s
   .filter(outLatched)
 
   .filter(onEventType(rule))
@@ -19,7 +19,7 @@ export const crud = (rule) => (s) => s // eslint-disable-line import/prefer-defa
 
   .batch(rule.batchSize || Number(process.env.PUBLISH_BATCH_SIZE) || 25)
   .map(toBatchUow)
-  .map(publish(rule))
+  .map(publishEvents(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
   .flatMap(unBatchUow)
@@ -39,5 +39,4 @@ const toEvent = (rule) => faultyAsync((uow) =>
         },
       }))));
 
-const publish = (rule) =>
-  publishEvents(null, rule.streamName || process.env.STREAM_NAME);
+export default crud;

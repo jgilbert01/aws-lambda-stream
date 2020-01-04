@@ -8,7 +8,7 @@ import {
   ttl, updateExpression, timestampCondition, DynamoDBConnector,
 } from '../../../src';
 
-import { materialize } from '../../../src/flavors/materialize';
+import materialize from '../../../src/flavors/materialize';
 
 describe('flavors/materialize.js', () => {
   beforeEach(() => {
