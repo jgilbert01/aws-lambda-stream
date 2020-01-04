@@ -1,7 +1,7 @@
 {
   "name": "aws-lambda-stream",
   "version": "0.1.0",
-  "description": "Library for processing streams in AWS Lambda",
+  "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
     "lambda",
