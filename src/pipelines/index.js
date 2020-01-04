@@ -4,7 +4,7 @@ import { faults, flushFaults } from '../faults';
 
 import { debug as d } from '../utils';
 
-const debug = d('pl');
+const debug = d('pl:init');
 
 let thePipelines = {};
 
@@ -19,7 +19,7 @@ export const initialize = (pipelines, opt = {}) => {
       [id]: pipelines[id]({ // pass in options
         id,
         ...opt,
-        debug: d(`pl:${id}`),
+        ...addDebug(id),
       }),
     }),
     {},
@@ -51,7 +51,7 @@ export const execute = (head, includeFaultHandler = true) => {
   const lines = keys.map((key) => {
     const f = thePipelines[key];
     const p = _.pipeline(f);
-    p.name = key;
+    p.id = key;
     return p;
   });
 
@@ -60,26 +60,26 @@ export const execute = (head, includeFaultHandler = true) => {
     const last = lines.length - 1;
 
     lines.slice(0, last).forEach((p, i) => {
-      debug('FORK: %s', p.name);
+      debug('FORK: %s', p.id);
       const os = head.observe();
 
       lines[i] = os
         // shallow clone of data per pipeline
         .map((uow) => ({
-          pipeline: p.name,
+          pipeline: p.id,
           ...uow,
-          debug: d(`pl:${p.name}`),
+          ...addDebug(p.id),
         }))
         .through(p);
     });
 
-    debug('FORK: %s', lines[last].name);
+    debug('FORK: %s', lines[last].id);
     const p = lines[last];
     lines[last] = head
       .map((uow) => ({
-        pipeline: p.name,
+        pipeline: p.id,
         ...uow,
-        debug: d(`pl:${p.name}`),
+        ...addDebug(p.id),
       }))
       .through(lines[last]);
   }
@@ -93,3 +93,5 @@ export const execute = (head, includeFaultHandler = true) => {
 
   return s;
 };
+
+const addDebug = (id) => ({ debug: d(`pl:${id}`) })
