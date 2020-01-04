@@ -4,21 +4,38 @@ import { faults, flushFaults } from '../faults';
 
 import { debug as d } from '../utils';
 
-const debug = d('pl');
+const debug = d('pl:init');
 
 let thePipelines = {};
 
-export const initialize = (pipelines) => {
-  debug('initialize: %j', Object.keys(pipelines));
-  thePipelines = pipelines;
+export const initialize = (pipelines, opt = {}) => {
+  const keys = Object.keys(pipelines);
+
+  debug('initialize: %j', keys);
+
+  thePipelines = keys.reduce(
+    (accumulator, id) => ({
+      ...accumulator,
+      [id]: pipelines[id]({ // pass in options
+        id,
+        ...opt,
+        ...addDebug(id),
+      }),
+    }),
+    {},
+  );
 };
 
-export const initializeFrom = (rules, pipelines = {}) => rules.reduce(
+export const initializeFrom = (rules) => rules.reduce(
   (accumulator, rule) => ({
     ...accumulator,
-    [rule.id]: rule.pipeline(rule),
+    [rule.id]: (opt) => rule.pipeline({
+      ...rule, // included 1st so rules are printed 1st in debug output
+      ...opt,
+      ...rule, // include again for override precedence
+    }),
   }),
-  pipelines,
+  {},
 );
 
 export const execute = (head, includeFaultHandler = true) => {
@@ -34,7 +51,7 @@ export const execute = (head, includeFaultHandler = true) => {
   const lines = keys.map((key) => {
     const f = thePipelines[key];
     const p = _.pipeline(f);
-    p.name = key;
+    p.id = key;
     return p;
   });
 
@@ -43,26 +60,26 @@ export const execute = (head, includeFaultHandler = true) => {
     const last = lines.length - 1;
 
     lines.slice(0, last).forEach((p, i) => {
-      debug('FORK: %s', p.name);
+      debug('FORK: %s', p.id);
       const os = head.observe();
 
       lines[i] = os
         // shallow clone of data per pipeline
         .map((uow) => ({
-          pipeline: p.name,
+          pipeline: p.id,
           ...uow,
-          debug: d(`pl:${p.name}`),
+          ...addDebug(p.id),
         }))
         .through(p);
     });
 
-    debug('FORK: %s', lines[last].name);
+    debug('FORK: %s', lines[last].id);
     const p = lines[last];
     lines[last] = head
       .map((uow) => ({
-        pipeline: p.name,
+        pipeline: p.id,
         ...uow,
-        debug: d(`pl:${p.name}`),
+        ...addDebug(p.id),
       }))
       .through(lines[last]);
   }
@@ -76,3 +93,5 @@ export const execute = (head, includeFaultHandler = true) => {
 
   return s;
 };
+
+const addDebug = (id) => ({ debug: d(`pl:${id}`) });

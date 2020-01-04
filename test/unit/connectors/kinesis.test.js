@@ -20,23 +20,23 @@ describe('connectors/kinesis.js', () => {
     const spy = sinon.spy((params, cb) => cb(null, {}));
     AWS.mock('Kinesis', 'putRecords', spy);
 
-    const EVENTS = [
-      {
-        type: 't1',
-        partitionKey: '1',
-      },
-    ];
+    const inputParams = {
+      Records: [
+        {
+          Data: Buffer.from(JSON.stringify({ type: 't1' })),
+          PartitionKey: '1',
+        },
+      ],
+    };
 
-    const data = await new Publisher(debug('kinesis'), 's1').publish(EVENTS);
+    const data = await new Publisher({
+      debug: debug('kinesis'),
+      streamName: 's1',
+    }).putRecords(inputParams);
 
     expect(spy).to.have.been.calledWith({
       StreamName: 's1',
-      Records: [
-        {
-          PartitionKey: EVENTS[0].partitionKey,
-          Data: Buffer.from(JSON.stringify(EVENTS[0])),
-        },
-      ],
+      Records: inputParams.Records,
     });
     expect(data).to.deep.equal({});
   });

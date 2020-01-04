@@ -5,7 +5,11 @@ import Promise from 'bluebird';
 config.setPromisesDependency(Promise);
 
 class Connector {
-  constructor(debug, streamName = process.env.STREAM_NAME, timeout = process.env.KINESIS_TIMEOUT || process.env.TIMEOUT || 1000) {
+  constructor({
+    debug,
+    streamName = process.env.STREAM_NAME,
+    timeout = process.env.KINESIS_TIMEOUT || process.env.TIMEOUT || 1000,
+  }) {
     this.debug = debug;
     this.streamName = streamName || 'undefined';
     this.stream = new Kinesis({
@@ -17,13 +21,10 @@ class Connector {
     });
   }
 
-  publish(events) {
+  putRecords(inputParams) {
     const params = {
       StreamName: this.streamName,
-      Records: events.map((e) => ({
-        Data: Buffer.from(JSON.stringify(e)),
-        PartitionKey: e.partitionKey,
-      })),
+      ...inputParams,
     };
 
     return this.stream.putRecords(params).promise()

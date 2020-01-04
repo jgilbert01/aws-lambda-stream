@@ -15,7 +15,8 @@ describe('filters/index.js', () => {
 
   it('should filter by regex', () => {
     const rule = {
-      eventType: /t.*/,
+      eventType: /t(1|3)/,
+      // eventType: /t.*/,
     };
 
     expect(filterOnEventType(rule, { event: { type: 't1' } })).to.be.true;

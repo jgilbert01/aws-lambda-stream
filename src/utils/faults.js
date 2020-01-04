@@ -1,17 +1,23 @@
 import _ from 'highland';
 import Promise from 'bluebird';
 
-export const throwFault = (uow) => (err) => {
-  // adorn the troubled uow
-  // for processing in the errors handler
-  err.uow = uow;
+export const throwFault = (uow, ignore = false) => (err) => {
+  /* istanbul ignore else */
+  if (!ignore) {
+    // adorn the troubled uow
+    // for processing in the errors handler
+    err.uow = uow;
+  }
   throw err;
 };
 
-export const rejectWithFault = (uow) => (err) => {
-  // adorn the troubled uow
-  // for processing in the errors handler
-  err.uow = uow;
+export const rejectWithFault = (uow, ignore = false) => (err) => {
+  /* istanbul ignore else */
+  if (!ignore) {
+    // adorn the troubled uow
+    // for processing in the errors handler
+    err.uow = uow;
+  }
   return Promise.reject(err);
 };
 

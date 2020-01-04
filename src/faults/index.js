@@ -1,8 +1,7 @@
 import _ from 'highland';
 import * as uuid from 'uuid';
 
-import Publisher from '../connectors/kinesis';
-import { now } from '../utils';
+import { now, publish } from '../utils';
 
 export const FAULT_EVENT_TYPE = 'fault';
 
@@ -54,10 +53,13 @@ export const flushFaults = (s) => {
 
     return s2
       // batch and publish fault events
-      .batch(process.env.FAULTS_BATCH_SIZE || process.env.BATCH_SIZE || 4)
-      .map(publishFaultEvents)
-      .parallel(process.env.FAULTS_PARALLEL || process.env.PARALLEL || 4)
-      .sequence();
+      .map((fault) => ({ event: fault })) // map to uow format
+      .through(publish({
+        handleErrors: false, // don't publish faults for faults
+        streamName: process.env.FAULT_STREAM_NAME || process.env.STREAM_NAME,
+        batchSize: Number(process.env.FAULTS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 4,
+        parallel: Number(process.env.FAULTS_PARALLEL) || Number(process.env.PARALLEL) || 4,
+      }));
   };
 
   return s
@@ -75,17 +77,6 @@ export const flushFaults = (s) => {
         next();
       }
     });
-};
-
-const publishFaultEvents = (batch) => {
-  const streamName = process.env.FAULT_STREAM_NAME
-    || process.env.STREAM_NAME;
-
-  const p = new Publisher(streamName).publish(batch)
-    .then(() => batch);
-  // NOTE: no error handling to eliminate infinite loop
-
-  return _(p);
 };
 
 const logErr = (err) => {

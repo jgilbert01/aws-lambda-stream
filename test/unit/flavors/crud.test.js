@@ -9,7 +9,7 @@ import {
   envTags,
 } from '../../../src';
 
-import { crud } from '../../../src/flavors/crud';
+import crud from '../../../src/flavors/crud';
 import { skipTag } from '../../../src/filters';
 
 describe('flavors/crud.js', () => {
@@ -18,7 +18,7 @@ describe('flavors/crud.js', () => {
       ...initializeFrom(rules),
     });
 
-    sinon.stub(Publisher.prototype, 'publish').resolves({});
+    sinon.stub(Publisher.prototype, 'putRecords').resolves({});
   });
 
   afterEach(sinon.restore);
@@ -74,7 +74,7 @@ describe('flavors/crud.js', () => {
         expect(collected[0].event.tags).to.deep.equal({
           region: 'us-west-2',
           field1: 'v1',
-          ...envTags({ pipeline: 'crud1' }),
+          ...envTags('crud1'),
           ...skipTag(),
         });
       })

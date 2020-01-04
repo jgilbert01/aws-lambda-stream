@@ -11,7 +11,7 @@ import {
   outSkip, outSourceIsSelf,
 } from '../filters';
 
-export const materialize = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
+const materialize = (rule) => (s) => s
   .filter(outSkip)
   .filter(outSourceIsSelf)
 
@@ -23,8 +23,7 @@ export const materialize = (rule) => (s) => s // eslint-disable-line import/pref
   .map(toUpdateRequest(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
-  .map(updateEntity(rule))
-  .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
+  .through(update(rule))
 
   .tap(printEndPipeline);
 
@@ -38,5 +37,4 @@ const toUpdateRequest = (rule) => faultyAsync((uow) =>
       updateRequest,
     })));
 
-const updateEntity = (rule) =>
-  update(null, rule.tableName || process.env.ENTITY_TABLE_NAME);
+export default materialize;

@@ -9,7 +9,7 @@ import {
 
 describe('pipelines/index.js', () => {
   beforeEach(() => {
-    sinon.stub(Publisher.prototype, 'publish').resolves({});
+    sinon.stub(Publisher.prototype, 'putRecords').resolves({});
   });
   afterEach(sinon.restore);
 
@@ -22,11 +22,12 @@ describe('pipelines/index.js', () => {
     };
 
     initialize({
-      p1: (s) => s
+      p1: (opt) => (s) => s
+        // .tap(() => console.log('opt: %s', opt))
         // .tap(console.log)
         .map(count),
-      p2: (s) => s.map(count),
-      p3: (s) => s.map(count),
+      p2: (opt) => (s) => s.map(count),
+      p3: (opt) => (s) => s.map(count),
     });
 
     const events = toKinesisRecords([{
@@ -45,7 +46,7 @@ describe('pipelines/index.js', () => {
 
   it('should propagate pipeline errors', (done) => {
     initialize({
-      px1: (s) => s
+      px1: (opt) => (s) => s
         .map((uow) => {
           const e = Error('simulated error');
           e.uow = uow;
@@ -63,14 +64,12 @@ describe('pipelines/index.js', () => {
       .tap((collected) => {
         expect(collected.length).to.equal(1);
 
-        expect(collected[0].type).to.equal(FAULT_EVENT_TYPE);
-        expect(collected[0].err.name).to.equal('Error');
-        expect(collected[0].err.message).to.equal('simulated error');
+        expect(collected[0].event.type).to.equal(FAULT_EVENT_TYPE);
+        expect(collected[0].event.err.name).to.equal('Error');
+        expect(collected[0].event.err.message).to.equal('simulated error');
 
-        expect(collected[0].tags).to.deep.equal({
-          functionname: 'undefined',
-          pipeline: 'px1',
-        });
+        expect(collected[0].event.tags.functionname).to.equal('undefined');
+        expect(collected[0].event.tags.pipeline).to.equal('px1');
 
         expect(collected[0].uow).to.be.not.null;
       })
@@ -79,7 +78,7 @@ describe('pipelines/index.js', () => {
 
   it('should propagate head errors', (done) => {
     initialize({
-      px2: (s) => s,
+      px2: (opt) => (s) => s,
     });
 
     const events = toKinesisRecords([{
@@ -99,14 +98,12 @@ describe('pipelines/index.js', () => {
       .tap((collected) => {
         expect(collected.length).to.equal(1);
 
-        expect(collected[0].type).to.equal(FAULT_EVENT_TYPE);
-        expect(collected[0].err.name).to.equal('Error');
-        expect(collected[0].err.message).to.equal('simulated head error');
+        expect(collected[0].event.type).to.equal(FAULT_EVENT_TYPE);
+        expect(collected[0].event.err.name).to.equal('Error');
+        expect(collected[0].event.err.message).to.equal('simulated head error');
 
-        expect(collected[0].tags).to.deep.equal({
-          functionname: 'undefined',
-          pipeline: 'undefined',
-        });
+        expect(collected[0].event.tags.functionname).to.equal('undefined');
+        expect(collected[0].event.tags.pipeline).to.equal('undefined');
 
         expect(collected[0].uow).to.be.not.null;
       })
@@ -118,8 +115,8 @@ describe('pipelines/index.js', () => {
     const err = new Error('unhandled head error');
 
     initialize({
-      px3: (s) => s,
-      px4: (s) => s,
+      px3: (opt) => (s) => s,
+      px4: (opt) => (s) => s,
     });
 
     const events = toKinesisRecords([{
@@ -156,6 +153,8 @@ describe('pipelines/index.js', () => {
         pipeline: (rule) => (s) => s,
       },
     ]);
+
+    initialize(pipelines);
 
     // console.log(pipelines);
 

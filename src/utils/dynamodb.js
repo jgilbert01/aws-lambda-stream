@@ -7,6 +7,7 @@ import merge from 'lodash/merge';
 import Connector from '../connectors/dynamodb';
 
 import { rejectWithFault } from './faults';
+import { debug as d } from './print';
 
 export const ttl = (start, days) => (start / 1000) + (60 * 60 * 24 * days);
 
@@ -27,13 +28,25 @@ export const timestampCondition = (fieldName = 'timestamp') => ({
   ConditionExpression: `attribute_not_exists(#${fieldName}) OR #${fieldName} < :${fieldName}`,
 });
 
-export const update = (debug, tableName = process.env.ENTITY_TABLE_NAME, updateRequestField = 'updateRequest') => (uow) => {
-  const connector = new Connector(uow.debug || debug, tableName);
-  const p = connector.update(uow[updateRequestField])
-    .then((updateResponse) => ({ ...uow, updateResponse }))
-    .catch(rejectWithFault(uow));
+export const update = ({
+  debug = d('dynamodb'),
+  tableName = process.env.ENTITY_TABLE_NAME,
+  updateRequestField = 'updateRequest',
+  parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
+} = {}) => {
+  const connector = new Connector({ debug, tableName });
 
-  return _(p);
+  const invoke = (uow) => {
+    const p = connector.update(uow[updateRequestField])
+      .then((updateResponse) => ({ ...uow, updateResponse }))
+      .catch(rejectWithFault(uow));
+
+    return _(p); // wrap promise in a stream
+  };
+
+  return (s) => s
+    .map(invoke)
+    .parallel(parallel);
 };
 
 // testing
