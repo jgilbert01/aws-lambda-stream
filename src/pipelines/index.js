@@ -8,17 +8,34 @@ const debug = d('pl');
 
 let thePipelines = {};
 
-export const initialize = (pipelines) => {
-  debug('initialize: %j', Object.keys(pipelines));
-  thePipelines = pipelines;
+export const initialize = (pipelines, opt = {}) => {
+  const keys = Object.keys(pipelines);
+
+  debug('initialize: %j', keys);
+
+  thePipelines = keys.reduce(
+    (accumulator, id) => ({
+      ...accumulator,
+      [id]: pipelines[id]({ // pass in options
+        id,
+        ...opt,
+        debug: d(`pl:${id}`),
+      }),
+    }),
+    {},
+  );
 };
 
-export const initializeFrom = (rules, pipelines = {}) => rules.reduce(
+export const initializeFrom = (rules) => rules.reduce(
   (accumulator, rule) => ({
     ...accumulator,
-    [rule.id]: rule.pipeline(rule),
+    [rule.id]: (opt) => rule.pipeline({
+      ...rule, // included 1st so rules are printed 1st in debug output
+      ...opt,
+      ...rule, // include again for override precedence
+    }),
   }),
-  pipelines,
+  {},
 );
 
 export const execute = (head, includeFaultHandler = true) => {
