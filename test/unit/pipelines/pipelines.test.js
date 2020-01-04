@@ -9,7 +9,7 @@ import {
 
 describe('pipelines/index.js', () => {
   beforeEach(() => {
-    sinon.stub(Publisher.prototype, 'publish').resolves({});
+    sinon.stub(Publisher.prototype, 'putRecords').resolves({});
   });
   afterEach(sinon.restore);
 
@@ -64,14 +64,12 @@ describe('pipelines/index.js', () => {
       .tap((collected) => {
         expect(collected.length).to.equal(1);
 
-        expect(collected[0].type).to.equal(FAULT_EVENT_TYPE);
-        expect(collected[0].err.name).to.equal('Error');
-        expect(collected[0].err.message).to.equal('simulated error');
+        expect(collected[0].event.type).to.equal(FAULT_EVENT_TYPE);
+        expect(collected[0].event.err.name).to.equal('Error');
+        expect(collected[0].event.err.message).to.equal('simulated error');
 
-        expect(collected[0].tags).to.deep.equal({
-          functionname: 'undefined',
-          pipeline: 'px1',
-        });
+        expect(collected[0].event.tags.functionname).to.equal('undefined');
+        expect(collected[0].event.tags.pipeline).to.equal('px1');
 
         expect(collected[0].uow).to.be.not.null;
       })
@@ -100,14 +98,12 @@ describe('pipelines/index.js', () => {
       .tap((collected) => {
         expect(collected.length).to.equal(1);
 
-        expect(collected[0].type).to.equal(FAULT_EVENT_TYPE);
-        expect(collected[0].err.name).to.equal('Error');
-        expect(collected[0].err.message).to.equal('simulated head error');
+        expect(collected[0].event.type).to.equal(FAULT_EVENT_TYPE);
+        expect(collected[0].event.err.name).to.equal('Error');
+        expect(collected[0].event.err.message).to.equal('simulated head error');
 
-        expect(collected[0].tags).to.deep.equal({
-          functionname: 'undefined',
-          pipeline: 'undefined',
-        });
+        expect(collected[0].event.tags.functionname).to.equal('undefined');
+        expect(collected[0].event.tags.pipeline).to.equal('undefined');
 
         expect(collected[0].uow).to.be.not.null;
       })

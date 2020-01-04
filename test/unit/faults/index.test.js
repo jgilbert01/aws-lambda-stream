@@ -9,7 +9,7 @@ let publishStub;
 
 describe('faults/index.js', () => {
   beforeEach(() => {
-    publishStub = sinon.stub(Publisher.prototype, 'publish').resolves({});
+    publishStub = sinon.stub(Publisher.prototype, 'putRecords').resolves({});
   });
 
   afterEach(sinon.restore);
@@ -50,16 +50,14 @@ describe('faults/index.js', () => {
 
         expect(collected.length).to.equal(3);
 
-        expect(collected[2].type).to.equal(FAULT_EVENT_TYPE);
-        expect(collected[2].err.name).to.equal('Error');
-        expect(collected[2].err.message).to.equal('handled error, has uow attached');
+        expect(collected[2].event.type).to.equal(FAULT_EVENT_TYPE);
+        expect(collected[2].event.err.name).to.equal('Error');
+        expect(collected[2].event.err.message).to.equal('handled error, has uow attached');
 
-        expect(collected[2].tags).to.deep.equal({
-          functionname: 'undefined',
-          pipeline: 'undefined',
-        });
+        expect(collected[2].event.tags.functionname).to.equal('undefined');
+        expect(collected[2].event.tags.pipeline).to.equal('undefined');
 
-        expect(collected[2].uow).to.deep.equal({
+        expect(collected[2].event.uow).to.deep.equal({
           record: {
             eventSource: 'aws:kinesis',
             eventID: 'shardId-000000000000:1',

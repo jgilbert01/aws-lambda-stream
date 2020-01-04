@@ -1,7 +1,7 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsync,
-  toBatchUow, unBatchUow, publishEvents,
+  publish,
 } from '../utils';
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
@@ -17,12 +17,8 @@ const crud = (rule) => (s) => s
   .map(toEvent(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
-  .batch(rule.batchSize || Number(process.env.PUBLISH_BATCH_SIZE) || 25)
-  .map(toBatchUow)
-  .map(publishEvents(rule))
-  .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
+  .through(publish(rule))
 
-  .flatMap(unBatchUow)
   .tap(printEndPipeline);
 
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));

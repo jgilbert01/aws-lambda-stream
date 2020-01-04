@@ -3,48 +3,73 @@ import _ from 'highland';
 import Publisher from '../connectors/kinesis';
 
 import { skipTag } from '../filters';
+import { toBatchUow, unBatchUow } from './batch';
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
 
-export const publishEvents = ({
+export const publish = ({
   debug = d('kinesis'),
   streamName = process.env.STREAM_NAME,
   eventField = 'event',
+  batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
+  parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  handleErrors = true,
 } = {}) => {
   const connector = new Publisher({ debug, streamName });
 
-  return (batchUow) => {
-    batchUow = adornStandardTags(batchUow, eventField);
+  const toInputParams = (batchUow) => ({
+    ...batchUow,
+    inputParams: {
+      Records: batchUow.batch
+        .map((uow) => toRecord(uow[eventField])),
+    },
+  });
 
-    const p = connector.publish(batchUow.batch.map((uow) => uow[eventField]))
+  const putRecords = (batchUow) => {
+    const p = connector.putRecords(batchUow.inputParams)
       .then((publishResponse) => ({ ...batchUow, publishResponse }))
-      .catch(rejectWithFault(batchUow));
+      .catch(rejectWithFault(batchUow, !handleErrors));
 
-    return _(p);
+    return _(p); // wrap promise in a stream
   };
+
+  return (s) => s
+    .map(adornStandardTags(eventField))
+
+    .batch(batchSize)
+    .map(toBatchUow)
+
+    .map(toInputParams)
+    .map(putRecords)
+    .parallel(parallel)
+
+    .flatMap(unBatchUow); // for cleaner logging and testing
 };
 
-export const adornStandardTags = (batchUow, eventField) => ({
-  batch: batchUow.batch.map((uow) => ({
-    ...uow,
-    event: {
-      ...uow[eventField],
-      tags: {
-        ...envTags(uow),
-        ...skipTag(),
-        ...uow[eventField].tags,
-      },
-    },
-  })),
+export const toRecord = (e) => ({
+  Data: Buffer.from(JSON.stringify(e)),
+  PartitionKey: e.partitionKey,
 });
 
-export const envTags = (uow) => ({
+export const adornStandardTags = (eventField) => (uow) => ({
+  ...uow,
+  event: {
+    ...uow[eventField],
+    tags: {
+      ...envTags(uow.pipeline),
+      ...skipTag(),
+      ...uow[eventField].tags,
+    },
+  },
+});
+
+export const envTags = (pipeline) => ({
   account: process.env.ACCOUNT_NAME || 'undefined',
   region: process.env.AWS_REGION || /* istanbul ignore next */ 'undefined',
   stage: process.env.SERVERLESS_STAGE || 'undefined',
   source: process.env.SERVERLESS_PROJECT || 'undefined',
   functionname: process.env.AWS_LAMBDA_FUNCTION_NAME || 'undefined',
-  pipeline: uow.pipeline || 'undefined',
+  pipeline: pipeline || 'undefined',
 });
 
 // testing
