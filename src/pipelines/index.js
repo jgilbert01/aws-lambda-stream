@@ -94,4 +94,4 @@ export const execute = (head, includeFaultHandler = true) => {
   return s;
 };
 
-const addDebug = (id) => ({ debug: d(`pl:${id}`) })
+const addDebug = (id) => ({ debug: d(`pl:${id}`) });
