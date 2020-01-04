@@ -4,16 +4,24 @@ import Publisher from '../connectors/kinesis';
 
 import { skipTag } from '../filters';
 import { rejectWithFault } from './faults';
+import { debug as d } from './print';
 
-export const publishEvents = (debug, streamName = process.env.STREAM_NAME, eventField = 'event') => (batchUow) => {
-  batchUow = adornStandardTags(batchUow, eventField);
+export const publishEvents = ({
+  debug = d('kinesis'),
+  streamName = process.env.STREAM_NAME,
+  eventField = 'event',
+} = {}) => {
+  const connector = new Publisher({ debug, streamName });
 
-  const connector = new Publisher(batchUow.batch[0].debug || debug, streamName);
-  const p = connector.publish(batchUow.batch.map((uow) => uow[eventField]))
-    .then((publishResponse) => ({ ...batchUow, publishResponse }))
-    .catch(rejectWithFault(batchUow));
+  return (batchUow) => {
+    batchUow = adornStandardTags(batchUow, eventField);
 
-  return _(p);
+    const p = connector.publish(batchUow.batch.map((uow) => uow[eventField]))
+      .then((publishResponse) => ({ ...batchUow, publishResponse }))
+      .catch(rejectWithFault(batchUow));
+
+    return _(p);
+  };
 };
 
 export const adornStandardTags = (batchUow, eventField) => ({

@@ -24,7 +24,7 @@ describe('utils/kinesis.js', () => {
     _(uows)
       .batch(10)
       .map(toBatchUow)
-      .flatMap(publishEvents(debug('kinesis')))
+      .flatMap(publishEvents({ debug: debug('kinesis') }))
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
@@ -69,7 +69,7 @@ describe('utils/kinesis.js', () => {
     _(uows)
       .batch(10)
       .map(toBatchUow)
-      .flatMap(publishEvents(debug('kinesis')))
+      .flatMap(publishEvents())
       .errors((err) => {
         // console.log(JSON.stringify(err, null, 2));
 

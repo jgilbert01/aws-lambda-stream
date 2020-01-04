@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import _ from 'highland';
 
 import {
-  ttl, updateExpression, timestampCondition, update, debug,
+  ttl, updateExpression, timestampCondition, update,
 } from '../../../src/utils';
 
 import Connector from '../../../src/connectors/dynamodb';
@@ -68,7 +68,7 @@ describe('utils/dynamodb.js', () => {
     }];
 
     _(uows)
-      .flatMap(update(debug('dynamodb')))
+      .flatMap(update())
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
