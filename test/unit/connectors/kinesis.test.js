@@ -27,7 +27,10 @@ describe('connectors/kinesis.js', () => {
       },
     ];
 
-    const data = await new Publisher(debug('kinesis'), 's1').publish(EVENTS);
+    const data = await new Publisher({
+      debug: debug('kinesis'),
+      streamName: 's1',
+    }).publish(EVENTS);
 
     expect(spy).to.have.been.calledWith({
       StreamName: 's1',

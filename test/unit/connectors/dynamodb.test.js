@@ -50,7 +50,10 @@ describe('connectors/dynamodb.js', () => {
       ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
     };
 
-    const data = await new Connector(debug('dynamodb'), 'my-service-entities')
+    const data = await new Connector({
+      debug: debug('dynamodb'),
+      tableName: 'my-service-entities',
+    })
       .update(UPDATE_REQUEST);
 
     expect(spy).to.have.been.calledWith({

@@ -5,7 +5,11 @@ import Promise from 'bluebird';
 config.setPromisesDependency(Promise);
 
 class Connector {
-  constructor(debug, tableName, timeout = process.env.DYNAMODB_TIMEOUT || process.env.TIMEOUT || 1000) {
+  constructor({
+    debug,
+    tableName,
+    timeout = process.env.DYNAMODB_TIMEOUT || process.env.TIMEOUT || 1000,
+  }) {
     this.debug = debug;
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
     this.db = new DynamoDB.DocumentClient({
