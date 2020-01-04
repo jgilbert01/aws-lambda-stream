@@ -68,7 +68,7 @@ describe('utils/dynamodb.js', () => {
     }];
 
     _(uows)
-      .flatMap(update())
+      .through(update())
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));

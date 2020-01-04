@@ -23,8 +23,7 @@ const materialize = (rule) => (s) => s
   .map(toUpdateRequest(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
-  .map(update(rule))
-  .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
+  .through(update(rule))
 
   .tap(printEndPipeline);
 

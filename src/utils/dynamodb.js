@@ -32,16 +32,21 @@ export const update = ({
   debug = d('dynamodb'),
   tableName = process.env.ENTITY_TABLE_NAME,
   updateRequestField = 'updateRequest',
+  parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
 } = {}) => {
   const connector = new Connector({ debug, tableName });
 
-  return (uow) => {
+  const invoke = (uow) => {
     const p = connector.update(uow[updateRequestField])
       .then((updateResponse) => ({ ...uow, updateResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(p);
+    return _(p); // wrap promise in a stream
   };
+
+  return (s) => s
+    .map(invoke)
+    .parallel(parallel);
 };
 
 // testing
