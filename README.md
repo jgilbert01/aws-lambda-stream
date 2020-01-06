@@ -12,21 +12,24 @@ Support is provided for AWS Kinesis, DynamoDB Streams and more.
 
 `npm install aws-lambda-stream --save`
 
-## Example: Listener Function
+## Basic Usage
+The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is just the initialization code that quickly sets up the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the stream, which provides natural _backpressure (see blow)_. The promise will resolve only once all the data is passed through all the stream steps.
+
+### Example: Listener Function
 This example processes a Kinesis stream and materializes the data in a single DynamoDB table. The details are explained below.
 
 ```javascript
 import { fromKinesis, toPromise } from 'aws-lambda-stream';
 
 export const handler = async (event) =>
-      fromKinesis(event)
-        .filter(onEventType)
-        .map(toUpdateRequest)
-        .through(update({ parallel: 4 }))
-        .through(toPromise);
+  fromKinesis(event)
+    .filter(onEventType)
+    .map(toUpdateRequest)
+    .through(update({ parallel: 4 }))
+    .through(toPromise);
 ```
 
-## Example: Trigger Function
+### Example: Trigger Function
 This example processes a DynamoDB Stream and publishes CUD events to a Kinesis stream. The details are explained below.
 
 ```javascript
@@ -47,9 +50,9 @@ Think of a `uow` as an _immutable_ object that represents the `scope` of a set o
 
 ```javascript
 interface UnitOfWork {
-	record: any;
-	event?: Event;
-	batch?: UnitOfWork[];
+  record: any;
+  event?: Event;
+  batch?: UnitOfWork[];
 }
 ```
 
@@ -62,13 +65,13 @@ The various streaming and messaging channels each have their own formats. We wan
 
 ```javascript
 interface Event {
-	id: string;
-	type: string;
-	timestamp: number;
-	partitionKey?: string;
-	tags: { [key: string]: string | number };
-	raw?: any; 
-	encryptionInfo?: any;
+  id: string;
+  type: string;
+  timestamp: number;
+  partitionKey?: string;
+  tags: { [key: string]: string | number };
+  raw?: any; 
+  encryptionInfo?: any;
 }
 ```
 
@@ -89,43 +92,43 @@ const onEventType = event => event.type.match(/thing-*/); // all event types sta
 ```
 
 ## Mapping
-Many stream processor steps map the incoming data to the format needed downstream. The results of the mapping are adorned to the `uow` as a new variable. The `uow` must be immutable, so we return a new `uow` by cloning the original `uow` with the spread operator and adorning the additional variable. The are various utils provided to assist (see below).
+Many stream processor steps map the incoming data to the format needed downstream. The results of the mapping are adorned to the `uow` as a new variable. The `uow` must be immutable, so we return a new `uow` by cloning the original `uow` with the _spread_ operator and adorning the additional variable. There are various utils provided to assist (see below).
 
 ```javascript
 .map((uow) => ({
-    ...uow,
-    variableName: {
-      // mapping logic here
-    }
+  ...uow,
+  variableName: {
+    // mapping logic here
+  }
 }))
 ```
 
-This is the function used in the Listener Function example above.
+This is the function used in the _Listener Function_ example above.
 
 ```javascript
 const toUpdateRequest = (uow) => ({
-    ...uow,
-    updateRequest: { // variable expected by dynamodb util
-      Key: {
-        pk: uow.event.thing.id,
-        sk: 'thing',
-      },
-      ...updateExpression({
-        ...uow.event.thing,
-        discriminator: 'thing',
-        timestamp: uow.event.timestamp,
-      }),
-      ...timestampCondition(),
-    }
+  ...uow,
+  updateRequest: { // variable expected by `update` util
+    Key: {
+      pk: uow.event.thing.id,
+      sk: 'thing',
+    },
+    ...updateExpression({
+      ...uow.event.thing,
+      discriminator: 'thing',
+      timestamp: uow.event.timestamp,
+    }),
+    ...timestampCondition(),
+  }
 });
 ```
 
-This is the function used in the Trigger Function example above.
+This is the function used in the _Trigger Function_ example above.
 
 ```javascript
 const toEvent = (uow) => ({
   ...uow,
-  event: { // variable expected by kinesis util
+  event: { // variable expected by the `publish` util
     ...event,
     thing: uow.event.raw.new, // canonical
   }
@@ -137,9 +140,9 @@ const toEvent = (uow) => ({
 ## Connectors
 At the end of a stream processor there is usually a _sink_ step that persists the results to a datastore or another stream. These external calls are wrapped in thin `Connector` classes so that they can be easily _mocked_ for unit testing.
 
-These connectors are then wrapped with utility functions to integrate them into the streaming framework.
+These connectors are then wrapped with utility functions, such as `update` and `publish`, to integrate them into the streaming framework. For example, the returned promise are normalized to [stream](https://highlandjs.org/#_(source)), fault handling is provided and features such as [parallel](https://highlandjs.org/#parallel) and [batch](https://highlandjs.org/#batch) are utilized.
 
-TODO
+These utility function leverage _currying_ to override default configuration settings, such as the _batchSize_ and the number of _parallel_ asyn-non-blocking_io executions.
 
 ## Faults
 When there is an unhandled error in a Kinesis stream processor, Lambda will continuously retry the function until the problem is either resolved or the event(s) in question expire(s). For transient errors, such as throttling, this may be the best course of action, because the problem may self-heal. However, if there is a poison event then we want to set it asside by publishing a `fault` event, so that the other events can be processed. I refer to this as the _Stream Circuit Breaker_ pattern.
@@ -150,21 +153,21 @@ Here is the definition of a `fault` event.
 export const FAULT_EVENT_TYPE: string = 'fault';
 
 interface FaultEvent extends Event {
-    err: {
-        name: string;
-        message: string;
-        stack: string;
-    };
-    uow: UnitOfWork;
+  err: {
+    name: string;
+    message: string;
+    stack: string;
+  };
+  uow: UnitOfWork;
 }
 ```
 
 * `err` - contains the error information
-* `uow` - contains the state of the `uow` when the error happened
+* `uow` - contains the state of the variables in the `uow` when the error happened
 
 When an error is thrown in a _Highland.js_ stream, the error will skip over all the remaining steps until it is either caught by an [errors](https://highlandjs.org/#errors) step or it reaches the end of the stream and all processing stops with the error.
 
-When you want to handle a poison event and raise a `fault` event then simply catch the error, adorn the current `uow` and rethrow the error. Several utilities are provided to assist: `throwFault` for stands try/catch, `rejectWithFault` for promises, and `faulty` and `faultyAsync` are function wrappers.
+When you want to handle a poison event and raise a `fault` event then simply catch the error, adorn the current `uow` to the error and rethrow the error. Several utilities are provided to assist: `throwFault` for standard try/catch, `rejectWithFault` for promises, and `faulty` and `faultyAsync` are function wrappers.
 
 Here is an example of using `throwFault`.
 
@@ -172,7 +175,7 @@ Here is an example of using `throwFault`.
 try {
   ...
 } catch (err) {
-    throwFault(err);
+  throwFault(err);
 }
 
 export const throwFault = (uow) => (err) => {
@@ -186,13 +189,14 @@ export const throwFault = (uow) => (err) => {
 Then we need to setup the `faults` errors function and the `flushFaults` stream. _Fault handling is already included when using the `pipelines` feature (see below)._
 
 ```javascript
-    ...
-    .errors(faults)
-    .through(flushFaults)
-    .through(toPromise);
+import { faults, flushFaults, toPromise } from 'aws-lambda-stream';
+  ...
+  .errors(faults)
+  .through(flushFaults)
+  .through(toPromise);
 ```
 
-The `faults` function tests to see if the `err` has a `uow` adorned. If so then it buffers a `fault` event. The `flushFaults` stream will published all the `fault` events once all events in the batch have been processed. This ensures that the `fault` events are not prematurely published in case an unhandle error occurs later in the batch.
+The `faults` function tests to see if the `err` has a `uow` adorned. If so then it buffers a `fault` event. The `flushFaults` stream will published all the buffered `fault` events once all events in the batch have been processed. This ensures that the `fault` events are not prematurely published in case an unhandle error occurs later in the batch.
 
 >Note that I plan to open-source a `fault-monitor` service and the `aws-lambda-stream-cli`. The monitor stores the fault events in S3.  The `cli` supports `resubmitting` the poison events to the function that raised the `fault`.
 
@@ -223,7 +227,9 @@ Here is an example of a pipeline. They are functions that receive options and th
 ```javascript
 const pipeline1 = (opt) => (s) => s
   .filter(onEventType)
-  .tap(uow => opt.debug('%j', uow));
+  .tap(uow => opt.debug('%j', uow))
+  .map(toUpdateRequest)
+  .through(update({ parallel: 4 }));
 
 export default pipeline1;
 ```
@@ -274,9 +280,23 @@ const RULES = [
   },
 ];
 ```
+* `id` - is a unqiue string
+* `pipeline` - the function that imlements the pipeline flavor
+* `eventType` - a regex, string or array of strings used to filter on event type
+* `toUpdateRequest` - is mapping function exepected by the `materialize` pipeline flavor
 
 ## Logging
-The [debug](https://www.npmjs.com/package/debug) library is used for logging. When using pipelines, each pipeline is given its own instance and it is attached to the `uow` for easy access. They are named after the pipelines with a `pl:` prefix. Various print utilities are provided, such as: `printStartPipeline` and `printEndPipeline`.
+The [debug](https://www.npmjs.com/package/debug) library is used for logging. When using pipelines, each pipeline is given its own instance and it is passed in with the pipeline configuration options and it is attached to the `uow` for easy access. They are named after the pipelines with a `pl:` prefix. 
+
+This turns on debug for all pipelines.
+
+`cli> DEBUG=pl:*`
+
+This turns on debug for a specific pipeline.
+
+`cli> DEBUG=pl:pipeline2`
+
+Various print utilities are provided, such as: `printStartPipeline` and `printEndPipeline`.
 
 ## Kinesis Support
 TODO
