@@ -13,7 +13,7 @@ Support is provided for AWS Kinesis, DynamoDB Streams and more.
 `npm install aws-lambda-stream --save`
 
 ## Basic Usage
-The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is just the initialization code that quickly sets up the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the stream, which provides natural _backpressure (see blow)_. The promise will resolve only once all the data is passed through all the stream steps.
+The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is just the initialization code that quickly sets up the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the stream, which provides natural _backpressure (see blow)_. The promise will resolve only once all the data has passed through all the stream steps.
 
 ### Example: Listener Function
 This example processes a Kinesis stream and materializes the data in a single DynamoDB table. The details are explained below.
@@ -140,9 +140,27 @@ const toEvent = (uow) => ({
 ## Connectors
 At the end of a stream processor there is usually a _sink_ step that persists the results to a datastore or another stream. These external calls are wrapped in thin `Connector` classes so that they can be easily _mocked_ for unit testing.
 
-These connectors are then wrapped with utility functions, such as `update` and `publish`, to integrate them into the streaming framework. For example, the returned promise are normalized to [stream](https://highlandjs.org/#_(source)), fault handling is provided and features such as [parallel](https://highlandjs.org/#parallel) and [batch](https://highlandjs.org/#batch) are utilized.
+These connectors are then wrapped with utility functions, such as `update` and `publish`, to integrate them into the streaming framework. For example, the promise returned from the connector is normalized to a [stream](https://highlandjs.org/#_(source)), fault handling is provided and features such as [parallel](https://highlandjs.org/#parallel) and [batch](https://highlandjs.org/#batch) are utilized.
 
 These utility function leverage _currying_ to override default configuration settings, such as the _batchSize_ and the number of _parallel_ asyn-non-blocking_io executions.
+
+Here is the example of using the `update` function.
+
+```javascript
+import { update, toPromise } from 'aws-lambda-stream';
+  ...
+  .through(update({ parallel: 4 }))
+  .through(toPromise);
+```
+
+Here is the example of using the `publish` function.
+
+```javascript
+import { publish, toPromise } from 'aws-lambda-stream';
+  ...
+  .through(publish({ batchSize: 25 }))
+  .through(toPromise);
+```
 
 ## Faults
 When there is an unhandled error in a Kinesis stream processor, Lambda will continuously retry the function until the problem is either resolved or the event(s) in question expire(s). For transient errors, such as throttling, this may be the best course of action, because the problem may self-heal. However, if there is a poison event then we want to set it asside by publishing a `fault` event, so that the other events can be processed. I refer to this as the _Stream Circuit Breaker_ pattern.
@@ -298,11 +316,37 @@ This turns on debug for a specific pipeline.
 
 Various print utilities are provided, such as: `printStartPipeline` and `printEndPipeline`.
 
+## Utilities
+TODO
+
+### Backpressure
+TODO
+
+### Parallel
+TODO
+
+### Batching
+TODO
+
+### Grouping
+TODO
+
+### Other
+TODO
+
 ## Kinesis Support
 TODO
+* `fromKinesis` - creates a stream from Kinesis records
+* `Publisher` - connector for the Kinesis SDK
+* `publish` - stream steps for publishing events to Kinesis
+* `toKinesisRecords` - test helper for creating Kinesis records from test events
 
 ## DynamoDB Support
 TODO
+* `fromDynamodb` - creates a stream from DynamoDB Stream records
+* `DynamoDBConnector` - connector for the DynamoDB SDK
+* `update` - stream steps for updating rows in a single DynamoDB table
+* `toDynamodbRecords` - test helper for creating Kinesis records from test events
 
 ## EventBridge Support
 * https://github.com/jgilbert01/aws-lambda-stream/issues/18
