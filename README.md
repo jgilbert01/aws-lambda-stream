@@ -317,36 +317,91 @@ This turns on debug for a specific pipeline.
 Various print utilities are provided, such as: `printStartPipeline` and `printEndPipeline`.
 
 ## Utilities
-TODO
+Here are some highlights of utiltities that are avail in this library or Highland.js.
 
 ### Backpressure
-TODO
+Unlike imperative programming, functional reactive programming with streams provides natural backpressure because it is pull oriented. In other words, a slow downstream step will not pull the next upstream record until it is finished rocessing the current record. This helps us avoid overwhelming downstream services and systems.
+
+However, this does not hold true for services like DynamoDB that return throttling errors. In these cases we can use the Highland.js [rateLimit](https://highlandjs.org/#ratelimit) feature to provide explicit backpressure.
+
+```javascript
+  ...
+  .rateLimit(2, 100) // 2 per 100ms
+  .through(update)
+  ...
+```
 
 ### Parallel
-TODO
+Asynchronous Non Blocking IO is probably the most important feature for optimiing throughput. The Highland.js [parallel](https://highlandjs.org/#parallel) feature allow us to take full control. When using this feature, upstream steps will continue to be executed while up to N asyc requests are waiting for responses. This feature along with `pipelines` allows us to maximize the utilization of every lambda invocation. 
+
+```javascript
+  ...
+  .map(makeSomeAsyncCall)
+  .parallel(8)
+  ...
+```
+
+This is usualy the first parameter I tweak. Environment variables, such as `UPDATE_PARALLEL` and `PARALLEL` are used for experiementing with different settings.
+
+This feature is baked into the DynamoDB `update` utility. 
 
 ### Batching
-TODO
+Many `aws-sdk` operations support batching multiple requests into a single call. This can help increase throughput by reducing aggregate network latency.
+
+The Highland.js [batch](https://highlandjs.org/#batch) feature allow us to easily collect us a batch of requests. The `toBatchUow` utility provided by this library formats these into a batch unit of work so that we can easily raise a `fault` for a batch a `resubmit` the batch.
+
+```javascript
+  ...
+  .batch(10)
+  .map(toBatchUow)
+  .map(makeSOmeAsyncCall)
+  ...
+```
+
+However, be aware that most of the aws-sdk batch apis do not succeed or fail as a unit. Therefore you have to either have to selectively retry the failed requests and/or ensure that these calls are idempotent. Therefore I usually try to first optimize using the `parellel` feature and then move onto `batch` if needs be.
+
+_I will look at adding selective retry as a feature of this library._
 
 ### Grouping
-TODO
+Another way to increase throughput is by grouping related events and thereby reducing the number external calls you will need to make. The Highland.js [group](https://highlandjs.org/#group) feature allow us to easily group related records.  The `toGroupUow` utility provided by this library formats these into a batch unit of work so that we can easily raise a `fault` for a group a `resubmit` the group.
 
-### Other
-TODO
+```javascript
+  ...
+  .group(uow => uow.event.partitionKey)
+  .flatMap(toGroupUow)
+  ...
+```
+
+## Other
+There are various other utilities in the utils folder.
+* `now` - wraps `Date.now()` so that it can be easily mocked in unit tests
+* `toKinesisRecords` - is a test helper for creating Kinesis records from test events
+* `toDynamodbRecords` - is a test helper for creating Kinesis records from test events
 
 ## Kinesis Support
-TODO
 * `fromKinesis` - creates a stream from Kinesis records
 * `Publisher` - connector for the Kinesis SDK
 * `publish` - stream steps for publishing events to Kinesis
-* `toKinesisRecords` - test helper for creating Kinesis records from test events
+* `toKinesisRecords` - test helper mentioned above
 
 ## DynamoDB Support
-TODO
 * `fromDynamodb` - creates a stream from DynamoDB Stream records
 * `DynamoDBConnector` - connector for the DynamoDB SDK
 * `update` - stream steps for updating rows in a single DynamoDB table
-* `toDynamodbRecords` - test helper for creating Kinesis records from test events
+* `toDynamodbRecords` - test helper mentioned above
+* `updateExpression` - creates an expression nfrom a plain old json object
+  * _consider using [DynamoDB Toolbox](https://github.com/jeremydaly/dynamodb-toolbox) for richer support_
+* `timestampCondition` - creates an expression for performing _inverse oplocks_
+* `ttl` - calculates `ttl` based on a start epoch and a number of days
+
+In addition:
+* `single` support is provided in `fromDynamodb` based on the `discriminator` field
+* `latching` support is provided in `fromDynamodb` based on the `latched` fields
+* `soft delete` support is provided in `fromDynamodb` based on the `deleted` fields
+* `global table` support is provided in `fromDynamodb` based on the `aws:rep:updateregion` fields
+  * _note this may not be needed in the latest version of global tables_
+
+> Look for future blog posts on `dynamodb single tables`, `latching`, `soft-deletes` and `oplock-based-joins`.
 
 ## EventBridge Support
 * https://github.com/jgilbert01/aws-lambda-stream/issues/18
@@ -368,3 +423,8 @@ TODO
 
 ## Validation
 * https://github.com/jgilbert01/aws-lambda-stream/issues/22
+
+## Links
+The following links contain additional information:
+* [Highland.js](https://highlandjs.org) documentation
+* My [Blog](https://medium.com/@jgilbert001) covers many topics such as System Wide Event Sourcing & CQRS
