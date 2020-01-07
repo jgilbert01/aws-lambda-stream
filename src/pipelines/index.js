@@ -24,6 +24,8 @@ export const initialize = (pipelines, opt = {}) => {
     }),
     {},
   );
+
+  return { assemble };
 };
 
 export const initializeFrom = (rules) => rules.reduce(
@@ -38,10 +40,10 @@ export const initializeFrom = (rules) => rules.reduce(
   {},
 );
 
-export const execute = (head, includeFaultHandler = true) => {
+export const assemble = (head, includeFaultHandler = true) => {
   const keys = Object.keys(thePipelines);
 
-  debug('execute: %j', keys);
+  debug('assemble: %j', keys);
 
   if (includeFaultHandler) {
     // after pre processoring
