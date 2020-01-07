@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import {
-  initialize, execute, initializeFrom,
+  initialize, assemble, initializeFrom,
   toDynamodbRecords, fromDynamodb,
   Publisher,
   envTags,
@@ -59,7 +59,7 @@ describe('flavors/crud.js', () => {
       },
     ]);
 
-    execute(fromDynamodb(events), false)
+    assemble(fromDynamodb(events), false)
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
