@@ -13,7 +13,7 @@ Support is provided for AWS Kinesis, DynamoDB Streams and more.
 `npm install aws-lambda-stream --save`
 
 ## Basic Usage
-The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is the initialization code that quickly sets up the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the stream, which provides natural _backpressure (see blow)_. The promise will resolve once all the data has passed through all the stream steps or reject when an unhandled error is encountered.
+The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is responsible for assembling the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the steps, which provides natural _backpressure (see blow)_. The promise will resolve once all the data has passed through all the stream steps or reject when an unhandled error is encountered.
 
 ### Example: Listener Function
 This example processes a Kinesis stream and materializes the data in a single DynamoDB table. The details are explained below.
@@ -79,9 +79,9 @@ interface Event {
 * `type` - generally the namespace, domain entity and action performed
 * `timestamp` - epoch value when the action was performed
 * `partitionKey` - generally the entity id or correlation id to ensure related events can be processed together
-* `tags` - A generic place for routing information. A standard set of values is always included, such as `account`, `region`, `stage`, `source`, `functionname` and `pipeline`.
+* `tags` - a generic place for routing information. A standard set of values is always included, such as `account`, `region`, `stage`, `source`, `functionname` and `pipeline`.
 * `<entity>` - a canonical entity that is specific to the event type. This is the _contract_ that must be held backwards compatible. The name of this field is usually the lowerCamelCase name of the entity type, such as `thing` for `Thing`.
-* `raw` - This is the raw data and format produced by the source of the event. This is included so that the _event-lake_ can form a complete audit with no lost information. This is not guaranteed to be backwards compatible, so use at your own risk.
+* `raw` - this is the raw data and format produced by the source of the event. This is included so that the _event-lake_ can form a complete audit with no lost information. This is not guaranteed to be backwards compatible, so use at your own risk.
 * `encryptionInfo` - envelope encryption metadata (see _Encryption_ below)
 
 ## Filters
@@ -225,12 +225,12 @@ The _Highland.js_ library allows us to [fork](https://highlandjs.org/#observe) s
 
 Each pipeline is implemented and tested separately. Each is usually defined in its own module/file.
 
-Here is an example of a pipeline. They are curried functions that first receive options and then the forked stream as input to which they add the desired steps. Pipelines typically start with a `filter` step.
+Here is an example of a pipeline. They are _curried_ functions that first receive options during `initialize` and then the forked stream during `assemble` (see below). During `assemble` they add the desired steps to the stream. Pipelines typically start with one or more `filter` steps to indicate which events the steps apply to.
 
 ```javascript
-const pipeline1 = (opt) => (s) => s
+const pipeline1 = (options) => (stream) => stream
   .filter(onEventType)
-  .tap(uow => opt.debug('%j', uow))
+  .tap(uow => options.debug('%j', uow))
   .map(toUpdateRequest)
   .through(update({ parallel: 4 }));
 
@@ -262,9 +262,9 @@ export const handler = async (event) =>
     .through(toPromise);
 ```
 
-But take care to assemble cohesive sets of pipelines into a single function. For example, a listener function in a BFF service will typically consume events from Kinesis and the various piplines will `materialize` different entities into a DynamoDB table to implement the CQRS pattern. Then the trigger function of the BFF service will consume events from the DynamoDB table, as `mutations` are invoked in the `graphql` function, and the pipelines will publish events to the Kinesis stream to implement the Event Sourcing pattern. (see Flavors below)
+But take care to assemble a cohesive set of pipelines into a single function. For example, a _listener_ function in a BFF service will typically consume events from Kinesis and the various pipelines will `materialize` different entities from the events into a DynamoDB table to implement the _CQRS_ pattern. Then the _trigger_ function of the BFF service will consume events from the DynamoDB table, as `mutations` are invoked in the `graphql` function, and these pipelines will `publish` events to the Kinesis stream to implement the _Event Sourcing_ pattern. (see Flavors below)
 
->Pipelines also help optimize utilization by giving a function more things to do while it waits on async-non-blocking-io calls (see Parallel below). Run test/unit/pipelines/coop.test.js to see an example of cooperative programming in action.
+>Pipelines also help optimize utilization by giving a function more things to do while it waits on async-non-blocking-io calls (see Parallel below). Run `test/unit/pipelines/coop.test.js` to see an example of _cooperative programming_ in action.
 
 ## Flavors
 Many of the pipelines we write follow the exact same steps and only the filters and data mapping details are different. We can package these pipeline _flavors_ into reusable pipelines that can be configured with `rules`.
