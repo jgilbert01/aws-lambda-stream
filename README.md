@@ -13,7 +13,7 @@ Support is provided for AWS Kinesis, DynamoDB Streams and more.
 `npm install aws-lambda-stream --save`
 
 ## Basic Usage
-The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is just the initialization code that quickly sets up the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the stream, which provides natural _backpressure (see blow)_. The promise will resolve only once all the data has passed through all the stream steps.
+The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is the initialization code that quickly sets up the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the stream, which provides natural _backpressure (see blow)_. The promise will resolve once all the data has passed through all the stream steps or reject when an unhandled error is encountered.
 
 ### Example: Listener Function
 This example processes a Kinesis stream and materializes the data in a single DynamoDB table. The details are explained below.
@@ -76,11 +76,11 @@ interface Event {
 ```
 
 * `id` - a unique deterministic value
-* `type` - generally the namespace, entity, action performed
+* `type` - generally the namespace, domain entity and action performed
 * `timestamp` - epoch value when the action was performed
 * `partitionKey` - generally the entity id or correlation id to ensure related events can be processed together
 * `tags` - A generic place for routing information. A standard set of values is always included, such as `account`, `region`, `stage`, `source`, `functionname` and `pipeline`.
-* `<entity>` - a canonical entity that is specific to the event type. This is the _contract_ that must be held backwards comaptible. The name of this field is usually the lowerCamelCase name of the entity type, such as `thing` for `Thing`.
+* `<entity>` - a canonical entity that is specific to the event type. This is the _contract_ that must be held backwards compatible. The name of this field is usually the lowerCamelCase name of the entity type, such as `thing` for `Thing`.
 * `raw` - This is the raw data and format produced by the source of the event. This is included so that the _event-lake_ can form a complete audit with no lost information. This is not guaranteed to be backwards compatible, so use at your own risk.
 * `encryptionInfo` - envelope encryption metadata (see _Encryption_ below)
 
@@ -142,7 +142,7 @@ At the end of a stream processor there is usually a _sink_ step that persists th
 
 These connectors are then wrapped with utility functions, such as `update` and `publish`, to integrate them into the streaming framework. For example, the promise returned from the connector is normalized to a [stream](https://highlandjs.org/#_(source)), fault handling is provided and features such as [parallel](https://highlandjs.org/#parallel) and [batch](https://highlandjs.org/#batch) are utilized.
 
-These utility function leverage _currying_ to override default configuration settings, such as the _batchSize_ and the number of _parallel_ asyn-non-blocking_io executions.
+These utility function leverage _currying_ to override default configuration settings, such as the _batchSize_ and the number of _parallel_ asyn-non-blocking-io executions.
 
 Here is the example of using the `update` function.
 
@@ -216,31 +216,16 @@ import { faults, flushFaults, toPromise } from 'aws-lambda-stream';
 
 The `faults` function tests to see if the `err` has a `uow` adorned. If so then it buffers a `fault` event. The `flushFaults` stream will published all the buffered `fault` events once all events in the batch have been processed. This ensures that the `fault` events are not prematurely published in case an unhandle error occurs later in the batch.
 
->Note that I plan to open-source a `fault-monitor` service and the `aws-lambda-stream-cli`. The monitor stores the fault events in S3.  The `cli` supports `resubmitting` the poison events to the function that raised the `fault`.
+>I plan to open source a `fault-monitor` service and the `aws-lambda-stream-cli`. The monitor stores the fault events in S3.  The `cli` supports `resubmitting` the poison events to the function that raised the `fault`.
 
 ## Pipelines
-TODO
+As mentioned above, we are multiplexing many event types through a single stream for a variety of good reasons. Therefore, we want to maximize the utilization of each function invocation by acting on as many events as possible. However, we also want to maintain good clean separation of the processing logic for these different event types. 
 
-```javascript
-import { initialize, execute, fromKinesis } from 'aws-lambda-stream';
+The _Highland.js_ library allows us to [fork](https://highlandjs.org/#observe) streams, passing each fork/observer through a [pipeline](https://highlandjs.org/#pipeline) and [merge](https://highlandjs.org/#merge) the streams back together where they can share common tail logic like `fault` handling.
 
-import pipeline1 from './pipeline1';
-import pipeline2 from './pipeline2';
+Each pipeline is implemented and tested separately. Each is usually defined in its own module/file.
 
-const PIPELINES = {
-  pipeline1,
-  pipeline2,
-};
-
-export const handler = async (event) => {
-  initialize(PIPELINES);
-
-  return execute(fromKinesis(event))
-    .through(toPromise);
-};
-```
-
-Here is an example of a pipeline. They are functions that receive options and then a forked stream as input and add the desired steps. Pipelines typically start with a `filter` step.
+Here is an example of a pipeline. They are curried functions that first receive options and then the forked stream as input to which they add the desired steps. Pipelines typically start with a `filter` step.
 
 ```javascript
 const pipeline1 = (opt) => (s) => s
@@ -251,6 +236,35 @@ const pipeline1 = (opt) => (s) => s
 
 export default pipeline1;
 ```
+
+Here is an example of a handler function that uses pipelines. 
+1. First we `initialize` the pipelines with any options. 
+2. Then we `assemble` all pipelines into a forked stream.
+3. And finally the processing of the events through the pipelines is started by `toPromise`. 
+4. The data fans out through all the pipelines and the processing concludes when all the units of work have flowed through and merged back together.
+
+```javascript
+import { initialize, fromKinesis } from 'aws-lambda-stream';
+
+import pipeline1 from './pipeline1';
+import pipeline2 from './pipeline2';
+
+const PIPELINES = {
+  pipeline1,
+  pipeline2,
+};
+
+const OPTIONS = { ... };
+
+export const handler = async (event) => 
+  initialize(PIPELINES, OPTIONS)
+    .assemble(fromKinesis(event))
+    .through(toPromise);
+```
+
+But take care to assemble cohesive sets of pipelines into a single function. For example, a listener function in a BFF service will typically consume events from Kinesis and the various piplines will `materialize` different entities into a DynamoDB table to implement the CQRS pattern. Then the trigger function of the BFF service will consume events from the DynamoDB table, as `mutations` are invoked in the `graphql` function, and the pipelines will publish events to the Kinesis stream to implement the Event Sourcing pattern. (see Flavors below)
+
+>Pipelines also help optimize utilization by giving a function more things to do while it waits on async-non-blocking-io calls (see Parallel below). Run test/unit/pipelines/coop.test.js to see an example of cooperative programming in action.
 
 ## Flavors
 Many of the pipelines we write follow the exact same steps and only the filters and data mapping details are different. We can package these pipeline _flavors_ into reusable pipelines that can be configured with `rules`.
@@ -299,9 +313,9 @@ const RULES = [
 ];
 ```
 * `id` - is a unqiue string
-* `pipeline` - the function that imlements the pipeline flavor
+* `pipeline` - the function that implements the pipeline flavor
 * `eventType` - a regex, string or array of strings used to filter on event type
-* `toUpdateRequest` - is mapping function exepected by the `materialize` pipeline flavor
+* `toUpdateRequest` - is a mapping function expected by the `materialize` pipeline flavor
 
 ## Logging
 The [debug](https://www.npmjs.com/package/debug) library is used for logging. When using pipelines, each pipeline is given its own instance and it is passed in with the pipeline configuration options and it is attached to the `uow` for easy access. They are named after the pipelines with a `pl:` prefix. 
@@ -317,10 +331,10 @@ This turns on debug for a specific pipeline.
 Various print utilities are provided, such as: `printStartPipeline` and `printEndPipeline`.
 
 ## Utilities
-Here are some highlights of utiltities that are avail in this library or Highland.js.
+Here are some highlights of utiltities that are available in this library or Highland.js.
 
 ### Backpressure
-Unlike imperative programming, functional reactive programming with streams provides natural backpressure because it is pull oriented. In other words, a slow downstream step will not pull the next upstream record until it is finished rocessing the current record. This helps us avoid overwhelming downstream services and systems.
+Unlike imperative programming, functional reactive programming with streams provides natural backpressure because it is pull oriented. In other words, a slow downstream step will not pull the next upstream record until it is finished processing the current record. This helps us avoid overwhelming downstream services and systems.
 
 However, this does not hold true for services like DynamoDB that return throttling errors. In these cases we can use the Highland.js [rateLimit](https://highlandjs.org/#ratelimit) feature to provide explicit backpressure.
 
@@ -332,7 +346,7 @@ However, this does not hold true for services like DynamoDB that return throttli
 ```
 
 ### Parallel
-Asynchronous Non Blocking IO is probably the most important feature for optimiing throughput. The Highland.js [parallel](https://highlandjs.org/#parallel) feature allow us to take full control. When using this feature, upstream steps will continue to be executed while up to N asyc requests are waiting for responses. This feature along with `pipelines` allows us to maximize the utilization of every lambda invocation. 
+Asynchronous Non Blocking IO is probably the most important feature for optimizing throughput. The Highland.js [parallel](https://highlandjs.org/#parallel) feature allows us to take full control. When using this feature, upstream steps will continue to be executed while up to N asyc requests are waiting for responses. This feature along with `pipelines` allows us to maximize the utilization of every lambda invocation. 
 
 ```javascript
   ...
@@ -341,14 +355,16 @@ Asynchronous Non Blocking IO is probably the most important feature for optimiin
   ...
 ```
 
-This is usualy the first parameter I tweak. Environment variables, such as `UPDATE_PARALLEL` and `PARALLEL` are used for experiementing with different settings.
+This is usually the first parameter I tweak when tuning a function. Environment variables, such as `UPDATE_PARALLEL` and `PARALLEL` are used for experimenting with different settings. 
 
-This feature is baked into the DynamoDB `update` utility. 
+>Here is a post on _queuing theory_ that helps put this in perspective: [What happens when you add another teller?](https://www.johndcook.com/blog/2008/10/21/what-happens-when-you-add-a-new-teller)
+
+This feature is baked into the DynamoDB `update` and Kinesis `publish` utilities. 
 
 ### Batching
 Many `aws-sdk` operations support batching multiple requests into a single call. This can help increase throughput by reducing aggregate network latency.
 
-The Highland.js [batch](https://highlandjs.org/#batch) feature allow us to easily collect us a batch of requests. The `toBatchUow` utility provided by this library formats these into a batch unit of work so that we can easily raise a `fault` for a batch a `resubmit` the batch.
+The Highland.js [batch](https://highlandjs.org/#batch) feature allows us to easily collect us a batch of requests. The `toBatchUow` utility provided by this library formats these into a batch unit of work so that we can easily raise a `fault` for a batch and `resubmit` the batch.
 
 ```javascript
   ...
@@ -358,17 +374,17 @@ The Highland.js [batch](https://highlandjs.org/#batch) feature allow us to easil
   ...
 ```
 
-However, be aware that most of the aws-sdk batch apis do not succeed or fail as a unit. Therefore you have to either have to selectively retry the failed requests and/or ensure that these calls are idempotent. Therefore I usually try to first optimize using the `parellel` feature and then move onto `batch` if needs be.
+However, be aware that most of the aws-sdk batch apis do not succeed or fail as a unit. Therefore you either have to selectively retry the failed requests and/or ensure that these calls are idempotent. Therefore I usually try to first optimize using the `parellel` feature and then move onto `batch` if needs be.
 
 _I will look at adding selective retry as a feature of this library._
 
 ### Grouping
-Another way to increase throughput is by grouping related events and thereby reducing the number external calls you will need to make. The Highland.js [group](https://highlandjs.org/#group) feature allow us to easily group related records.  The `toGroupUow` utility provided by this library formats these into a batch unit of work so that we can easily raise a `fault` for a group a `resubmit` the group.
+Another way to increase throughput is by grouping related events and thereby reducing the number external calls you will need to make. The Highland.js [group](https://highlandjs.org/#group) feature allows us to easily group related records.  The `toGroupUows` utility provided by this library formats these into batched units of work so that we can easily raise a `fault` for a group and `resubmit` the group.
 
 ```javascript
   ...
   .group(uow => uow.event.partitionKey)
-  .flatMap(toGroupUow)
+  .flatMap(toGroupUows)
   ...
 ```
 
@@ -376,7 +392,7 @@ Another way to increase throughput is by grouping related events and thereby red
 There are various other utilities in the utils folder.
 * `now` - wraps `Date.now()` so that it can be easily mocked in unit tests
 * `toKinesisRecords` - is a test helper for creating Kinesis records from test events
-* `toDynamodbRecords` - is a test helper for creating Kinesis records from test events
+* `toDynamodbRecords` - is a test helper for creating DynamoDN Strean records from test events
 
 ## Kinesis Support
 * `fromKinesis` - creates a stream from Kinesis records
@@ -389,16 +405,17 @@ There are various other utilities in the utils folder.
 * `DynamoDBConnector` - connector for the DynamoDB SDK
 * `update` - stream steps for updating rows in a single DynamoDB table
 * `toDynamodbRecords` - test helper mentioned above
-* `updateExpression` - creates an expression nfrom a plain old json object
+* `updateExpression` - creates an expression from a plain old json object
+  * see _Mapping_ above
   * _consider using [DynamoDB Toolbox](https://github.com/jeremydaly/dynamodb-toolbox) for richer support_
 * `timestampCondition` - creates an expression for performing _inverse oplocks_
 * `ttl` - calculates `ttl` based on a start epoch and a number of days
 
 In addition:
-* `single` support is provided in `fromDynamodb` based on the `discriminator` field
-* `latching` support is provided in `fromDynamodb` based on the `latched` fields
-* `soft delete` support is provided in `fromDynamodb` based on the `deleted` fields
-* `global table` support is provided in `fromDynamodb` based on the `aws:rep:updateregion` fields
+* `single table` support is provided in `fromDynamodb` based on the `discriminator` field
+* `latching` support is provided in `fromDynamodb` based on the `latched` field
+* `soft delete` support is provided in `fromDynamodb` based on the `deleted` field
+* `global table` support is provided in `fromDynamodb` based on the `aws:rep:updateregion` field
   * _note this may not be needed in the latest version of global tables_
 
 > Look for future blog posts on `dynamodb single tables`, `latching`, `soft-deletes` and `oplock-based-joins`.
@@ -427,4 +444,4 @@ In addition:
 ## Links
 The following links contain additional information:
 * [Highland.js](https://highlandjs.org) documentation
-* My [Blog](https://medium.com/@jgilbert001) covers many topics such as System Wide Event Sourcing & CQRS
+* My [Blog](https://medium.com/@jgilbert001) covers many topics such as _System Wide Event Sourcing & CQRS_
