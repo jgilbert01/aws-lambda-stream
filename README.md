@@ -46,7 +46,7 @@ export const handler = async (event) =>
 The first step of a stream processor transforms the incoming Records into a [stream](https://highlandjs.org/#_(source)), like such: `_(event.Records)`. The various `from` functions, such as `fromKinesis` and `fromDynamodb`, normialize the records into a standard `Event` format. The output is a stream of `UnitOfWork` objects.
 
 ## UnitOfWork Type (aka uow)
-Think of a `uow` as an _immutable_ object that represents the `scope` of a set of `variables` passing through the stream. More so than ever, we should not use global variables in stream processors. Your processor steps will add new variables to the `uow` for use by downstream steps (see _Mapping_ below). This _scoping_ is crucial when we leverage the parallel processing features discussed below.
+Think of a `uow` as an _immutable_ object that represents the `scope` of a set of `variables` passing through the stream. More so than ever, we should not use global variables in stream processors. Your processor steps will add new variables to the `uow` for use by downstream steps _(see _Mapping_ below)_. This _scoping_ is crucial when we leverage the _parallel processing_ and _pipeline_ features discussed below.
 
 ```javascript
 interface UnitOfWork {
@@ -82,17 +82,19 @@ interface Event {
 * `tags` - a generic place for routing information. A standard set of values is always included, such as `account`, `region`, `stage`, `source`, `functionname` and `pipeline`.
 * `<entity>` - a canonical entity that is specific to the event type. This is the _contract_ that must be held backwards compatible. The name of this field is usually the lowerCamelCase name of the entity type, such as `thing` for `Thing`.
 * `raw` - this is the raw data and format produced by the source of the event. This is included so that the _event-lake_ can form a complete audit with no lost information. This is not guaranteed to be backwards compatible, so use at your own risk.
-* `encryptionInfo` - envelope encryption metadata (see _Encryption_ below)
+* `encryptionInfo` - envelope encryption metadata _(see _Encryption_ below)_
 
 ## Filters
 For a variety of reasons, we generally multiplex many event types through the same stream. I discuss this in detail in the following post: [Stream Inversion & Topology](https://medium.com/@jgilbert001/stream-inversion-topology-ad773627a435?source=friends_link&sk=a3639a9f8d459dd60266569380fb5c71). Thus, we use `filter` steps with functions like `onEventType` to focus in on the event types of interest and perform content based routing in general.
 
 ```javascript
-const onEventType = event => event.type.match(/thing-*/); // all event types starting with `thing-`
+// all event types starting with `thing-`
+const onEventType = event => 
+  event.type.match(/thing-*/);
 ```
 
 ## Mapping
-Many stream processor steps map the incoming data to the format needed downstream. The results of the mapping are adorned to the `uow` as a new variable. The `uow` must be immutable, so we return a new `uow` by cloning the original `uow` with the _spread_ operator and adorning the additional variable. There are various utils provided to assist (see below).
+Many stream processor steps map the incoming data to the format needed downstream. The results of the mapping are adorned to the `uow` as a new variable. The `uow` must be immutable, so we return a new `uow` by cloning the original `uow` with the _spread_ operator and adorning the additional variable. There are various utils provided to assist _(see below)_.
 
 ```javascript
 .map((uow) => ({
@@ -163,7 +165,7 @@ import { publish, toPromise } from 'aws-lambda-stream';
 ```
 
 ## Faults
-When there is an unhandled error in a Kinesis stream processor, Lambda will continuously retry the function until the problem is either resolved or the event(s) in question expire(s). For transient errors, such as throttling, this may be the best course of action, because the problem may self-heal. However, if there is a poison event then we want to set it asside by publishing a `fault` event, so that the other events can be processed. I refer to this as the _Stream Circuit Breaker_ pattern.
+When there is an unhandled error in a Kinesis stream processor, Lambda will continuously retry the function until the problem is either resolved or the event(s) in question expire(s). For transient errors, such as throttling, this may be the best course of action, because the problem may self-heal. However, if there is a poison event then we want to set it asside, by publishing a `fault` event, so that the other events can be processed. I refer to this as the _Stream Circuit Breaker_ pattern.
 
 Here is the definition of a `fault` event.
 
@@ -225,7 +227,7 @@ The _Highland.js_ library allows us to [fork](https://highlandjs.org/#observe) s
 
 Each pipeline is implemented and tested separately. Each is usually defined in its own module/file.
 
-Here is an example of a pipeline. They are _curried_ functions that first receive options during `initialize` and then the forked stream during `assemble` (see below). During `assemble` they add the desired steps to the stream. Pipelines typically start with one or more `filter` steps to indicate which events the steps apply to.
+Here is an example of a pipeline. They are _curried_ functions that first receive options during `initialize` and then the forked stream during `assemble` _(see below)_. During `assemble` they add the desired steps to the stream. Pipelines typically start with one or more `filter` steps to indicate which events the steps apply to.
 
 ```javascript
 const pipeline1 = (options) => (stream) => stream
@@ -238,10 +240,6 @@ export default pipeline1;
 ```
 
 Here is an example of a handler function that uses pipelines. 
-1. First we `initialize` the pipelines with any options. 
-2. Then we `assemble` all pipelines into a forked stream.
-3. And finally the processing of the events through the pipelines is started by `toPromise`. 
-4. The data fans out through all the pipelines and the processing concludes when all the units of work have flowed through and merged back together.
 
 ```javascript
 import { initialize, fromKinesis } from 'aws-lambda-stream';
@@ -262,9 +260,14 @@ export const handler = async (event) =>
     .through(toPromise);
 ```
 
-But take care to assemble a cohesive set of pipelines into a single function. For example, a _listener_ function in a BFF service will typically consume events from Kinesis and the various pipelines will `materialize` different entities from the events into a DynamoDB table to implement the _CQRS_ pattern. Then the _trigger_ function of the BFF service will consume events from the DynamoDB table, as `mutations` are invoked in the `graphql` function, and these pipelines will `publish` events to the Kinesis stream to implement the _Event Sourcing_ pattern. (see Flavors below)
+1. First we `initialize` the pipelines with any options. 
+2. Then we `assemble` all pipelines into a forked stream.
+3. And finally the processing of the events through the pipelines is started by `toPromise`. 
+4. The data fans out through all the pipelines and the processing concludes when all the units of work have flowed through and merged back together.
 
->Pipelines also help optimize utilization by giving a function more things to do while it waits on async-non-blocking-io calls (see Parallel below). Run `test/unit/pipelines/coop.test.js` to see an example of _cooperative programming_ in action.
+But take care to assemble a cohesive set of pipelines into a single function. For example, a _listener_ function in a BFF service will typically consume events from Kinesis and the various pipelines will `materialize` different entities from the events into a DynamoDB table to implement the _CQRS_ pattern. Then the _trigger_ function of the BFF service will consume events from the DynamoDB table, as `mutations` are invoked in the `graphql` function, and these pipelines will `publish` events to the Kinesis stream to implement the _Event Sourcing_ pattern. _(see Flavors below)_
+
+>Pipelines also help optimize utilization by giving a function more things to do while it waits on async-non-blocking-io calls _(see Parallel below)_. Run `test/unit/pipelines/coop.test.js` to see an example of _cooperative programming_ in action.
 
 ## Flavors
 Many of the pipelines we write follow the exact same steps and only the filters and data mapping details are different. We can package these pipeline _flavors_ into reusable pipelines that can be configured with `rules`.
@@ -286,7 +289,7 @@ const PIPELINES = {
 };
 ```
 
-Here are some example rules. The `id`, `pipeline`, and `eventType` fields are required. The remaining fields are defined by the specified pipeline flavor. You can define functions inline, but it is best to implement and unit test them separately.
+Here are some example rules. The `id`, `flavor`, and `eventType` fields are required. The remaining fields are defined by the specified pipeline flavor. You can define functions inline, but it is best to implement and unit test them separately.
 
 ```javascript
 import materialize from 'aws-lambda-stream/flavors/materialize';
@@ -294,26 +297,26 @@ import materialize from 'aws-lambda-stream/flavors/materialize';
 const RULES = [
   {
     id: 'p1',
-    pipeline: materialize,
+    flavor: materialize,
     eventType: /thing-(created|updated)/,
     toUpdateRequest,
   },
   {
     id: 'p2',
-    pipeline: materialize,
+    flavor: materialize,
     eventType: 'thing-deleted',
     toUpdateRequest: toSoftDeleteUpdateRequest,
   },
   {
     id: 'p3',
-    pipeline: materialize,
+    flavor: materialize,
     eventType: ['something-created', 'something-updated'],
     toUpdateRequest: (uow) => ({ ... }),
   },
 ];
 ```
 * `id` - is a unqiue string
-* `pipeline` - the function that implements the pipeline flavor
+* `flavor` - the function that implements the pipeline flavor
 * `eventType` - a regex, string or array of strings used to filter on event type
 * `toUpdateRequest` - is a mapping function expected by the `materialize` pipeline flavor
 
@@ -370,7 +373,7 @@ The Highland.js [batch](https://highlandjs.org/#batch) feature allows us to easi
   ...
   .batch(10)
   .map(toBatchUow)
-  .map(makeSOmeAsyncCall)
+  .map(makeSomeAsyncCall)
   ...
 ```
 
