@@ -395,7 +395,7 @@ Another way to increase throughput is by grouping related events and thereby red
 There are various other utilities in the utils folder.
 * `now` - wraps `Date.now()` so that it can be easily mocked in unit tests
 * `toKinesisRecords` - is a test helper for creating Kinesis records from test events
-* `toDynamodbRecords` - is a test helper for creating DynamoDN Strean records from test events
+* `toDynamodbRecords` - is a test helper for creating DynamoDB Strean records from test events
 
 ## Kinesis Support
 * `fromKinesis` - creates a stream from Kinesis records
