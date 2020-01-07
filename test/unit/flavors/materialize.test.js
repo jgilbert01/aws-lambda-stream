@@ -89,14 +89,14 @@ const toUpdateRequest = (uow) => ({
 const rules = [
   {
     id: 'mv1',
-    pipeline: materialize,
+    flavor: materialize,
     eventType: 'm1',
     filters: [() => true],
     toUpdateRequest,
   },
   {
     id: 'other1',
-    pipeline: materialize,
+    flavor: materialize,
     eventType: 'x9',
   },
 ];

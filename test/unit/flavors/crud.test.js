@@ -97,19 +97,19 @@ const toEvent = (uow) => ({
 const rules = [
   {
     id: 'crud1',
-    pipeline: crud,
+    flavor: crud,
     eventType: /thing-*/,
     filters: [() => true],
     toEvent,
   },
   {
     id: 'crud2',
-    pipeline: crud,
+    flavor: crud,
     eventType: /other-*/,
   },
   {
     id: 'crud-other1',
-    pipeline: crud,
+    flavor: crud,
     eventType: 'x9',
   },
 ];

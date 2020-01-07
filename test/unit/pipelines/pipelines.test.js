@@ -144,13 +144,13 @@ describe('pipelines/index.js', () => {
     const pipelines = initializeFrom([
       {
         id: 'px5',
-        pipeline: (rule) => (s) => s.map(rule.map(rule)),
+        flavor: (rule) => (s) => s.map(rule.map(rule)),
         map: (rule) => (uow) => ({ ...uow, v: rule.value }),
         value: 1,
       },
       {
         id: 'px6',
-        pipeline: (rule) => (s) => s,
+        flavor: (rule) => (s) => s,
       },
     ]);
 

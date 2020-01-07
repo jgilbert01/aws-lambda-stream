@@ -31,7 +31,7 @@ export const initialize = (pipelines, opt = {}) => {
 export const initializeFrom = (rules) => rules.reduce(
   (accumulator, rule) => ({
     ...accumulator,
-    [rule.id]: (opt) => rule.pipeline({
+    [rule.id]: (opt) => rule.flavor({
       ...rule, // included 1st so rules are printed 1st in debug output
       ...opt,
       ...rule, // include again for override precedence
