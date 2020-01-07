@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import {
-  initialize, execute, initializeFrom,
+  initialize, assemble, initializeFrom,
   toKinesisRecords, fromKinesis,
   ttl, updateExpression, timestampCondition, DynamoDBConnector,
 } from '../../../src';
@@ -34,7 +34,7 @@ describe('flavors/materialize.js', () => {
       },
     ]);
 
-    execute(fromKinesis(events), false)
+    assemble(fromKinesis(events), false)
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
@@ -89,14 +89,14 @@ const toUpdateRequest = (uow) => ({
 const rules = [
   {
     id: 'mv1',
-    pipeline: materialize,
+    flavor: materialize,
     eventType: 'm1',
     filters: [() => true],
     toUpdateRequest,
   },
   {
     id: 'other1',
-    pipeline: materialize,
+    flavor: materialize,
     eventType: 'x9',
   },
 ];

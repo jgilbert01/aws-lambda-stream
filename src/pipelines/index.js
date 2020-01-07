@@ -24,12 +24,14 @@ export const initialize = (pipelines, opt = {}) => {
     }),
     {},
   );
+
+  return { assemble };
 };
 
 export const initializeFrom = (rules) => rules.reduce(
   (accumulator, rule) => ({
     ...accumulator,
-    [rule.id]: (opt) => rule.pipeline({
+    [rule.id]: (opt) => rule.flavor({
       ...rule, // included 1st so rules are printed 1st in debug output
       ...opt,
       ...rule, // include again for override precedence
@@ -38,10 +40,10 @@ export const initializeFrom = (rules) => rules.reduce(
   {},
 );
 
-export const execute = (head, includeFaultHandler = true) => {
+export const assemble = (head, includeFaultHandler = true) => {
   const keys = Object.keys(thePipelines);
 
-  debug('execute: %j', keys);
+  debug('assemble: %j', keys);
 
   if (includeFaultHandler) {
     // after pre processoring

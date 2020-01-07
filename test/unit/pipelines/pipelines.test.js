@@ -2,7 +2,7 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { initialize, execute, initializeFrom } from '../../../src/pipelines';
+import { initialize, assemble, initializeFrom } from '../../../src/pipelines';
 import {
   fromKinesis, Publisher, toKinesisRecords, FAULT_EVENT_TYPE,
 } from '../../../src';
@@ -21,6 +21,11 @@ describe('pipelines/index.js', () => {
       return uow;
     };
 
+    const events = toKinesisRecords([{
+      type: 't1',
+    }]);
+
+
     initialize({
       p1: (opt) => (s) => s
         // .tap(() => console.log('opt: %s', opt))
@@ -28,13 +33,8 @@ describe('pipelines/index.js', () => {
         .map(count),
       p2: (opt) => (s) => s.map(count),
       p3: (opt) => (s) => s.map(count),
-    });
-
-    const events = toKinesisRecords([{
-      type: 't1',
-    }]);
-
-    execute(fromKinesis(events), false)
+    })
+      .assemble(fromKinesis(events), false)
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
@@ -59,7 +59,7 @@ describe('pipelines/index.js', () => {
       type: 't2',
     }]);
 
-    execute(fromKinesis(events))
+    assemble(fromKinesis(events))
       .collect()
       .tap((collected) => {
         expect(collected.length).to.equal(1);
@@ -93,7 +93,7 @@ describe('pipelines/index.js', () => {
       })
       .map(expect.fail);
 
-    execute(head, true)
+    assemble(head, true)
       .collect()
       .tap((collected) => {
         expect(collected.length).to.equal(1);
@@ -129,7 +129,7 @@ describe('pipelines/index.js', () => {
       })
       .map(expect.fail);
 
-    execute(head, true)
+    assemble(head, true)
       .map(expect.fail)
       .stopOnError(spy)
       .collect()
@@ -144,13 +144,13 @@ describe('pipelines/index.js', () => {
     const pipelines = initializeFrom([
       {
         id: 'px5',
-        pipeline: (rule) => (s) => s.map(rule.map(rule)),
+        flavor: (rule) => (s) => s.map(rule.map(rule)),
         map: (rule) => (uow) => ({ ...uow, v: rule.value }),
         value: 1,
       },
       {
         id: 'px6',
-        pipeline: (rule) => (s) => s,
+        flavor: (rule) => (s) => s,
       },
     ]);
 

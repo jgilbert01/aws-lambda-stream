@@ -1,3 +1,5 @@
+import _ from 'highland';
+
 // used after highland batch step
 export const toBatchUow = (batch) => ({ batch });
 
@@ -9,3 +11,6 @@ export const unBatchUow = (uow) => {
     ...outerUowMinusBatch,
   }));
 };
+
+// use with flatMap after highland group step
+export const toGroupUows = /* istanbul ignore next */(groups) => _(Object.keys(groups).map((key) => ({ batch: groups[key] })));

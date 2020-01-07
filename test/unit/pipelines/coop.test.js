@@ -3,7 +3,7 @@ import 'mocha';
 import _ from 'highland';
 import Promise from 'bluebird';
 
-import { initialize, execute } from '../../../src/pipelines';
+import { initialize, assemble } from '../../../src/pipelines';
 
 import {
   fromKinesis, toKinesisRecords, now,
@@ -40,7 +40,7 @@ describe.skip('pipelines/coop-example', () => {
 
     });
 
-    execute(fromKinesis(events))
+    assemble(fromKinesis(events))
       // .stopOnError(console.error)
       .collect()
       .tap((collected) => {

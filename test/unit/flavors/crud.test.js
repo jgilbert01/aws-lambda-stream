@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import {
-  initialize, execute, initializeFrom,
+  initialize, assemble, initializeFrom,
   toDynamodbRecords, fromDynamodb,
   Publisher,
   envTags,
@@ -59,7 +59,7 @@ describe('flavors/crud.js', () => {
       },
     ]);
 
-    execute(fromDynamodb(events), false)
+    assemble(fromDynamodb(events), false)
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
@@ -97,19 +97,19 @@ const toEvent = (uow) => ({
 const rules = [
   {
     id: 'crud1',
-    pipeline: crud,
+    flavor: crud,
     eventType: /thing-*/,
     filters: [() => true],
     toEvent,
   },
   {
     id: 'crud2',
-    pipeline: crud,
+    flavor: crud,
     eventType: /other-*/,
   },
   {
     id: 'crud-other1',
-    pipeline: crud,
+    flavor: crud,
     eventType: 'x9',
   },
 ];
