@@ -6,8 +6,6 @@ import Connector from '../connectors/dynamodb';
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
 
-export const ttl = (start, days) => (start / 1000) + (60 * 60 * 24 * days);
-
 export const updateExpression = (Item) => ({
   ExpressionAttributeNames: Object.keys(Item)
     .map((attrName) => ({ [`#${attrName}`]: attrName }))
