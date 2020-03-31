@@ -3,13 +3,14 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import { initialize, assemble, initializeFrom } from '../../../src/pipelines';
-import {
-  fromKinesis, Publisher, toKinesisRecords, FAULT_EVENT_TYPE,
-} from '../../../src';
+import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
+import { FAULT_EVENT_TYPE } from '../../../src';
+
+import Connector from '../../../src/connectors/kinesis';
 
 describe('pipelines/index.js', () => {
   beforeEach(() => {
-    sinon.stub(Publisher.prototype, 'putRecords').resolves({});
+    sinon.stub(Connector.prototype, 'putRecords').resolves({});
   });
   afterEach(sinon.restore);
 

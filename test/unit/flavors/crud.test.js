@@ -4,10 +4,12 @@ import sinon from 'sinon';
 
 import {
   initialize, assemble, initializeFrom,
-  toDynamodbRecords, fromDynamodb,
-  Publisher,
   envTags,
 } from '../../../src';
+
+import { toDynamodbRecords, fromDynamodb } from '../../../src/from/dynamodb';
+
+import Connector from '../../../src/connectors/kinesis';
 
 import crud from '../../../src/flavors/crud';
 import { skipTag } from '../../../src/filters';
@@ -18,7 +20,7 @@ describe('flavors/crud.js', () => {
       ...initializeFrom(rules),
     });
 
-    sinon.stub(Publisher.prototype, 'putRecords').resolves({});
+    sinon.stub(Connector.prototype, 'putRecords').resolves({});
   });
 
   afterEach(sinon.restore);

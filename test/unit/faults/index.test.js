@@ -2,14 +2,16 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { fromKinesis, Publisher, toKinesisRecords } from '../../../src';
+import Connector from '../../../src/connectors/kinesis';
+
+import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import { faults, flushFaults, FAULT_EVENT_TYPE } from '../../../src/faults';
 
 let publishStub;
 
 describe('faults/index.js', () => {
   beforeEach(() => {
-    publishStub = sinon.stub(Publisher.prototype, 'putRecords').resolves({});
+    publishStub = sinon.stub(Connector.prototype, 'putRecords').resolves({});
   });
 
   afterEach(sinon.restore);

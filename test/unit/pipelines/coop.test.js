@@ -4,10 +4,8 @@ import _ from 'highland';
 import Promise from 'bluebird';
 
 import { initialize, assemble } from '../../../src/pipelines';
-
-import {
-  fromKinesis, toKinesisRecords, now,
-} from '../../../src';
+import { now } from '../../../src';
+import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 
 describe.skip('pipelines/coop-example', () => {
   it('should show pipeline cooperation', (done) => {

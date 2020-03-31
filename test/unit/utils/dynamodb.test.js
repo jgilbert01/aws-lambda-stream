@@ -3,9 +3,11 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
+import { ttl } from '../../../src/utils';
+
 import {
-  ttl, updateExpression, timestampCondition, update,
-} from '../../../src/utils';
+  updateExpression, timestampCondition, update,
+} from '../../../src/utils/dynamodb';
 
 import Connector from '../../../src/connectors/dynamodb';
 

@@ -1,7 +1,8 @@
 import _ from 'highland';
 import * as uuid from 'uuid';
 
-import { now, publish } from '../utils';
+import { now } from '../utils';
+import { publish } from '../utils/kinesis';
 
 export const FAULT_EVENT_TYPE = 'fault';
 

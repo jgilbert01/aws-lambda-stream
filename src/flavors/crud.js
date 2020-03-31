@@ -1,9 +1,9 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsync,
-  publish,
 } from '../utils';
 
+import { publish } from '../utils/kinesis';
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
 
 const crud = (rule) => (s) => s

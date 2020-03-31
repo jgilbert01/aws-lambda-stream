@@ -4,9 +4,13 @@ import sinon from 'sinon';
 
 import {
   initialize, assemble, initializeFrom,
-  toKinesisRecords, fromKinesis,
-  ttl, updateExpression, timestampCondition, DynamoDBConnector,
+  ttl,
 } from '../../../src';
+
+import { toKinesisRecords, fromKinesis } from '../../../src/from/kinesis';
+import { updateExpression, timestampCondition } from '../../../src/utils/dynamodb';
+
+import Connector from '../../../src/connectors/dynamodb';
 
 import materialize from '../../../src/flavors/materialize';
 
@@ -16,7 +20,7 @@ describe('flavors/materialize.js', () => {
       ...initializeFrom(rules),
     });
 
-    sinon.stub(DynamoDBConnector.prototype, 'update').resolves({});
+    sinon.stub(Connector.prototype, 'update').resolves({});
   });
 
   afterEach(sinon.restore);

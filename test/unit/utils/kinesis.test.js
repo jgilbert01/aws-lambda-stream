@@ -3,7 +3,8 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
-import { debug, publish, toRecord } from '../../../src/utils';
+import { debug } from '../../../src/utils';
+import { publish, toRecord } from '../../../src/utils/kinesis';
 
 import Publisher from '../../../src/connectors/kinesis';
 
