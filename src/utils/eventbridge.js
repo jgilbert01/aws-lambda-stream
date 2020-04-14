@@ -3,7 +3,7 @@ import _ from 'highland';
 import Connector from '../connectors/eventbridge';
 
 import { toBatchUow, unBatchUow } from './batch';
-import { rejectWithFault } from './faults';
+import { rejectWithFault, throwFault } from './faults';
 import { debug as d } from './print';
 import { adornStandardTags } from './tags';
 
@@ -33,8 +33,9 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
 
   const putEvents = (batchUow) => {
     const p = connector.putEvents(batchUow.inputParams)
-      .then((publishResponse) => ({ ...batchUow, publishResponse }))
-      .catch(rejectWithFault(batchUow, !handleErrors));
+      .catch(rejectWithFault(batchUow, !handleErrors))
+      .then(handleFailedEntries(batchUow))
+      .then((publishResponse) => ({ ...batchUow, publishResponse }));
 
     return _(p); // wrap promise in a stream
   };
@@ -50,4 +51,27 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
     .parallel(parallel)
 
     .flatMap(unBatchUow); // for cleaner logging and testing
+};
+
+const handleFailedEntries = (batchUow) => (publishResponse) => {
+  if (publishResponse.FailedEntryCount === 0) {
+    return publishResponse;
+  } else {
+    const failed = publishResponse.Entries.reduce((a, c, i) => {
+      if (c.ErrorCode) {
+        return [...a, {
+          ...batchUow.batch[i],
+          inputParam: batchUow.inputParams.Entries[i],
+          err: {
+            code: c.ErrorCode,
+            msg: c.ErrorMessage,
+          },
+        }];
+      } else {
+        return a;
+      }
+    }, []);
+
+    return throwFault({ batch: failed })(new Error(`Event Bridge Failed Entry Count: ${publishResponse.FailedEntryCount}`));
+  }
 };

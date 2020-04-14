@@ -12,7 +12,7 @@ describe('utils/eventbridge.js', () => {
   afterEach(sinon.restore);
 
   it('should batch and publish', (done) => {
-    sinon.stub(Connector.prototype, 'putEvents').resolves({});
+    sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
 
     const uows = [{
       event: {
@@ -65,7 +65,7 @@ describe('utils/eventbridge.js', () => {
               }),
             }],
           },
-          publishResponse: {},
+          publishResponse: { FailedEntryCount: 0 },
         });
       })
       .done(done);
@@ -128,6 +128,74 @@ describe('utils/eventbridge.js', () => {
               }),
             }],
           },
+        });
+      })
+      .collect()
+      .tap((collected) => {
+        expect(collected.length).to.equal(0);
+      })
+      .done(done);
+  });
+
+  it('should handle faild entry', (done) => {
+    sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 1, Entries: [{ ErrorCode: '1', ErrorMessage: 'M1' }, { EventId: '999' }] });
+
+    const uows = [{
+      event: {
+        id: '14f46ef2-0ef0-11ea-8d71-362b9e155667',
+        type: 'p2',
+        partitionKey: 'f440c880-4c41-4965-8658-2cbd503a2c73',
+      },
+    }];
+
+    _(uows)
+      .through(publish())
+      .errors((err) => {
+        // console.log(JSON.stringify(err, null, 2));
+
+        // expect(err.name).to.equal('test error');
+        expect(err.uow).to.deep.equal({
+          batch: [
+            {
+              event: {
+                id: '14f46ef2-0ef0-11ea-8d71-362b9e155667',
+                type: 'p2',
+                partitionKey: 'f440c880-4c41-4965-8658-2cbd503a2c73',
+                tags: {
+                  account: 'undefined',
+                  functionname: 'undefined',
+                  pipeline: 'undefined',
+                  region: 'us-west-2',
+                  source: 'undefined',
+                  stage: 'undefined',
+                  skip: true,
+                },
+              },
+              inputParam: {
+                EventBusName: 'undefined',
+                Source: 'custom',
+                DetailType: 'p2',
+                Detail: JSON.stringify({
+                  id: '14f46ef2-0ef0-11ea-8d71-362b9e155667',
+                  type: 'p2',
+                  partitionKey: 'f440c880-4c41-4965-8658-2cbd503a2c73',
+                  tags: {
+                    account: 'undefined',
+                    region: 'us-west-2',
+                    stage: 'undefined',
+                    source: 'undefined',
+                    functionname: 'undefined',
+                    pipeline: 'undefined',
+                    skip: true,
+                  },
+                }),
+              },
+              err: {
+                code: '1',
+                msg: 'M1',
+              },
+            },
+          ],
         });
       })
       .collect()
