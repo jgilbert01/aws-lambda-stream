@@ -1,10 +1,8 @@
 import 'mocha';
 import { expect } from 'chai';
 
-import {
-  fromKinesis, toKinesisRecords, fromDynamodb, toDynamodbRecords,
-} from '../../../src';
-
+import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
+import { fromDynamodb, toDynamodbRecords } from '../../../src/from/dynamodb';
 import { outSourceIsSelf, outLatched } from '../../../src/filters/latch';
 
 describe('filters/latch.js', () => {

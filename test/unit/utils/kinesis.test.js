@@ -3,15 +3,16 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
-import { debug, publish, toRecord } from '../../../src/utils';
+import { debug } from '../../../src/utils';
+import { publishToKinesis as publish, toRecord } from '../../../src/utils/kinesis';
 
-import Publisher from '../../../src/connectors/kinesis';
+import Connector from '../../../src/connectors/kinesis';
 
 describe('utils/kinesis.js', () => {
   afterEach(sinon.restore);
 
   it('should batch and publish', (done) => {
-    sinon.stub(Publisher.prototype, 'putRecords').resolves({});
+    sinon.stub(Connector.prototype, 'putRecords').resolves({});
 
     const uows = [{
       event: {
@@ -68,7 +69,7 @@ describe('utils/kinesis.js', () => {
   });
 
   it('should reject with a fault', (done) => {
-    sinon.stub(Publisher.prototype, 'putRecords').rejects('test error');
+    sinon.stub(Connector.prototype, 'putRecords').rejects('test error');
 
     const uows = [{
       event: {

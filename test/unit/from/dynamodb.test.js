@@ -1,9 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
 
-import { fromDynamodb } from '../../../src/from/dynamodb';
-
-import { toDynamodbRecords } from '../../../src/utils/dynamodb';
+import { fromDynamodb, toDynamodbRecords } from '../../../src/from/dynamodb';
 
 import { ttl } from '../../../src/utils';
 
