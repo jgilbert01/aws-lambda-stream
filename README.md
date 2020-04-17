@@ -20,6 +20,21 @@ The following diagram depicts a tyipcal scenario for using this library to imple
 ## Basic Usage
 The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is responsible for assembling the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the steps, which provides natural _backpressure (see blow)_. The promise will resolve once all the data has passed through all the stream steps or reject when an unhandled error is encountered.
 
+### Example: Trigger Function
+This example processes a DynamoDB Stream and publishes domain events to an EventBridge bus, which routes the events to the likes of a Kinesis stream. The details are explained below.
+
+```javascript
+import { fromDynamodb } from 'aws-lambda-stream/from/dynamodb';
+import { publishToEventBridge as publish } from 'aws-lambda-stream/utils/eventbridge';
+import { toPromise } from 'aws-lambda-stream';
+
+export const handler = async (event) =>
+  fromDynamodb(event)
+    .map(toEvent)
+    .through(publish({ batchSize: 25 }))
+    .through(toPromise);
+```
+
 ### Example: Listener Function
 This example processes a Kinesis stream and materializes the data in a single DynamoDB table. The details are explained below.
 
@@ -33,21 +48,6 @@ export const handler = async (event) =>
     .filter(onEventType)
     .map(toUpdateRequest)
     .through(update({ parallel: 4 }))
-    .through(toPromise);
-```
-
-### Example: Trigger Function
-This example processes a DynamoDB Stream and publishes CUD events to an EventBridge bus, which routes the events to the likes of a Kinesis stream. The details are explained below.
-
-```javascript
-import { fromDynamodb } from 'aws-lambda-stream/from/dynamodb';
-import { publishToEventBridge as publish } from 'aws-lambda-stream/utils/eventbridge';
-import { toPromise } from 'aws-lambda-stream';
-
-export const handler = async (event) =>
-  fromDynamodb(event)
-    .map(toEvent)
-    .through(publish({ batchSize: 25 }))
     .through(toPromise);
 ```
 
