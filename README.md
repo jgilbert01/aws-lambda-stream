@@ -12,10 +12,13 @@ Support is provided for AWS EventBridge, Kinesis, DynamoDB Streams and more.
 
 `npm install aws-lambda-stream --save`
 
-## Basic Usage
-The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is responsible for assembling the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the steps, which provides natural _backpressure (see blow)_. The promise will resolve once all the data has passed through all the stream steps or reject when an unhandled error is encountered.
+## Typical Scenario
+The following diagram depicts a tyipcal scenario for using this library to implement event sourcing and cqrs patterns. State changes in the database of Service X trigger the publication of domain events and Service Y consumes the events and caches the desired data in materialized views to support its requirements.
 
 <img src="overview.png" width="700">
+
+## Basic Usage
+The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is responsible for assembling the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the steps, which provides natural _backpressure (see blow)_. The promise will resolve once all the data has passed through all the stream steps or reject when an unhandled error is encountered.
 
 ### Example: Listener Function
 This example processes a Kinesis stream and materializes the data in a single DynamoDB table. The details are explained below.
