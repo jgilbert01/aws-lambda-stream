@@ -4,7 +4,7 @@
 
 The event signature for many Lambda functions is an array containing a micro-batch of `event.Records`. Functional Reactive Programming (FRP) is the cleanest approach for processing these streams. This library provides a light-weight framework for creating these stream processors. The underlying streaming library is [Highland.js](https://highlandjs.org), replete with features like filter, map, reduce, backpressure, batching, parallel processing and more.
 
-Support is provided for AWS Kinesis, DynamoDB Streams and more.
+Support is provided for AWS EventBridge, Kinesis, DynamoDB Streams and more.
 
 >Note: The original code base has been used in production for years. This specific open-sourced version is in BETA while the various features are ported and documented.
 
@@ -15,11 +15,15 @@ Support is provided for AWS Kinesis, DynamoDB Streams and more.
 ## Basic Usage
 The following examples show how to implement basic handler functions for consuming events from a Kinesis stream and a DynamoDB Stream. A key thing to note is that the code you see here is responsible for assembling the steps in the stream pipeline. The final step, `toPromise` returns a Promise from the handler function. Then the promise starts consuming from the stream and the data starts flowing through the steps. The data is pulled through the steps, which provides natural _backpressure (see blow)_. The promise will resolve once all the data has passed through all the stream steps or reject when an unhandled error is encountered.
 
+<img src="overview.png" width="700">
+
 ### Example: Listener Function
 This example processes a Kinesis stream and materializes the data in a single DynamoDB table. The details are explained below.
 
 ```javascript
-import { fromKinesis, toPromise } from 'aws-lambda-stream';
+import { fromKinesis } from 'aws-lambda-stream/from/kinesis';
+import { update } from 'aws-lambda-stream/utils/dynamodb';
+import { toPromise } from 'aws-lambda-stream';
 
 export const handler = async (event) =>
   fromKinesis(event)
@@ -30,10 +34,12 @@ export const handler = async (event) =>
 ```
 
 ### Example: Trigger Function
-This example processes a DynamoDB Stream and publishes CUD events to a Kinesis stream. The details are explained below.
+This example processes a DynamoDB Stream and publishes CUD events to an EventBridge bus, which routes the events to the likes of a Kinesis stream. The details are explained below.
 
 ```javascript
-import { fromDynamodb, toPromise } from 'aws-lambda-stream';
+import { fromDynamodb } from 'aws-lambda-stream/from/dynamodb';
+import { publishToEventBridge as publish } from 'aws-lambda-stream/utils/eventbridge';
+import { toPromise } from 'aws-lambda-stream';
 
 export const handler = async (event) =>
   fromDynamodb(event)
@@ -43,7 +49,7 @@ export const handler = async (event) =>
 ```
 
 ## Creating a stream from a lambda event
-The first step of a stream processor transforms the incoming Records into a [stream](https://highlandjs.org/#_(source)), like such: `_(event.Records)`. The various `from` functions, such as `fromKinesis` and `fromDynamodb`, normialize the records into a standard `Event` format. The output is a stream of `UnitOfWork` objects.
+The first step of a stream processor transforms the incoming Records into a [stream](https://highlandjs.org/#_(source)), like such: `_(event.Records)`. The various `from` functions, such as `fromKinesis`, `fromDynamodb` and `fromEventBridge`, normialize the records into a standard `Event` format. The output is a stream of `UnitOfWork` objects.
 
 ## UnitOfWork Type (aka uow)
 Think of a `uow` as an _immutable_ object that represents the `scope` of a set of `variables` passing through the stream. More so than ever, we should not use global variables in stream processors. Your processor steps will add new variables to the `uow` for use by downstream steps _(see _Mapping_ below)_. This _scoping_ is crucial when we leverage the _parallel processing_ and _pipeline_ features discussed below.
@@ -71,7 +77,7 @@ interface Event {
   partitionKey?: string;
   tags: { [key: string]: string | number };
   raw?: any;
-  encryptionInfo?: any;
+  eem?: any;
 }
 ```
 
@@ -82,15 +88,15 @@ interface Event {
 * `tags` - a generic place for routing information. A standard set of values is always included, such as `account`, `region`, `stage`, `source`, `functionname` and `pipeline`.
 * `<entity>` - a canonical entity that is specific to the event type. This is the _contract_ that must be held backwards compatible. The name of this field is usually the lowerCamelCase name of the entity type, such as `thing` for `Thing`.
 * `raw` - this is the raw data and format produced by the source of the event. This is included so that the _event-lake_ can form a complete audit with no lost information. This is not guaranteed to be backwards compatible, so use at your own risk.
-* `encryptionInfo` - envelope encryption metadata _(see _Encryption_ below)_
+* `eem` - envelope encryption metadata _(see _Encryption_ below)_
 
 ## Filters
 For a variety of reasons, we generally multiplex many event types through the same stream. I discuss this in detail in the following post: [Stream Inversion & Topology](https://medium.com/@jgilbert001/stream-inversion-topology-ad773627a435?source=friends_link&sk=a3639a9f8d459dd60266569380fb5c71). Thus, we use `filter` steps with functions like `onEventType` to focus in on the event types of interest and perform content based routing in general.
 
 ```javascript
 // all event types starting with `thing-`
-const onEventType = event =>
-  event.type.match(/thing-*/);
+const onEventType = uow =>
+  uow.event.type.match(/thing-*/);
 ```
 
 ## Mapping
@@ -108,6 +114,8 @@ Many stream processor steps map the incoming data to the format needed downstrea
 This is the function used in the _Listener Function_ example above.
 
 ```javascript
+import { updateExpression, timestampCondition } from 'aws-lambda-stream/utils/dynamodb';
+
 const toUpdateRequest = (uow) => ({
   ...uow,
   updateRequest: { // variable expected by `update` util
@@ -144,12 +152,14 @@ At the end of a stream processor there is usually a _sink_ step that persists th
 
 These connectors are then wrapped with utility functions, such as `update` and `publish`, to integrate them into the streaming framework. For example, the promise returned from the connector is normalized to a [stream](https://highlandjs.org/#_(source)), fault handling is provided and features such as [parallel](https://highlandjs.org/#parallel) and [batch](https://highlandjs.org/#batch) are utilized.
 
-These utility function leverage _currying_ to override default configuration settings, such as the _batchSize_ and the number of _parallel_ asyn-non-blocking-io executions.
+These utility functions leverage _currying_ to override default configuration settings, such as the _batchSize_ and the number of _parallel_ asyn-non-blocking-io executions.
 
 Here is the example of using the `update` function.
 
 ```javascript
-import { update, toPromise } from 'aws-lambda-stream';
+import { toPromise } from 'aws-lambda-stream';
+import { update } from 'aws-lambda-stream/utils/dynamodb';
+
   ...
   .through(update({ parallel: 4 }))
   .through(toPromise);
@@ -158,14 +168,15 @@ import { update, toPromise } from 'aws-lambda-stream';
 Here is the example of using the `publish` function.
 
 ```javascript
-import { publish, toPromise } from 'aws-lambda-stream';
+import { toPromise } from 'aws-lambda-stream';
+import { publishToEventBridge as publish } from 'aws-lambda-stream/utils/eventbridge';
   ...
   .through(publish({ batchSize: 25 }))
   .through(toPromise);
 ```
 
 ## Faults
-When there is an unhandled error in a Kinesis stream processor, Lambda will continuously retry the function until the problem is either resolved or the event(s) in question expire(s). For transient errors, such as throttling, this may be the best course of action, because the problem may self-heal. However, if there is a poison event then we want to set it asside, by publishing a `fault` event, so that the other events can be processed. I refer to this as the _Stream Circuit Breaker_ pattern.
+When there is an unhandled error in a Kinesis or DynamoDB stream processor, Lambda will continuously retry the function until the problem is either resolved or the event(s) in question expire(s). For transient errors, such as throttling, this may be the best course of action, because the problem may self-heal. However, if there is a poison event then we want to set it aside, by publishing a `fault` event, so that the other events can be processed. I refer to this as the _Stream Circuit Breaker_ pattern.
 
 Here is the definition of a `fault` event.
 
@@ -212,7 +223,7 @@ Then we need to setup the `faults` errors function and the `flushFaults` stream.
 import { faults, flushFaults, toPromise } from 'aws-lambda-stream';
   ...
   .errors(faults)
-  .through(flushFaults)
+  .through(flushFaults(opt))
   .through(toPromise);
 ```
 
@@ -242,7 +253,9 @@ export default pipeline1;
 Here is an example of a handler function that uses pipelines.
 
 ```javascript
-import { initialize, fromKinesis } from 'aws-lambda-stream';
+import { initialize, toPromise } from 'aws-lambda-stream';
+import { fromKinesis } from 'aws-lambda-stream/from/kinesis';
+import defaultOptions from 'aws-lambda-stream/utils/opt';
 
 import pipeline1 from './pipeline1';
 import pipeline2 from './pipeline2';
@@ -252,7 +265,7 @@ const PIPELINES = {
   pipeline2,
 };
 
-const OPTIONS = { ... };
+const OPTIONS = { ...defaultOptions, ... };
 
 export const handler = async (event) =>
   initialize(PIPELINES, OPTIONS)
@@ -394,25 +407,31 @@ Another way to increase throughput is by grouping related events and thereby red
 ## Other
 There are various other utilities in the utils folder.
 * `now` - wraps `Date.now()` so that it can be easily mocked in unit tests
-* `toKinesisRecords` - is a test helper for creating Kinesis records from test events
-* `toDynamodbRecords` - is a test helper for creating DynamoDB Strean records from test events
+* `ttl` - calculates `ttl` based on a start epoch and a number of days
+
+## EventBridge Support
+* `fromEventBridge` - creates a stream from an EventBridge record
+  * `toEventBridgeRecord` - is a test helper for creating an EventBridge record from a test event
+* `Connector` - connector for the EventBridge SDK
+* `publishToEventBridge` - stream steps for publishing events to EventBridge
+
+>Note: The default configuration, as defined in `utils/opt`, is to publisher to an AWS EventBridge custom bus and route the events to one or more streams or other targets. This approach, referred to as the _Event Hub_, provides maximum flexibility. The bus also routes all events to an _Event Lake_ via AWS Firehose to create a perpetual audit of all events.
 
 ## Kinesis Support
 * `fromKinesis` - creates a stream from Kinesis records
-* `Publisher` - connector for the Kinesis SDK
-* `publish` - stream steps for publishing events to Kinesis
-* `toKinesisRecords` - test helper mentioned above
+  * `toKinesisRecords` - is a test helper for creating Kinesis records from test events
+* `Connector` - connector for the Kinesis SDK
+* `publishToKinesis` - stream steps for publishing events to Kinesis
 
 ## DynamoDB Support
 * `fromDynamodb` - creates a stream from DynamoDB Stream records
-* `DynamoDBConnector` - connector for the DynamoDB SDK
+  * `toDynamodbRecords` - is a test helper for creating DynamoDB Strean records from test events
+* `Connector` - connector for the DynamoDB SDK
 * `update` - stream steps for updating rows in a single DynamoDB table
-* `toDynamodbRecords` - test helper mentioned above
 * `updateExpression` - creates an expression from a plain old json object
   * see _Mapping_ above
   * _consider using [DynamoDB Toolbox](https://github.com/jeremydaly/dynamodb-toolbox) for richer support_
 * `timestampCondition` - creates an expression for performing _inverse oplocks_
-* `ttl` - calculates `ttl` based on a start epoch and a number of days
 
 In addition:
 * `single table` support is provided in `fromDynamodb` based on the `discriminator` field
@@ -422,12 +441,6 @@ In addition:
   * _note this may not be needed in the latest version of global tables_
 
 > Look for future blog posts on `dynamodb single tables`, `latching`, `soft-deletes` and `oplock-based-joins`.
-
-## EventBridge Support
-* `fromEventBridge` - creates a stream from Kinesis records
-* `Connector` - connector for the EventBridge SDK
-* `publishToEventBridge` - stream steps for publishing events to EventBridge
-* `toEventBridgeRecord` - test helper mentioned above
 
 ## S3 Support
 * https://github.com/jgilbert01/aws-lambda-stream/issues/17
