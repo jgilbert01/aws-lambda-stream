@@ -1,7 +1,7 @@
 import _ from 'highland';
 import * as uuid from 'uuid';
 
-import { now, publish } from '../utils';
+import { now } from '../utils';
 
 export const FAULT_EVENT_TYPE = 'fault';
 
@@ -37,7 +37,7 @@ export const faults = (err, push) => {
   }
 };
 
-export const flushFaults = (s) => {
+export const flushFaults = (opt) => (s) => {
   // use at the every end with through() to redirect to faults streams
 
   const faultStream = () => {
@@ -54,9 +54,10 @@ export const flushFaults = (s) => {
     return s2
       // batch and publish fault events
       .map((fault) => ({ event: fault })) // map to uow format
-      .through(publish({
+      .through(opt.publish({
+        ...opt,
+        ...opt.faultOpt, // override options specific for faults
         handleErrors: false, // don't publish faults for faults
-        streamName: process.env.FAULT_STREAM_NAME || process.env.STREAM_NAME,
         batchSize: Number(process.env.FAULTS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 4,
         parallel: Number(process.env.FAULTS_PARALLEL) || Number(process.env.PARALLEL) || 4,
       }));

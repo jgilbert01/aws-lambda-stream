@@ -1,7 +1,6 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsync,
-  publish,
 } from '../utils';
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
@@ -17,7 +16,7 @@ const crud = (rule) => (s) => s
   .map(toEvent(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
-  .through(publish(rule))
+  .through(rule.publish(rule))
 
   .tap(printEndPipeline);
 

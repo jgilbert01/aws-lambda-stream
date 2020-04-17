@@ -8,7 +8,7 @@ const debug = d('pl:init');
 
 let thePipelines = {};
 
-export const initialize = (pipelines, opt = {}) => {
+export const initialize = (pipelines, opt) => {
   const keys = Object.keys(pipelines);
 
   debug('initialize: %j', keys);
@@ -25,7 +25,7 @@ export const initialize = (pipelines, opt = {}) => {
     {},
   );
 
-  return { assemble };
+  return { assemble: assemble(opt) };
 };
 
 export const initializeFrom = (rules) => rules.reduce(
@@ -40,7 +40,7 @@ export const initializeFrom = (rules) => rules.reduce(
   {},
 );
 
-export const assemble = (head, includeFaultHandler = true) => {
+const assemble = (opt) => (head, includeFaultHandler = true) => {
   const keys = Object.keys(thePipelines);
 
   debug('assemble: %j', keys);
@@ -90,7 +90,10 @@ export const assemble = (head, includeFaultHandler = true) => {
 
   if (includeFaultHandler) {
     s = s.errors(faults)
-      .through(flushFaults);
+      .through(flushFaults({
+        ...opt,
+        ...addDebug('fault'),
+      }));
   }
 
   return s;

@@ -2,14 +2,16 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { initialize, assemble, initializeFrom } from '../../../src/pipelines';
-import {
-  fromKinesis, Publisher, toKinesisRecords, FAULT_EVENT_TYPE,
-} from '../../../src';
+import { initialize, initializeFrom } from '../../../src/pipelines';
+import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
+import { FAULT_EVENT_TYPE } from '../../../src';
+
+import defaultOptions from '../../../src/utils/opt';
+import Connector from '../../../src/connectors/eventbridge';
 
 describe('pipelines/index.js', () => {
   beforeEach(() => {
-    sinon.stub(Publisher.prototype, 'putRecords').resolves({});
+    sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
   });
   afterEach(sinon.restore);
 
@@ -24,7 +26,6 @@ describe('pipelines/index.js', () => {
     const events = toKinesisRecords([{
       type: 't1',
     }]);
-
 
     initialize({
       p1: (opt) => (s) => s
@@ -45,6 +46,10 @@ describe('pipelines/index.js', () => {
   });
 
   it('should propagate pipeline errors', (done) => {
+    const events = toKinesisRecords([{
+      type: 't2',
+    }]);
+
     initialize({
       px1: (opt) => (s) => s
         .map((uow) => {
@@ -53,13 +58,8 @@ describe('pipelines/index.js', () => {
           throw e;
         })
         .map(expect.fail),
-    });
-
-    const events = toKinesisRecords([{
-      type: 't2',
-    }]);
-
-    assemble(fromKinesis(events))
+    }, defaultOptions)
+      .assemble(fromKinesis(events))
       .collect()
       .tap((collected) => {
         expect(collected.length).to.equal(1);
@@ -77,10 +77,6 @@ describe('pipelines/index.js', () => {
   });
 
   it('should propagate head errors', (done) => {
-    initialize({
-      px2: (opt) => (s) => s,
-    });
-
     const events = toKinesisRecords([{
       type: 't3',
     }]);
@@ -93,7 +89,10 @@ describe('pipelines/index.js', () => {
       })
       .map(expect.fail);
 
-    assemble(head, true)
+    initialize({
+      px2: (opt) => (s) => s,
+    }, defaultOptions)
+      .assemble(head, true)
       .collect()
       .tap((collected) => {
         expect(collected.length).to.equal(1);
@@ -114,11 +113,6 @@ describe('pipelines/index.js', () => {
     const spy = sinon.spy();
     const err = new Error('unhandled head error');
 
-    initialize({
-      px3: (opt) => (s) => s,
-      px4: (opt) => (s) => s,
-    });
-
     const events = toKinesisRecords([{
       type: 't4',
     }]);
@@ -129,7 +123,11 @@ describe('pipelines/index.js', () => {
       })
       .map(expect.fail);
 
-    assemble(head, true)
+    initialize({
+      px3: (opt) => (s) => s,
+      px4: (opt) => (s) => s,
+    }, defaultOptions)
+      .assemble(head, true)
       .map(expect.fail)
       .stopOnError(spy)
       .collect()

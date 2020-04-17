@@ -2,14 +2,18 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { fromKinesis, Publisher, toKinesisRecords } from '../../../src';
+import Connector from '../../../src/connectors/eventbridge';
+
+import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import { faults, flushFaults, FAULT_EVENT_TYPE } from '../../../src/faults';
+
+import defaultOptions from '../../../src/utils/opt';
 
 let publishStub;
 
 describe('faults/index.js', () => {
   beforeEach(() => {
-    publishStub = sinon.stub(Publisher.prototype, 'putRecords').resolves({});
+    publishStub = sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
   });
 
   afterEach(sinon.restore);
@@ -40,7 +44,7 @@ describe('faults/index.js', () => {
     fromKinesis(events)
       .map(simulateHandledError)
       .errors(faults)
-      .through(flushFaults)
+      .through(flushFaults(defaultOptions))
 
       .collect()
       .tap((collected) => {

@@ -3,22 +3,21 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import {
-  initialize, assemble, initializeFrom,
-  toDynamodbRecords, fromDynamodb,
-  Publisher,
+  initialize, initializeFrom,
   envTags,
 } from '../../../src';
+
+import { toDynamodbRecords, fromDynamodb } from '../../../src/from/dynamodb';
+
+import defaultOptions from '../../../src/utils/opt';
+import Connector from '../../../src/connectors/eventbridge';
 
 import crud from '../../../src/flavors/crud';
 import { skipTag } from '../../../src/filters';
 
 describe('flavors/crud.js', () => {
   beforeEach(() => {
-    initialize({
-      ...initializeFrom(rules),
-    });
-
-    sinon.stub(Publisher.prototype, 'putRecords').resolves({});
+    sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
   });
 
   afterEach(sinon.restore);
@@ -59,7 +58,10 @@ describe('flavors/crud.js', () => {
       },
     ]);
 
-    assemble(fromDynamodb(events), false)
+    initialize({
+      ...initializeFrom(rules),
+    }, defaultOptions)
+      .assemble(fromDynamodb(events), false)
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
