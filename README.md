@@ -79,7 +79,7 @@ interface Event {
   timestamp: number;
   partitionKey?: string;
   tags: { [key: string]: string | number };
-  raw?: any;
+  raw?: any; 
   eem?: any;
 }
 ```
@@ -98,7 +98,7 @@ For a variety of reasons, we generally multiplex many event types through the sa
 
 ```javascript
 // all event types starting with `thing-`
-const onEventType = uow =>
+const onEventType = uow => 
   uow.event.type.match(/thing-*/);
 ```
 
@@ -163,7 +163,7 @@ Here is the example of using the `update` function.
 import { toPromise } from 'aws-lambda-stream';
 import { update } from 'aws-lambda-stream/utils/dynamodb';
 
-  ...
+...
   .through(update({ parallel: 4 }))
   .through(toPromise);
 ```
@@ -230,12 +230,12 @@ import { faults, flushFaults, toPromise } from 'aws-lambda-stream';
   .through(toPromise);
 ```
 
-The `faults` function tests to see if the `err` has a `uow` adorned. If so then it buffers a `fault` event. The `flushFaults` stream will published all the buffered `fault` events once all events in the batch have been processed. This ensures that the `fault` events are not prematurely published in case an unhandle error occurs later in the batch.
+The `faults` function tests to see if the `err` has a `uow` adorned. If so then it buffers a `fault` event. The `flushFaults` stream will published all the buffered `fault` events once all events in the batch have been processed. This ensures that the `fault` events are not prematurely published in case an unhandled error occurs later in the batch.
 
 >I plan to open source a `fault-monitor` service and the `aws-lambda-stream-cli`. The monitor stores the fault events in S3.  The `cli` supports `resubmitting` the poison events to the function that raised the `fault`.
 
 ## Pipelines
-As mentioned above, we are multiplexing many event types through a single stream for a variety of good reasons. Therefore, we want to maximize the utilization of each function invocation by acting on as many events as possible. However, we also want to maintain good clean separation of the processing logic for these different event types.
+As mentioned above, we are multiplexing many event types through a single stream for a variety of good reasons. Therefore, we want to maximize the utilization of each function invocation by acting on as many events as possible. However, we also want to maintain good clean separation of the processing logic for these different event types. 
 
 The _Highland.js_ library allows us to [fork](https://highlandjs.org/#observe) streams, passing each fork/observer through a [pipeline](https://highlandjs.org/#pipeline) and [merge](https://highlandjs.org/#merge) the streams back together where they can share common tail logic like `fault` handling.
 
@@ -253,7 +253,7 @@ const pipeline1 = (options) => (stream) => stream
 export default pipeline1;
 ```
 
-Here is an example of a handler function that uses pipelines.
+Here is an example of a handler function that uses pipelines. 
 
 ```javascript
 import { initialize, toPromise } from 'aws-lambda-stream';
@@ -270,15 +270,15 @@ const PIPELINES = {
 
 const OPTIONS = { ...defaultOptions, ... };
 
-export const handler = async (event) =>
+export const handler = async (event) => 
   initialize(PIPELINES, OPTIONS)
     .assemble(fromKinesis(event))
     .through(toPromise);
 ```
 
-1. First we `initialize` the pipelines with any options.
+1. First we `initialize` the pipelines with any options. 
 2. Then we `assemble` all pipelines into a forked stream.
-3. And finally the processing of the events through the pipelines is started by `toPromise`.
+3. And finally the processing of the events through the pipelines is started by `toPromise`. 
 4. The data fans out through all the pipelines and the processing concludes when all the units of work have flowed through and merged back together.
 
 But take care to assemble a cohesive set of pipelines into a single function. For example, a _listener_ function in a BFF service will typically consume events from Kinesis and the various pipelines will `materialize` different entities from the events into a DynamoDB table to implement the _CQRS_ pattern. Then the _trigger_ function of the BFF service will consume events from the DynamoDB table, as `mutations` are invoked in the `graphql` function, and these pipelines will `publish` events to the Kinesis stream to implement the _Event Sourcing_ pattern. _(see Flavors below)_
@@ -337,7 +337,7 @@ const RULES = [
 * `toUpdateRequest` - is a mapping function expected by the `materialize` pipeline flavor
 
 ## Logging
-The [debug](https://www.npmjs.com/package/debug) library is used for logging. When using pipelines, each pipeline is given its own instance and it is passed in with the pipeline configuration options and it is attached to the `uow` for easy access. They are named after the pipelines with a `pl:` prefix.
+The [debug](https://www.npmjs.com/package/debug) library is used for logging. When using pipelines, each pipeline is given its own instance and it is passed in with the pipeline configuration options and it is attached to the `uow` for easy access. They are named after the pipelines with a `pl:` prefix. 
 
 This turns on debug for all pipelines.
 
@@ -355,7 +355,7 @@ Here are some highlights of utiltities that are available in this library or Hig
 ### Backpressure
 Unlike imperative programming, functional reactive programming with streams provides natural backpressure because it is pull oriented. In other words, a slow downstream step will not pull the next upstream record until it is finished processing the current record. This helps us avoid overwhelming downstream services and systems.
 
-However, this does not hold true for services like DynamoDB that return throttling errors. In these cases we can use the Highland.js [rateLimit](https://highlandjs.org/#ratelimit) feature to provide explicit backpressure.
+However, this does not hold true for services, like DynamoDB, that return throttling errors. In these cases we can use the Highland.js [rateLimit](https://highlandjs.org/#ratelimit) feature to provide explicit backpressure.
 
 ```javascript
   ...
@@ -365,7 +365,7 @@ However, this does not hold true for services like DynamoDB that return throttli
 ```
 
 ### Parallel
-Asynchronous Non Blocking IO is probably the most important feature for optimizing throughput. The Highland.js [parallel](https://highlandjs.org/#parallel) feature allows us to take full control. When using this feature, upstream steps will continue to be executed while up to N asyc requests are waiting for responses. This feature along with `pipelines` allows us to maximize the utilization of every lambda invocation.
+Asynchronous Non Blocking IO is probably the most important feature for optimizing throughput. The Highland.js [parallel](https://highlandjs.org/#parallel) feature allows us to take full control. When using this feature, upstream steps will continue to be executed while up to N asyc requests are waiting for responses. This feature along with `pipelines` allows us to optimize the utilization of every lambda invocation. 
 
 ```javascript
   ...
@@ -374,16 +374,16 @@ Asynchronous Non Blocking IO is probably the most important feature for optimizi
   ...
 ```
 
-This is usually the first parameter I tweak when tuning a function. Environment variables, such as `UPDATE_PARALLEL` and `PARALLEL` are used for experimenting with different settings.
+This is usually the first parameter I tweak when tuning a function. Environment variables, such as `UPDATE_PARALLEL` and `PARALLEL` are used for experimenting with different settings. 
 
 >Here is a post on _queuing theory_ that helps put this in perspective: [What happens when you add another teller?](https://www.johndcook.com/blog/2008/10/21/what-happens-when-you-add-a-new-teller)
 
-This feature is baked into the DynamoDB `update` and Kinesis `publish` utilities.
+This feature is baked into the DynamoDB `update` and Kinesis `publish` utilities. 
 
 ### Batching
 Many `aws-sdk` operations support batching multiple requests into a single call. This can help increase throughput by reducing aggregate network latency.
 
-The Highland.js [batch](https://highlandjs.org/#batch) feature allows us to easily collect us a batch of requests. The `toBatchUow` utility provided by this library formats these into a batch unit of work so that we can easily raise a `fault` for a batch and `resubmit` the batch.
+The Highland.js [batch](https://highlandjs.org/#batch) feature allows us to easily collect a batch of requests. The `toBatchUow` utility provided by this library formats these into a batch unit of work so that we can easily raise a `fault` for a batch and `resubmit` the batch.
 
 ```javascript
   ...
@@ -397,7 +397,7 @@ However, be aware that most of the aws-sdk batch apis do not succeed or fail as 
 
 _I will look at adding selective retry as a feature of this library._
 
-### Grouping
+### Grouping / Reducing
 Another way to increase throughput is by grouping related events and thereby reducing the number external calls you will need to make. The Highland.js [group](https://highlandjs.org/#group) feature allows us to easily group related records.  The `toGroupUows` utility provided by this library formats these into batched units of work so that we can easily raise a `fault` for a group and `resubmit` the group.
 
 ```javascript
@@ -467,3 +467,13 @@ In addition:
 The following links contain additional information:
 * [Highland.js](https://highlandjs.org) documentation
 * My [Blog](https://medium.com/@jgilbert001) covers many topics such as _System Wide Event Sourcing & CQRS_
+
+## Project Templates
+The following project templates are provided to help get your event platform up and running:
+
+* event-hub
+* event-lake-s3
+* and more coming...
+
+Create your own project using the Serverless Framework, such as:
+`sls create --template-url https://github.com/jgilbert01/aws-lambda-stream/tree/master/templates/event-hub --path myprefix-event-hub`
