@@ -1,0 +1,56 @@
+service: event-test
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  tracing:
+    lambda: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - events:PutEvents
+      Resource:
+        ${cf:event-hub-${opt:stage}.busArn}
+
+functions:
+  publish:
+    handler: handler.publish
+    environment:
+      BUS_NAME: ${cf:event-hub-${opt:stage}.busName}
+      
+  listener:
+    handler: handler.listener
+
+  listener2:
+    handler: handler.listener2
+    events:
+      - stream:
+          type: kinesis
+          arn: ${cf:event-hub-${opt:stage}.stream1Arn}
+          batchSize: 100
+          startingPosition: TRIM_HORIZON
+
+resources:
+  Resources:
+    InvokeEventRule: 
+      Type: AWS::Events::Rule
+      Properties: 
+        EventBusName: ${cf:event-hub-${opt:stage}.busName}
+        EventPattern: 
+          source: 
+            - custom
+        State: ENABLED
+        Targets: 
+          - Id: ListenerLambdaFunction
+            Arn: 
+              Fn::GetAtt: [ ListenerLambdaFunction, Arn ]
+            
+    PermissionInvokeEventRule: 
+      Type: AWS::Lambda::Permission
+      Properties: 
+        FunctionName:
+          Ref: ListenerLambdaFunction
+        Action: lambda:InvokeFunction
+        Principal: events.amazonaws.com
+        SourceArn: 
+          Fn::GetAtt: [ InvokeEventRule, Arn ]

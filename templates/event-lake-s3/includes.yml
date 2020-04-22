@@ -1,0 +1,69 @@
+CloudWatchLoggingOptions: 
+  Enabled: true
+  LogGroupName:
+    Ref: LogGroup
+  LogStreamName:
+    Ref: LogStream
+
+LogGroup: 
+  Type: AWS::Logs::LogGroup
+
+LogStream: 
+  Type: AWS::Logs::LogStream
+  Properties: 
+    LogGroupName:
+      Ref: LogGroup
+    LogStreamName: event-lake-s3
+
+EventBridgeRole:
+  Type: AWS::IAM::Role
+  Properties:
+    AssumeRolePolicyDocument:
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service: events.amazonaws.com
+          Action: sts:AssumeRole
+    Policies:               
+      - PolicyName: put
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Action:
+                - firehose:PutRecord
+                - firehose:PutRecordBatch
+              Resource:
+                - Fn::GetAtt: [ DeliveryStream, Arn ]
+
+DeliveryRole:
+  Type: AWS::IAM::Role
+  Properties:
+    AssumeRolePolicyDocument:
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service: firehose.amazonaws.com
+          Action: sts:AssumeRole
+    Policies:               
+      - PolicyName: delivery
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:AbortMultipartUpload
+                - s3:GetBucketLocation
+                - s3:GetObject
+                - s3:ListBucket
+                - s3:ListBucketMultipartUploads
+                - s3:PutObject
+              Resource:
+                - Fn::GetAtt: [ Bucket, Arn ]
+                - Fn::Join:
+                    - /
+                    - - Fn::GetAtt: [ Bucket, Arn ]
+                      - '*'
+            - Effect: Allow
+              Action:
+                - logs:PutLogEvents
+              Resource:
+                - Fn::GetAtt: [ LogGroup, Arn ]

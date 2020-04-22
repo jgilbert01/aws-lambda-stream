@@ -1,0 +1,86 @@
+service: event-hub
+
+provider:
+  name: aws
+  # cfnRole: arn:aws:iam::${self:custom.accounts.${opt:acct}.accountNumber}:role/cfnRole
+  # deploymentBucket: myprefix-${opt:acct}-${opt:region}-serverlessdeploymentbucket
+
+custom:
+  accounts:
+    dev:
+      # accountNumber: 2109876543210
+      shardCount: 1
+    prod:
+      # accountNumber: 0123456789012
+      shardCount: 1
+
+resources:
+  Resources:
+    Bus:
+      Type: AWS::Events::EventBus
+      Properties:
+        Name: ${opt:stage}-${self:service}-bus
+
+    Stream1:
+      Type: AWS::Kinesis::Stream
+      Properties:
+        Name: ${opt:stage}-${self:service}-s1
+        RetentionPeriodHours: 24
+        ShardCount: ${self:custom.accounts.${opt:acct}.shardCount}
+
+    StreamRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: events.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:               
+          - PolicyName: put
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - kinesis:PutRecord
+                    - kinesis:PutRecords
+                  Resource:
+                    - Fn::GetAtt: [ Stream1, Arn ]
+                    # - Fn::GetAtt: [ Stream2, Arn ]
+
+    Stream1EventRule: 
+      Type: AWS::Events::Rule
+      Properties: 
+        EventBusName:
+          Ref: Bus
+        EventPattern: 
+          detail:
+            type:
+              - anything-but: fault
+        State: ENABLED
+        Targets: 
+          - Id: Stream1
+            Arn: 
+              Fn::GetAtt: [ Stream1, Arn ]
+            RoleArn:
+              Fn::GetAtt: [ StreamRole, Arn ]
+            KinesisParameters:
+              PartitionKeyPath: $.detail.partitionKey
+            InputPath: $.detail
+            
+  Outputs:
+    busName:
+      Value: 
+        Ref: Bus
+    busArn:
+      Value: 
+        Fn::GetAtt: [ Bus, Arn ]
+
+    stream1Name:
+      Value: 
+        Ref: Stream1
+    stream1Arn:
+      Value: 
+        Fn::GetAtt: [ Stream1, Arn ]
+        
