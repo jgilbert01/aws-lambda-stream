@@ -17,7 +17,7 @@ export const fromEventBridge = (event) =>
       },
     })));
 
-// testing
+// test helper
 export const toEventBridgeRecord = (event) => ({
   'version': '0',
   'id': '0',

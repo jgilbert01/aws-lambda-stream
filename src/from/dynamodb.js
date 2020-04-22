@@ -103,7 +103,7 @@ export const outGlobalTableExtraModify = (record) => {
   return true;
 };
 
-// testing
+// test helper
 export const toDynamodbRecords = (events) => ({
   Records: events.map((e, i) =>
     ({

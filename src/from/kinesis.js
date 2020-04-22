@@ -22,7 +22,7 @@ export const fromKinesis = (event) =>
       },
     })));
 
-// testing
+// test helper
 export const toKinesisRecords = (events) => ({
   Records: events.map((e, i) =>
     ({
