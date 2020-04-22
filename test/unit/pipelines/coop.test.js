@@ -3,11 +3,9 @@ import 'mocha';
 import _ from 'highland';
 import Promise from 'bluebird';
 
-import { initialize, assemble } from '../../../src/pipelines';
-
-import {
-  fromKinesis, toKinesisRecords, now,
-} from '../../../src';
+import { initialize } from '../../../src/pipelines';
+import { now } from '../../../src';
+import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 
 describe.skip('pipelines/coop-example', () => {
   it('should show pipeline cooperation', (done) => {
@@ -38,9 +36,8 @@ describe.skip('pipelines/coop-example', () => {
         .map(daoActionAll)
         .parallel(PARALLEL),
 
-    });
-
-    assemble(fromKinesis(events))
+    })
+      .assemble(fromKinesis(events))
       // .stopOnError(console.error)
       .collect()
       .tap((collected) => {

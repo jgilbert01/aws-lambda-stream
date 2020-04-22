@@ -3,20 +3,20 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import {
-  initialize, assemble, initializeFrom,
-  toKinesisRecords, fromKinesis,
-  ttl, updateExpression, timestampCondition, DynamoDBConnector,
+  initialize, initializeFrom,
+  ttl,
 } from '../../../src';
+
+import { toKinesisRecords, fromKinesis } from '../../../src/from/kinesis';
+import { updateExpression, timestampCondition } from '../../../src/utils/dynamodb';
+
+import Connector from '../../../src/connectors/dynamodb';
 
 import materialize from '../../../src/flavors/materialize';
 
 describe('flavors/materialize.js', () => {
   beforeEach(() => {
-    initialize({
-      ...initializeFrom(rules),
-    });
-
-    sinon.stub(DynamoDBConnector.prototype, 'update').resolves({});
+    sinon.stub(Connector.prototype, 'update').resolves({});
   });
 
   afterEach(sinon.restore);
@@ -34,7 +34,10 @@ describe('flavors/materialize.js', () => {
       },
     ]);
 
-    assemble(fromKinesis(events), false)
+    initialize({
+      ...initializeFrom(rules),
+    })
+      .assemble(fromKinesis(events), false)
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {

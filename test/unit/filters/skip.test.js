@@ -1,8 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
 
-import { fromKinesis, toKinesisRecords } from '../../../src';
-
+import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import { outSkip, skipTag } from '../../../src/filters/skip';
 
 describe('filters/skip.js', () => {

@@ -1,9 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
 
-import { fromKinesis } from '../../../src/from/kinesis';
-
-import { toKinesisRecords } from '../../../src/utils';
+import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 
 describe('from/kinesis.js', () => {
   it('should parse records', (done) => {

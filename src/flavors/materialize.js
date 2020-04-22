@@ -3,13 +3,14 @@ import Promise from 'bluebird';
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsync,
-  update,
 } from '../utils';
 
 import {
   filterOnEventType, filterOnContent,
   outSkip, outSourceIsSelf,
 } from '../filters';
+
+import { update } from '../utils/dynamodb';
 
 const materialize = (rule) => (s) => s
   .filter(outSkip)
