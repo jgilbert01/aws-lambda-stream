@@ -4,7 +4,12 @@ import _ from 'highland';
 
 import { faulty } from '../utils';
 
-export const fromDynamodb = (event) => // eslint-disable-line import/prefer-default-export
+export const fromDynamodb = (event, {
+  pkFn = 'pk',
+  skFn = 'sk',
+  discriminatorFn = 'discriminator',
+  eventTypePrefix = undefined,
+} = {}) => // eslint-disable-line import/prefer-default-export
 
   // prepare the event stream
   _(event.Records)
@@ -22,8 +27,8 @@ export const fromDynamodb = (event) => // eslint-disable-line import/prefer-defa
         record,
         event: {
           id: record.eventID,
-          type: `${calculateEventTypePrefix(record)}-${calculateEventTypeSuffix(record)}`,
-          partitionKey: record.dynamodb.Keys.pk.S,
+          type: `${calculateEventTypePrefix(record, { skFn, discriminatorFn, eventTypePrefix })}-${calculateEventTypeSuffix(record)}`,
+          partitionKey: record.dynamodb.Keys[pkFn].S,
           timestamp: record.dynamodb.ApproximateCreationDateTime * 1000,
           tags: {
             region: record.awsRegion,
@@ -44,9 +49,11 @@ export const fromDynamodb = (event) => // eslint-disable-line import/prefer-defa
 // for node rows this could be the same value as the sk
 // for edge rows the sk is used as the fk value
 // so if the table includes edge rows then the discriminator field should hold the prefix
-const calculateEventTypePrefix = (record) => {
+const calculateEventTypePrefix = (record, opt) => {
+  /* istanbul ignore if */ if (opt.eventTypePrefix) return opt.eventTypePrefix;
+
   const image = record.dynamodb.NewImage || record.dynamodb.OldImage;
-  const discriminator = image.discriminator || image.sk;
+  const discriminator = image[opt.discriminatorFn] || image[opt.skFn];
   return discriminator.S.toLowerCase();
 };
 
