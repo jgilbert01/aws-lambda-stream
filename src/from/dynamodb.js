@@ -4,12 +4,12 @@ import _ from 'highland';
 
 import { faulty } from '../utils';
 
-export const fromDynamodb = (event, opt = {
-  pkFn: 'pk',
-  skFn: 'sk',
-  discriminatorFn: 'discriminator',
-  eventTypePrefix: undefined,
-}) => // eslint-disable-line import/prefer-default-export
+export const fromDynamodb = (event, {
+  pkFn = 'pk',
+  skFn = 'sk',
+  discriminatorFn = 'discriminator',
+  eventTypePrefix = undefined,
+} = {}) => // eslint-disable-line import/prefer-default-export
 
   // prepare the event stream
   _(event.Records)
@@ -27,8 +27,8 @@ export const fromDynamodb = (event, opt = {
         record,
         event: {
           id: record.eventID,
-          type: `${calculateEventTypePrefix(record, opt)}-${calculateEventTypeSuffix(record)}`,
-          partitionKey: record.dynamodb.Keys[opt.pkFn].S,
+          type: `${calculateEventTypePrefix(record, { skFn, discriminatorFn, eventTypePrefix })}-${calculateEventTypeSuffix(record)}`,
+          partitionKey: record.dynamodb.Keys[pkFn].S,
           timestamp: record.dynamodb.ApproximateCreationDateTime * 1000,
           tags: {
             region: record.awsRegion,
