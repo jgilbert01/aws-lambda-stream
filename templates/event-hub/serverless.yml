@@ -28,6 +28,13 @@ resources:
         RetentionPeriodHours: 24
         ShardCount: ${self:custom.accounts.${opt:acct}.shardCount}
 
+    # Stream1Consumer1:
+    #   Type: AWS::Kinesis::StreamConsumer
+    #   Properties:
+    #     ConsumerName: ${opt:stage}-${self:service}-s1-c1
+    #     StreamARN:
+    #       Fn::GetAtt: [ Stream1, Arn ]
+
     StreamRole:
       Type: AWS::IAM::Role
       Properties:
@@ -84,3 +91,9 @@ resources:
       Value: 
         Fn::GetAtt: [ Stream1, Arn ]
         
+    # stream1Consumer1Name:
+    #   Value: 
+    #     Fn::GetAtt: [ Stream1Consumer1, ConsumerName ]
+    # stream1Consumer1Arn:
+    #   Value: 
+    #     Ref: Stream1Consumer1
