@@ -24,8 +24,8 @@ The following examples show how to implement basic handler functions for consumi
 This example processes a DynamoDB Stream and publishes domain events to an EventBridge bus, which routes the events to the likes of a Kinesis stream. The details are explained below.
 
 ```javascript
-import { fromDynamodb } from 'aws-lambda-stream/from/dynamodb';
-import { publishToEventBridge as publish } from 'aws-lambda-stream/utils/eventbridge';
+import { fromDynamodb } from 'aws-lambda-stream/lib/from/dynamodb';
+import { publishToEventBridge as publish } from 'aws-lambda-stream/lib/utils/eventbridge';
 import { toPromise } from 'aws-lambda-stream';
 
 export const handler = async (event) =>
@@ -39,8 +39,8 @@ export const handler = async (event) =>
 This example processes a Kinesis stream and materializes the data in a single DynamoDB table. The details are explained below.
 
 ```javascript
-import { fromKinesis } from 'aws-lambda-stream/from/kinesis';
-import { update } from 'aws-lambda-stream/utils/dynamodb';
+import { fromKinesis } from 'aws-lambda-stream/lib/from/kinesis';
+import { update } from 'aws-lambda-stream/lib/utils/dynamodb';
 import { toPromise } from 'aws-lambda-stream';
 
 export const handler = async (event) =>
@@ -161,7 +161,7 @@ Here is the example of using the `update` function.
 
 ```javascript
 import { toPromise } from 'aws-lambda-stream';
-import { update } from 'aws-lambda-stream/utils/dynamodb';
+import { update } from 'aws-lambda-stream/lib/utils/dynamodb';
 
 ...
   .through(update({ parallel: 4 }))
@@ -172,7 +172,7 @@ Here is the example of using the `publish` function.
 
 ```javascript
 import { toPromise } from 'aws-lambda-stream';
-import { publishToEventBridge as publish } from 'aws-lambda-stream/utils/eventbridge';
+import { publishToEventBridge as publish } from 'aws-lambda-stream/lib/utils/eventbridge';
   ...
   .through(publish({ batchSize: 25 }))
   .through(toPromise);
@@ -257,8 +257,8 @@ Here is an example of a handler function that uses pipelines.
 
 ```javascript
 import { initialize, toPromise } from 'aws-lambda-stream';
-import { fromKinesis } from 'aws-lambda-stream/from/kinesis';
-import defaultOptions from 'aws-lambda-stream/utils/opt';
+import { fromKinesis } from 'aws-lambda-stream/lib/from/kinesis';
+import defaultOptions from 'aws-lambda-stream/lib/utils/opt';
 
 import pipeline1 from './pipeline1';
 import pipeline2 from './pipeline2';
@@ -308,7 +308,7 @@ const PIPELINES = {
 Here are some example rules. The `id`, `flavor`, and `eventType` fields are required. The remaining fields are defined by the specified pipeline flavor. You can define functions inline, but it is best to implement and unit test them separately.
 
 ```javascript
-import materialize from 'aws-lambda-stream/flavors/materialize';
+import materialize from 'aws-lambda-stream/lib/flavors/materialize';
 
 const RULES = [
   {
