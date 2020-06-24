@@ -12,7 +12,7 @@ import { updateExpression, timestampCondition } from '../../../src/utils/dynamod
 
 import Connector from '../../../src/connectors/dynamodb';
 
-import materialize from '../../../src/flavors/materialize';
+import { materialize } from '../../../src/flavors/materialize';
 
 describe('flavors/materialize.js', () => {
   beforeEach(() => {
