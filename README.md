@@ -24,9 +24,7 @@ The following examples show how to implement basic handler functions for consumi
 This example processes a DynamoDB Stream and publishes domain events to an EventBridge bus, which routes the events to the likes of a Kinesis stream. The details are explained below.
 
 ```javascript
-import { fromDynamodb } from 'aws-lambda-stream/from/dynamodb';
-import { publishToEventBridge as publish } from 'aws-lambda-stream/utils/eventbridge';
-import { toPromise } from 'aws-lambda-stream';
+import { fromDynamodb, publishToEventBridge as publish, toPromise } from 'aws-lambda-stream';
 
 export const handler = async (event) =>
   fromDynamodb(event)
@@ -39,9 +37,7 @@ export const handler = async (event) =>
 This example processes a Kinesis stream and materializes the data in a single DynamoDB table. The details are explained below.
 
 ```javascript
-import { fromKinesis } from 'aws-lambda-stream/from/kinesis';
-import { update } from 'aws-lambda-stream/utils/dynamodb';
-import { toPromise } from 'aws-lambda-stream';
+import { fromKinesis, update, toPromise } from 'aws-lambda-stream';
 
 export const handler = async (event) =>
   fromKinesis(event)
@@ -79,7 +75,7 @@ interface Event {
   timestamp: number;
   partitionKey?: string;
   tags: { [key: string]: string | number };
-  raw?: any; 
+  raw?: any;
   eem?: any;
 }
 ```
@@ -98,7 +94,7 @@ For a variety of reasons, we generally multiplex many event types through the sa
 
 ```javascript
 // all event types starting with `thing-`
-const onEventType = uow => 
+const onEventType = uow =>
   uow.event.type.match(/thing-*/);
 ```
 
@@ -117,7 +113,7 @@ Many stream processor steps map the incoming data to the format needed downstrea
 This is the function used in the _Listener Function_ example above.
 
 ```javascript
-import { updateExpression, timestampCondition } from 'aws-lambda-stream/utils/dynamodb';
+import { updateExpression, timestampCondition } from 'aws-lambda-stream';
 
 const toUpdateRequest = (uow) => ({
   ...uow,
@@ -160,8 +156,7 @@ These utility functions leverage _currying_ to override default configuration se
 Here is the example of using the `update` function.
 
 ```javascript
-import { toPromise } from 'aws-lambda-stream';
-import { update } from 'aws-lambda-stream/utils/dynamodb';
+import { update, toPromise } from 'aws-lambda-stream';
 
 ...
   .through(update({ parallel: 4 }))
@@ -171,8 +166,7 @@ import { update } from 'aws-lambda-stream/utils/dynamodb';
 Here is the example of using the `publish` function.
 
 ```javascript
-import { toPromise } from 'aws-lambda-stream';
-import { publishToEventBridge as publish } from 'aws-lambda-stream/utils/eventbridge';
+import { publishToEventBridge as publish, toPromise } from 'aws-lambda-stream';
   ...
   .through(publish({ batchSize: 25 }))
   .through(toPromise);
@@ -235,7 +229,7 @@ The `faults` function tests to see if the `err` has a `uow` adorned. If so then 
 >I plan to open source a `fault-monitor` service and the `aws-lambda-stream-cli`. The monitor stores the fault events in S3.  The `cli` supports `resubmitting` the poison events to the function that raised the `fault`.
 
 ## Pipelines
-As mentioned above, we are multiplexing many event types through a single stream for a variety of good reasons. Therefore, we want to maximize the utilization of each function invocation by acting on as many events as possible. However, we also want to maintain good clean separation of the processing logic for these different event types. 
+As mentioned above, we are multiplexing many event types through a single stream for a variety of good reasons. Therefore, we want to maximize the utilization of each function invocation by acting on as many events as possible. However, we also want to maintain good clean separation of the processing logic for these different event types.
 
 The _Highland.js_ library allows us to [fork](https://highlandjs.org/#observe) streams, passing each fork/observer through a [pipeline](https://highlandjs.org/#pipeline) and [merge](https://highlandjs.org/#merge) the streams back together where they can share common tail logic like `fault` handling.
 
@@ -253,12 +247,10 @@ const pipeline1 = (options) => (stream) => stream
 export default pipeline1;
 ```
 
-Here is an example of a handler function that uses pipelines. 
+Here is an example of a handler function that uses pipelines.
 
 ```javascript
-import { initialize, toPromise } from 'aws-lambda-stream';
-import { fromKinesis } from 'aws-lambda-stream/from/kinesis';
-import defaultOptions from 'aws-lambda-stream/utils/opt';
+import { initialize, defaultOptions, fromKinesis, toPromise } from 'aws-lambda-stream';
 
 import pipeline1 from './pipeline1';
 import pipeline2 from './pipeline2';
@@ -270,15 +262,15 @@ const PIPELINES = {
 
 const OPTIONS = { ...defaultOptions, ... };
 
-export const handler = async (event) => 
+export const handler = async (event) =>
   initialize(PIPELINES, OPTIONS)
     .assemble(fromKinesis(event))
     .through(toPromise);
 ```
 
-1. First we `initialize` the pipelines with any options. 
+1. First we `initialize` the pipelines with any options.
 2. Then we `assemble` all pipelines into a forked stream.
-3. And finally the processing of the events through the pipelines is started by `toPromise`. 
+3. And finally the processing of the events through the pipelines is started by `toPromise`.
 4. The data fans out through all the pipelines and the processing concludes when all the units of work have flowed through and merged back together.
 
 But take care to assemble a cohesive set of pipelines into a single function. For example, a _listener_ function in a BFF service will typically consume events from Kinesis and the various pipelines will `materialize` different entities from the events into a DynamoDB table to implement the _CQRS_ pattern. Then the _trigger_ function of the BFF service will consume events from the DynamoDB table, as `mutations` are invoked in the `graphql` function, and these pipelines will `publish` events to the Kinesis stream to implement the _Event Sourcing_ pattern. _(see Flavors below)_
@@ -308,7 +300,7 @@ const PIPELINES = {
 Here are some example rules. The `id`, `flavor`, and `eventType` fields are required. The remaining fields are defined by the specified pipeline flavor. You can define functions inline, but it is best to implement and unit test them separately.
 
 ```javascript
-import materialize from 'aws-lambda-stream/flavors/materialize';
+import materialize from 'aws-lambda-stream';
 
 const RULES = [
   {
@@ -337,7 +329,7 @@ const RULES = [
 * `toUpdateRequest` - is a mapping function expected by the `materialize` pipeline flavor
 
 ## Logging
-The [debug](https://www.npmjs.com/package/debug) library is used for logging. When using pipelines, each pipeline is given its own instance and it is passed in with the pipeline configuration options and it is attached to the `uow` for easy access. They are named after the pipelines with a `pl:` prefix. 
+The [debug](https://www.npmjs.com/package/debug) library is used for logging. When using pipelines, each pipeline is given its own instance and it is passed in with the pipeline configuration options and it is attached to the `uow` for easy access. They are named after the pipelines with a `pl:` prefix.
 
 This turns on debug for all pipelines.
 
@@ -365,7 +357,7 @@ However, this does not hold true for services, like DynamoDB, that return thrott
 ```
 
 ### Parallel
-Asynchronous Non Blocking IO is probably the most important feature for optimizing throughput. The Highland.js [parallel](https://highlandjs.org/#parallel) feature allows us to take full control. When using this feature, upstream steps will continue to be executed while up to N asyc requests are waiting for responses. This feature along with `pipelines` allows us to optimize the utilization of every lambda invocation. 
+Asynchronous Non Blocking IO is probably the most important feature for optimizing throughput. The Highland.js [parallel](https://highlandjs.org/#parallel) feature allows us to take full control. When using this feature, upstream steps will continue to be executed while up to N asyc requests are waiting for responses. This feature along with `pipelines` allows us to optimize the utilization of every lambda invocation.
 
 ```javascript
   ...
@@ -374,11 +366,11 @@ Asynchronous Non Blocking IO is probably the most important feature for optimizi
   ...
 ```
 
-This is usually the first parameter I tweak when tuning a function. Environment variables, such as `UPDATE_PARALLEL` and `PARALLEL` are used for experimenting with different settings. 
+This is usually the first parameter I tweak when tuning a function. Environment variables, such as `UPDATE_PARALLEL` and `PARALLEL` are used for experimenting with different settings.
 
 >Here is a post on _queuing theory_ that helps put this in perspective: [What happens when you add another teller?](https://www.johndcook.com/blog/2008/10/21/what-happens-when-you-add-a-new-teller)
 
-This feature is baked into the DynamoDB `update` and Kinesis `publish` utilities. 
+This feature is baked into the DynamoDB `update` and Kinesis `publish` utilities.
 
 ### Batching
 Many `aws-sdk` operations support batching multiple requests into a single call. This can help increase throughput by reducing aggregate network latency.

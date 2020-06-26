@@ -6,7 +6,7 @@ import { initialize, initializeFrom } from '../../../src/pipelines';
 import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import { FAULT_EVENT_TYPE } from '../../../src';
 
-import defaultOptions from '../../../src/utils/opt';
+import { defaultOptions } from '../../../src/utils/opt';
 import Connector from '../../../src/connectors/eventbridge';
 
 describe('pipelines/index.js', () => {
