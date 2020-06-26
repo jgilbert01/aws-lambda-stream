@@ -7,7 +7,7 @@ import Connector from '../../../src/connectors/eventbridge';
 import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import { faults, flushFaults, FAULT_EVENT_TYPE } from '../../../src/faults';
 
-import defaultOptions from '../../../src/utils/opt';
+import { defaultOptions } from '../../../src/utils/opt';
 
 let publishStub;
 

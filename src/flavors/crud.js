@@ -5,7 +5,7 @@ import {
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
 
-const crud = (rule) => (s) => s
+export const crud = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   .filter(outLatched)
 
   .filter(onEventType(rule))
@@ -33,5 +33,3 @@ const toEvent = (rule) => faultyAsync((uow) =>
           ...event,
         },
       }))));
-
-export default crud;

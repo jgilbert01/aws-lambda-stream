@@ -12,7 +12,7 @@ import {
 
 import { update } from '../utils/dynamodb';
 
-const materialize = (rule) => (s) => s
+export const materialize = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   .filter(outSkip)
   .filter(outSourceIsSelf)
 
@@ -37,5 +37,3 @@ const toUpdateRequest = (rule) => faultyAsync((uow) =>
       ...uow,
       updateRequest,
     })));
-
-export default materialize;

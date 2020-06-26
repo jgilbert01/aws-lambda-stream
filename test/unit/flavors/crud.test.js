@@ -9,10 +9,10 @@ import {
 
 import { toDynamodbRecords, fromDynamodb } from '../../../src/from/dynamodb';
 
-import defaultOptions from '../../../src/utils/opt';
+import { defaultOptions } from '../../../src/utils/opt';
 import Connector from '../../../src/connectors/eventbridge';
 
-import crud from '../../../src/flavors/crud';
+import { crud } from '../../../src/flavors/crud';
 import { skipTag } from '../../../src/filters';
 
 describe('flavors/crud.js', () => {
