@@ -8,11 +8,18 @@ provider:
 custom:
   accounts:
     dev:
-      # accountNumber: 2109876543210
+      # accountNumber: 123456789012
       shardCount: 1
+      # ingressShardCount: 1
+      # egressBuses:
+        # add an arn for each downstream subsystem
+        # y: arn:aws:events:us-east-1:123456789012:event-bus/${opt:stage}-${self:service}-bus
     prod:
-      # accountNumber: 0123456789012
+      # accountNumber: 123456789012
       shardCount: 1
+      # ingressShardCount: 1
+      # egressBuses:
+        # y: arn:aws:events:us-east-1:123456789012:event-bus/${opt:stage}-${self:service}-bus
 
 resources:
   Resources:
@@ -20,6 +27,10 @@ resources:
       Type: AWS::Events::EventBus
       Properties:
         Name: ${opt:stage}-${self:service}-bus
+
+    # ----------
+    # STREAMS
+    # ----------
 
     Stream1:
       Type: AWS::Kinesis::Stream
@@ -35,7 +46,18 @@ resources:
     #     StreamARN:
     #       Fn::GetAtt: [ Stream1, Arn ]
 
-    StreamRole:
+    # IngressStream:
+    #   Type: AWS::Kinesis::Stream
+    #   Properties:
+    #     Name: ${opt:stage}-${self:service}-ingress
+    #     RetentionPeriodHours: 24
+    #     ShardCount: ${self:custom.accounts.${opt:acct}.ingressShardCount}
+
+    # ----------
+    # POLICIES
+    # ----------
+
+    BusRole:
       Type: AWS::IAM::Role
       Properties:
         AssumeRolePolicyDocument:
@@ -44,8 +66,8 @@ resources:
               Principal:
                 Service: events.amazonaws.com
               Action: sts:AssumeRole
-        Policies:               
-          - PolicyName: put
+        Policies:
+          - PolicyName: internal
             PolicyDocument:
               Statement:
                 - Effect: Allow
@@ -55,45 +77,113 @@ resources:
                   Resource:
                     - Fn::GetAtt: [ Stream1, Arn ]
                     # - Fn::GetAtt: [ Stream2, Arn ]
+                    # - Fn::GetAtt: [ IngressStream, Arn ]
+          # - PolicyName: egress
+          #   PolicyDocument:
+          #     Statement:
+          #       - Effect: Allow
+          #         Action:
+          #           - events:PutEvents
+          #         Resource:
+          #           # add an arn for each downstream subsystem
+          #           - ${self:custom.accounts.${opt:acct}.egressBuses.y}
 
-    Stream1EventRule: 
+    # add a policy for each upstream subsystem
+    # EventBusPolicyForSubsystemX:
+    #   Type: AWS::Events::EventBusPolicy
+    #   Properties:
+    #     EventBusName:
+    #       Ref: Bus
+    #     Action: events:PutEvents
+    #     Principal: 123456789012
+    #     StatementId: SubsystemX
+
+    # ----------
+    # RULES
+    # ----------
+
+    Stream1EventRule:
       Type: AWS::Events::Rule
-      Properties: 
+      Properties:
         EventBusName:
           Ref: Bus
-        EventPattern: 
+        EventPattern:
+          # source:
+          #   - anything-but: external
           detail:
             type:
               - anything-but: fault
         State: ENABLED
-        Targets: 
+        Targets:
           - Id: Stream1
-            Arn: 
+            Arn:
               Fn::GetAtt: [ Stream1, Arn ]
             RoleArn:
-              Fn::GetAtt: [ StreamRole, Arn ]
+              Fn::GetAtt: [ BusRole, Arn ]
             KinesisParameters:
               PartitionKeyPath: $.detail.partitionKey
             InputPath: $.detail
-            
+
+    # EgressEventRule:
+    #   Type: AWS::Events::Rule
+    #   Properties:
+    #     EventBusName:
+    #       Ref: Bus
+    #     EventPattern:
+    #       source:
+    #         - external
+    #     State: ENABLED
+    #     Targets:
+    #       # add a target for each downstream subsystem
+    #       - Id: EgressY
+    #         Arn: ${self:custom.accounts.${opt:acct}.egressBuses.y}
+    #         RoleArn:
+    #           Fn::GetAtt: [ BusRole, Arn ]
+
+    # IngressStreamEventRule:
+    #   Type: AWS::Events::Rule
+    #   Properties:
+    #     EventBusName:
+    #       Ref: Bus
+    #     EventPattern:
+    #       source:
+    #         - external
+    #     State: ENABLED
+    #     Targets:
+    #       - Id: IngressStream
+    #         Arn:
+    #           Fn::GetAtt: [ IngressStream, Arn ]
+    #         RoleArn:
+    #           Fn::GetAtt: [ BusRole, Arn ]
+    #         KinesisParameters:
+    #           PartitionKeyPath: $.detail.partitionKey
+    #         InputPath: $.detail
+
   Outputs:
     busName:
-      Value: 
+      Value:
         Ref: Bus
     busArn:
-      Value: 
+      Value:
         Fn::GetAtt: [ Bus, Arn ]
 
     stream1Name:
-      Value: 
+      Value:
         Ref: Stream1
     stream1Arn:
-      Value: 
+      Value:
         Fn::GetAtt: [ Stream1, Arn ]
-        
+
     # stream1Consumer1Name:
-    #   Value: 
+    #   Value:
     #     Fn::GetAtt: [ Stream1Consumer1, ConsumerName ]
     # stream1Consumer1Arn:
-    #   Value: 
+    #   Value:
     #     Ref: Stream1Consumer1
+
+    # ingressStreamName:
+    #   Value:
+    #     Ref: IngressStream
+    # ingressStreamArn:
+    #   Value:
+    #     Fn::GetAtt: [ IngressStream, Arn ]
