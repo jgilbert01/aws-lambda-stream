@@ -6,5 +6,6 @@ export * from './handler';
 export * from './kinesis';
 export * from './opt';
 export * from './print';
+export * from './sqs';
 export * from './tags';
 export * from './time';
