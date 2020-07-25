@@ -420,7 +420,7 @@ There are various other utilities in the utils folder.
 
 ## DynamoDB Support
 * `fromDynamodb` - creates a stream from DynamoDB Stream records
-  * `toDynamodbRecords` - is a test helper for creating DynamoDB Strean records from test events
+  * `toDynamodbRecords` - is a test helper for creating DynamoDB Stream records from test events
 * `Connector` - connector for the DynamoDB SDK
 * `update` - stream steps for updating rows in a single DynamoDB table
 * `updateExpression` - creates an expression from a plain old json object
@@ -438,13 +438,26 @@ In addition:
 > Look for future blog posts on `dynamodb single tables`, `latching`, `soft-deletes` and `oplock-based-joins`.
 
 ## S3 Support
-* https://github.com/jgilbert01/aws-lambda-stream/issues/17
+These features are intended for implementing intra-service logic.
+* `fromS3` - creates a stream from an S3 notification
+  * `toS3Records` - is a test helper for creating S3 records from test messages
+* `Connector` - connector for the S3 SDK
+* `putObjectToS3` - stream steps to put an object in a bucket
+
 
 ## SNS Support
-* https://github.com/jgilbert01/aws-lambda-stream/issues/15
+These features are intended for implementing intra-service logic.
+* `fromSns` - creates a stream from an SNS topic
+  * `toSnsRecords` - is a test helper for creating SNS records from test messages
+* `Connector` - connector for the SNS SDK
+* `publishToSns` - stream steps to publish a message to a topic
 
 ## SQS Support
-* https://github.com/jgilbert01/aws-lambda-stream/issues/16
+These features are intended for implementing intra-service logic. They are frequently combined with the SNS and S3 support. See the unit tests for an example of S3 wrapped in SNS wrapped in SQS.
+* `fromSqs` - creates a stream from an SQS queue
+  * `toSqsRecords` - is a test helper for creating SQS records from test messages
+* `Connector` - connector for the SQS SDK
+* `sendToSqs` - stream steps to send a message to a queue
 
 ## Encryption Support
 * https://github.com/jgilbert01/aws-lambda-stream/issues/20
