@@ -1,12 +1,12 @@
 import _ from 'highland';
 
 // this from function is intended for use with intra-service messages
-// as opposd to consuming inter-servic events
+// as opposed to consuming inter-servic events
 
 export const fromSns = (event) =>
   _(event.Records)
     .map((record) =>
-      // create a unit-of-work for each event
+      // create a unit-of-work for each message
       // so we can correlate related work for error handling
       ({
         record,
