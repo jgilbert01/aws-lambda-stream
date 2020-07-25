@@ -8,7 +8,7 @@ import { debug as d } from './print';
 
 export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   debug = d('sqs'),
-  streamName: queueName = process.env.QUEUE_NAME,
+  queueName = process.env.QUEUE_NAME,
   messageField = 'message',
   batchSize = Number(process.env.SQS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
