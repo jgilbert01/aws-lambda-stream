@@ -1,16 +1,16 @@
 {
   "presets": [
     [
-      "env",
+      "@babel/env",
       {
         "targets": {
           "node": "12"
-        },
-        "useBuiltIns": true,
-        "debug": false
+        }
       }
-    ],
-    "stage-2"
+    ]
+  ],
+  "plugins": [
+    "@babel/plugin-transform-runtime"
   ],
   "env": {
     "test": {

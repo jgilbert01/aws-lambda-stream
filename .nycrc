@@ -10,7 +10,10 @@
       "test/int/**/*.test.js",
       "test/unit/**/*.test.js"
     ],
-    "require": [],
+    "require": [
+      "@babel/register",
+      "./test/helper.js"
+    ],
     "reporter": [
       "text",
       "lcov",
