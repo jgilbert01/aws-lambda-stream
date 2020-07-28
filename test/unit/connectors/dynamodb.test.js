@@ -83,4 +83,44 @@ describe('connectors/dynamodb.js', () => {
     });
     expect(data).to.deep.equal({});
   });
+
+  it('should put', async () => {
+    const spy = sinon.spy((params, cb) => cb(null, {}));
+    AWS.mock('DynamoDB.DocumentClient', 'put', spy);
+
+    const PUT_REQUEST = {
+      // TableName: 'my-service-entities',
+      Item: {
+        pk: '1',
+        sk: 'thing',
+        name: 'Thing One',
+        description: 'This is thing 1',
+        discriminator: 'thing',
+        latched: true,
+        ttl: 1549053422,
+        timestamp: 1548967022000,
+      },
+    };
+
+    const data = await new Connector({
+      debug: debug('dynamodb'),
+      tableName: 'my-service-entities',
+    })
+      .put(PUT_REQUEST);
+
+    expect(spy).to.have.been.calledWith({
+      TableName: 'my-service-entities',
+      Item: {
+        pk: '1',
+        sk: 'thing',
+        name: 'Thing One',
+        description: 'This is thing 1',
+        discriminator: 'thing',
+        latched: true,
+        ttl: 1549053422,
+        timestamp: 1548967022000,
+      },
+    });
+    expect(data).to.deep.equal({});
+  });
 });

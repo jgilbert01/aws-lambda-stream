@@ -38,6 +38,17 @@ class Connector {
         return Promise.reject(err);
       });
   }
+
+  put(inputParams) {
+    const params = {
+      TableName: this.tableName,
+      ...inputParams,
+    };
+
+    return this.db.put(params).promise()
+      .tap(this.debug)
+      .tapCatch(this.debug);
+  }
 }
 
 export default Connector;
