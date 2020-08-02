@@ -8,7 +8,7 @@ class Connector {
   constructor({
     debug,
     tableName,
-    timeout = process.env.DYNAMODB_TIMEOUT || process.env.TIMEOUT || 1000,
+    timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
     this.debug = debug;
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
