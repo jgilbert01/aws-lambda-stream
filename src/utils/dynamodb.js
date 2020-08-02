@@ -46,7 +46,7 @@ export const update = ({
 
 export const put = ({
   debug = d('dynamodb'),
-  tableName = process.env.ENTITY_TABLE_NAME,
+  tableName = process.env.EVENT_TABLE_NAME,
   putRequestField = 'putRequest',
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
 } = {}) => {
