@@ -7,7 +7,7 @@ config.setPromisesDependency(Promise);
 class Connector {
   constructor({
     debug,
-    timeout = process.env.BUS_TIMEOUT || process.env.TIMEOUT || 1000,
+    timeout = Number(process.env.BUS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
     this.debug = debug;
     this.bus = new EventBridge({

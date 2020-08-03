@@ -1,3 +1,4 @@
+export * from './connectors';
 export * from './faults';
 export * from './filters';
 export * from './flavors';

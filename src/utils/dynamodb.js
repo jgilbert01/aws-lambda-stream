@@ -43,3 +43,24 @@ export const update = ({
     .map(invoke)
     .parallel(parallel);
 };
+
+export const put = ({
+  debug = d('dynamodb'),
+  tableName = process.env.EVENT_TABLE_NAME,
+  putRequestField = 'putRequest',
+  parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
+} = {}) => {
+  const connector = new Connector({ debug, tableName });
+
+  const invoke = (uow) => {
+    const p = connector.put(uow[putRequestField])
+      .then((putResponse) => ({ ...uow, putResponse }))
+      .catch(rejectWithFault(uow));
+
+    return _(p); // wrap promise in a stream
+  };
+
+  return (s) => s
+    .map(invoke)
+    .parallel(parallel);
+};

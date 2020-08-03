@@ -283,6 +283,7 @@ Many of the pipelines we write follow the exact same steps and only the filters 
 The following _flavors_ are included and you can package your own into libaries.
 * `materialize` - used in `listener` functions to materialize an `entity` from an `event` into a DynamoDB single table
 * `crud` - used in `trigger` functions to `publish` events to Kinesis as entities are maintained in a DynamoDB single table
+* `collect` - used in `listener` functions to collect events in a micro event store for complex event processing
 * more to be ported soon
 
 Here is an example of initializing pipelines from rules. Note that you can initialize one-off pipelines along side rule-driven pipelines.

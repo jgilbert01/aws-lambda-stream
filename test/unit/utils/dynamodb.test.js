@@ -6,7 +6,7 @@ import _ from 'highland';
 import { ttl } from '../../../src/utils';
 
 import {
-  updateExpression, timestampCondition, update,
+  updateExpression, timestampCondition, update, put,
 } from '../../../src/utils/dynamodb';
 
 import Connector from '../../../src/connectors/dynamodb';
@@ -83,6 +83,36 @@ describe('utils/dynamodb.js', () => {
           },
         });
         expect(collected[0].updateResponse).to.deep.equal({});
+      })
+      .done(done);
+  });
+
+  it('should call put', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'put').resolves({});
+
+    const uows = [{
+      putRequest: {
+        Item: {
+          pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+          sk: 'thing',
+        },
+      },
+    }];
+
+    _(uows)
+      .through(put())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(stub).to.have.been.calledWith({
+          Item: {
+            pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+            sk: 'thing',
+          },
+        });
+        expect(collected[0].putResponse).to.deep.equal({});
       })
       .done(done);
   });

@@ -8,7 +8,7 @@ class Connector {
   constructor({
     debug,
     streamName = process.env.STREAM_NAME,
-    timeout = process.env.KINESIS_TIMEOUT || process.env.TIMEOUT || 1000,
+    timeout = Number(process.env.KINESIS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
     this.debug = debug;
     this.streamName = streamName || 'undefined';

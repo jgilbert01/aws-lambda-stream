@@ -8,7 +8,7 @@ class Connector {
   constructor({
     debug,
     queueUrl = process.env.QUEUE_URL,
-    timeout = process.env.SQS_TIMEOUT || process.env.TIMEOUT || 1000,
+    timeout = Number(process.env.SQS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
     this.debug = debug;
     this.queueUrl = queueUrl || 'undefined';

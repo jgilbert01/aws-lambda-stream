@@ -8,7 +8,7 @@ class Connector {
   constructor({
     debug,
     bucketName = process.env.BUCKET_NAME,
-    timeout = process.env.S3_TIMEOUT || process.env.TIMEOUT || 1000,
+    timeout = Number(process.env.S3_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
     this.debug = debug;
     this.bucketName = bucketName || 'undefined';
