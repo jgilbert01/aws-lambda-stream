@@ -132,3 +132,13 @@ export const toDynamodbRecords = (events) => ({
       // eventSourceARN: 'arn:aws:dynamodb:us-west-2:123456789012:table/myservice-entities/stream/2016-11-16T20:42:48.104',
     })),
 });
+
+export const UNKNOWN_DYNAMODB_EVENT_TYPE = toDynamodbRecords([
+  {
+    timestamp: 0,
+    keys: { pk: '0', sk: '0' },
+    newImage: {
+      discriminator: 'unknown',
+    },
+  },
+]);

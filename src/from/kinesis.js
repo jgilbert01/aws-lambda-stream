@@ -42,3 +42,5 @@ export const toKinesisRecords = (events) => ({
       },
     })),
 });
+
+export const UNKNOWN_KINESIS_EVENT_TYPE = toKinesisRecords([{ type: 'unknown-type' }]);
