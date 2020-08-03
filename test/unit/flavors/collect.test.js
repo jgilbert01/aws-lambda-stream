@@ -22,13 +22,41 @@ describe('flavors/collect.js', () => {
   it('should execute', (done) => {
     const events = toKinesisRecords([
       {
+        id: '1',
         type: 'c1',
         timestamp: 1548967022000,
-        partitionKey: '1',
+        partitionKey: '11',
         thing: {
-          id: '1',
+          id: '11',
           name: 'Thing One',
           description: 'This is thing one',
+        },
+        raw: {},
+      },
+      {
+        id: '2',
+        type: 'c2',
+        timestamp: 1548967022000,
+        partitionKey: '22',
+        thing: {
+          id: '22',
+          name: 'Thing Two',
+          description: 'This is thing two',
+          group: 'C',
+        },
+        raw: {},
+      },
+      {
+        id: '3',
+        type: 'c3',
+        timestamp: 1548967022000,
+        partitionKey: '33',
+        thing: {
+          id: '33',
+          name: 'Thing Three',
+          description: 'This is thing three',
+          group: 'A',
+          category: 'B',
         },
         raw: {},
       },
@@ -38,46 +66,67 @@ describe('flavors/collect.js', () => {
     ]);
 
     initialize({
-      ...initializeFrom(rules),
+      ...initializeFrom(RULES),
     })
       .assemble(fromKinesis(events), false)
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
-        expect(collected.length).to.equal(1);
+        expect(collected.length).to.equal(3);
+
         expect(collected[0].pipeline).to.equal('clt1');
         expect(collected[0].event.type).to.equal('c1');
         expect(collected[0].putRequest).to.deep.equal({
           Item: {
-            pk: 'shardId-000000000000:0',
+            pk: '1',
             sk: 'EVENT',
             discriminator: 'EVENT',
-            data: '1',
-            ttl: 1549917422,
+            data: '11',
+            ttl: 1551818222,
             timestamp: 1548967022000,
             sequenceNumber: '0',
             event: {
-              id: 'shardId-000000000000:0',
+              id: '1',
               type: 'c1',
               timestamp: 1548967022000,
-              partitionKey: '1',
+              partitionKey: '11',
               thing: {
-                id: '1',
+                id: '11',
                 name: 'Thing One',
                 description: 'This is thing one',
               },
             },
           },
         });
+
+        expect(collected[1].pipeline).to.equal('clt2');
+        expect(collected[1].event.type).to.equal('c2');
+        expect(collected[1].putRequest.Item.data).to.equal('C');
+
+        expect(collected[2].pipeline).to.equal('clt3');
+        expect(collected[2].event.type).to.equal('c3');
+        expect(collected[2].putRequest.Item.data).to.equal('A|B');
       })
       .done(done);
   });
 });
 
-const rules = [
+const RULES = [
   {
     id: 'clt1',
     flavor: collect,
     eventType: 'c1',
+  },
+  {
+    id: 'clt2',
+    flavor: collect,
+    eventType: 'c2',
+    correlationKey: 'thing.group',
+  },
+  {
+    id: 'clt3',
+    flavor: collect,
+    eventType: 'c3',
+    correlationKey: (uow) => [uow.event.thing.group, uow.event.thing.category].join('|'),
   },
 ];
