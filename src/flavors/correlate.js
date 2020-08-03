@@ -23,6 +23,7 @@ import { put } from '../utils/dynamodb';
  *   id: string
  *   flavor: correlate,
  *   eventType: string | string[] | Function,
+ *   filters: Function[],
  *   correlationKey: string | Function,
  *   correlationKeySuffix?: string,
  *   ttl?: number, // default ttl of collected event

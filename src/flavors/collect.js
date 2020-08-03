@@ -26,6 +26,7 @@ import { put } from '../utils/dynamodb';
  *   id: string
  *   flavor: collect,
  *   eventType: string | string[] | Function,
+ *   filters: Function[],
  *   correlationKey?: string | Function, // default uow.event.partitionKey
  *   ttl?: number, // default 33
  * }
