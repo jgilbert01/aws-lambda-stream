@@ -28,7 +28,7 @@ import { put } from '../utils/dynamodb';
  *   eventType: string | string[] | Function,
  *   filters: Function[],
  *   correlationKey?: string | Function, // default uow.event.partitionKey
- *   ttl?: number, // default 33
+ *   ttl?: number, // default 33 days
  *   expire: boolean | string
  * }
  */
