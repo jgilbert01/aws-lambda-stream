@@ -4,7 +4,7 @@ import isFunction from 'lodash/isFunction';
 import {
   printStartPipeline, printEndPipeline,
   faulty,
-  ttl,
+  ttlRule,
 } from '../utils';
 
 import {
@@ -27,6 +27,7 @@ import { put } from '../utils/dynamodb';
  *   correlationKey: string | Function,
  *   correlationKeySuffix?: string,
  *   ttl?: number, // default ttl of collected event
+ *   expire: boolean | string
  * }
  */
 
@@ -87,7 +88,8 @@ const toPutRequest = (rule) => faulty(
         discriminator: 'CORREL', // ATION
         timestamp: uow.event.timestamp,
         sequenceNumber: uow.meta.sequenceNumber,
-        ttl: rule.ttl ? ttl(uow.event.timestamp, rule.ttl /* days */) : uow.meta.ttl,
+        ttl: rule.ttl ? ttlRule(rule, uow) : uow.meta.ttl,
+        expire: rule.expire,
         correlationKeySuffix: rule.correlationKeySuffix,
         ruleId: rule.id,
         event: uow.event,

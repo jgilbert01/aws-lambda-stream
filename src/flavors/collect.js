@@ -5,7 +5,7 @@ import omit from 'lodash/omit';
 import {
   printStartPipeline, printEndPipeline,
   faulty,
-  ttl,
+  ttlRule,
 } from '../utils';
 
 import {
@@ -29,6 +29,7 @@ import { put } from '../utils/dynamodb';
  *   filters: Function[],
  *   correlationKey?: string | Function, // default uow.event.partitionKey
  *   ttl?: number, // default 33
+ *   expire: boolean | string
  * }
  */
 
@@ -76,7 +77,8 @@ const toPutRequest = (rule) => faulty(
         discriminator: 'EVENT',
         timestamp: uow.event.timestamp,
         sequenceNumber: uow.record.kinesis.sequenceNumber,
-        ttl: ttl(uow.event.timestamp, rule.ttl || process.env.TTL || 33), // days
+        ttl: ttlRule(rule, uow),
+        expire: rule.expire,
         data: uow.key,
         event: rule.includeRaw ? /* istanbul ignore next */ uow.event : omit(uow.event, ['raw']),
       },
