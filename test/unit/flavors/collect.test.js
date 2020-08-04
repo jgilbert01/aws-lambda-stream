@@ -83,6 +83,7 @@ describe('flavors/collect.js', () => {
             discriminator: 'EVENT',
             data: '11',
             ttl: 1551818222,
+            expire: undefined,
             timestamp: 1548967022000,
             sequenceNumber: '0',
             event: {
@@ -106,6 +107,7 @@ describe('flavors/collect.js', () => {
         expect(collected[2].pipeline).to.equal('clt3');
         expect(collected[2].event.type).to.equal('c3');
         expect(collected[2].putRequest.Item.data).to.equal('A|B');
+        expect(collected[2].putRequest.Item.expire).to.equal(true);
       })
       .done(done);
   });
@@ -128,5 +130,6 @@ const RULES = [
     flavor: collect,
     eventType: 'c3',
     correlationKey: (uow) => [uow.event.thing.group, uow.event.thing.category].join('|'),
+    expire: true,
   },
 ];
