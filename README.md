@@ -285,6 +285,7 @@ The following _flavors_ are included and you can package your own into libaries.
 * `crud` - used in `trigger` functions to `publish` events to Kinesis as entities are maintained in a DynamoDB single table
 * `collect` - used in `listener` functions to collect events in a micro event store for complex event processing
 * `correlate` - used in `trigger` functions to correlate related events for complex event processing
+* `expire` - used in `trigger` functions to emit `expired` events when a TTL is reacted
 * more to be ported soon
 
 Here is an example of initializing pipelines from rules. Note that you can initialize one-off pipelines along side rule-driven pipelines.
