@@ -6,7 +6,7 @@ import _ from 'highland';
 import { ttl } from '../../../src/utils';
 
 import {
-  updateExpression, timestampCondition, update, put,
+  updateExpression, timestampCondition, update, put, query,
 } from '../../../src/utils/dynamodb';
 
 import Connector from '../../../src/connectors/dynamodb';
@@ -113,6 +113,56 @@ describe('utils/dynamodb.js', () => {
           },
         });
         expect(collected[0].putResponse).to.deep.equal({});
+      })
+      .done(done);
+  });
+
+  it('should call query', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'query').resolves([{
+      pk: '1',
+      sk: 'EVENT',
+      data: '11',
+      event: {},
+    }]);
+
+    const uows = [{
+      queryRequest: {
+        IndexName: 'DataIndex',
+        KeyConditionExpression: '#data = :data',
+        ExpressionAttributeNames: {
+          '#data': 'data',
+        },
+        ExpressionAttributeValues: {
+          ':data': '11',
+        },
+        ConsistentRead: true,
+      },
+    }];
+
+    _(uows)
+      .through(query())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(stub).to.have.been.calledWith({
+          IndexName: 'DataIndex',
+          KeyConditionExpression: '#data = :data',
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          ConsistentRead: true,
+        });
+        expect(collected[0].queryResponse).to.deep.equal([{
+          pk: '1',
+          sk: 'EVENT',
+          data: '11',
+          event: {},
+        }]);
       })
       .done(done);
   });

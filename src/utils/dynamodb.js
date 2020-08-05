@@ -64,3 +64,24 @@ export const put = ({
     .map(invoke)
     .parallel(parallel);
 };
+
+export const query = ({
+  debug = d('dynamodb'),
+  tableName = process.env.EVENT_TABLE_NAME,
+  queryRequestField = 'queryRequest',
+  parallel = Number(process.env.QUERY_PARALLEL) || Number(process.env.PARALLEL) || 4,
+} = {}) => {
+  const connector = new Connector({ debug, tableName });
+
+  const invoke = (uow) => {
+    const p = connector.query(uow[queryRequestField])
+      .then((queryResponse) => ({ ...uow, queryResponse }))
+      .catch(rejectWithFault(uow));
+
+    return _(p); // wrap promise in a stream
+  };
+
+  return (s) => s
+    .map(invoke)
+    .parallel(parallel);
+};
