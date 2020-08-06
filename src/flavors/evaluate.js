@@ -18,11 +18,11 @@ import {
  *
  * interface Rule {
  *   id: string
- *   flavor: correlate,
- *   eventType: string | string[] | Function, // 1st-level filter based on event type
- *   filters?: Function[],                    // 2nd-level filter based on event content
- *   expression?: Function;                   // filter rules based on correlated events
- *   correlationKeySuffix?: string,
+ *   flavor: evaluate,
+ *   eventType: string | string[] | Function, // match rules to events based on event type
+ *   correlationKeySuffix?: string,           // match rules to events based on correlation key suffix
+ *   filters?: Function[],                    // evaluate event content
+ *   expression?: Function;                   // evaluate correlated events, triggers query for correlated events
  *   emit: string | Function;                 // create higher-order event(s) to publish
  *   batchSize?: number;
  *   parallel?: number;
@@ -50,7 +50,7 @@ export const evaluate = (rule) => (s) => s // eslint-disable-line import/prefer-
 const forEvents = (uow) => (uow.record.eventName === 'INSERT'
   && (uow.record.dynamodb.Keys.sk.S === 'EVENT' || uow.record.dynamodb.NewImage.discriminator.S === 'CORREL'));
 
-const normalize = (uow) => ({
+const normalize = (uow) => ({ // we are interested in the event that was persisted, not that it was persisted
   ...uow,
   meta: {
     id: uow.event.id,
@@ -136,7 +136,8 @@ const toQueryRequest = (rule) => (uow) => ({
           ':data': uow.meta.data,
         },
         ConsistentRead: true,
-        // TODO GreaterThan expire data ???
+        // TODO filter out expired events
+        // TODO cache and clear on init
       },
 });
 

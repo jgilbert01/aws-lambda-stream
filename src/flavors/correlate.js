@@ -25,7 +25,7 @@ import { put } from '../utils/dynamodb';
  *   eventType: string | string[] | Function,
  *   filters: Function[],
  *   correlationKey: string | Function,
- *   correlationKeySuffix?: string,
+ *   correlationKeySuffix?: string, // used to create alternate correlations on the same key
  *   ttl?: number, // default ttl of collected event
  *   expire: boolean | string
  *   parallel?: number;
