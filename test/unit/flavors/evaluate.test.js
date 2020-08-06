@@ -483,7 +483,7 @@ describe('flavors/evaluate.js', () => {
     }, defaultOptions)
       .assemble(fromDynamodb(events), false)
       .collect()
-      .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
         expect(collected.length).to.equal(2);
 
