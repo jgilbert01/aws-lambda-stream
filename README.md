@@ -285,6 +285,7 @@ The following _flavors_ are included and you can package your own into libaries.
 * `crud` - used in `trigger` functions to `publish` events to Kinesis as entities are maintained in a DynamoDB single table
 * `collect` - used in `listener` functions to collect events in a micro event store for complex event processing
 * `correlate` - used in `trigger` functions to correlate related events for complex event processing
+* `evaluate` - used in `trigger` functions to run rules against correlated events and produce higher-order events
 * `expire` - used in `trigger` functions to emit `expired` events when a TTL is reacted
 * more to be ported soon
 
