@@ -125,19 +125,24 @@ describe('utils/dynamodb.js', () => {
       event: {},
     }]);
 
-    const uows = [{
-      queryRequest: {
-        IndexName: 'DataIndex',
-        KeyConditionExpression: '#data = :data',
-        ExpressionAttributeNames: {
-          '#data': 'data',
+    const uows = [
+      {
+        queryRequest: {
+          IndexName: 'DataIndex',
+          KeyConditionExpression: '#data = :data',
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          ConsistentRead: true,
         },
-        ExpressionAttributeValues: {
-          ':data': '11',
-        },
-        ConsistentRead: true,
       },
-    }];
+      {
+        queryRequest: undefined,
+      },
+    ];
 
     _(uows)
       .through(query())
@@ -145,7 +150,7 @@ describe('utils/dynamodb.js', () => {
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
 
-        expect(collected.length).to.equal(1);
+        expect(collected.length).to.equal(2);
         expect(stub).to.have.been.calledWith({
           IndexName: 'DataIndex',
           KeyConditionExpression: '#data = :data',
@@ -163,6 +168,8 @@ describe('utils/dynamodb.js', () => {
           data: '11',
           event: {},
         }]);
+
+        expect(collected[1].queryResponse).to.be.undefined;
       })
       .done(done);
   });

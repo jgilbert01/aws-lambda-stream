@@ -69,13 +69,16 @@ export const query = ({
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME,
   queryRequestField = 'queryRequest',
+  queryResponseField = 'queryResponse',
   parallel = Number(process.env.QUERY_PARALLEL) || Number(process.env.PARALLEL) || 4,
 } = {}) => {
   const connector = new Connector({ debug, tableName });
 
   const invoke = (uow) => {
+    if (!uow[queryRequestField]) return _(Promise.resolve(uow));
+
     const p = connector.query(uow[queryRequestField])
-      .then((queryResponse) => ({ ...uow, queryResponse }))
+      .then((queryResponse) => ({ ...uow, [queryResponseField]: queryResponse }))
       .catch(rejectWithFault(uow));
 
     return _(p); // wrap promise in a stream
