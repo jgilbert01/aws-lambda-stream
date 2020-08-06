@@ -99,7 +99,7 @@ describe('flavors/correlate.js', () => {
             expire: undefined,
             timestamp: 1548967022000,
             sequenceNumber: '0',
-            correlationKeySuffix: undefined,
+            suffix: undefined,
             ruleId: 'crl1',
             event: {
               id: '1',
