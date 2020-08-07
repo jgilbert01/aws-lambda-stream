@@ -30,6 +30,7 @@ import { put } from '../utils/dynamodb';
  *   correlationKey?: string | Function, // default uow.event.partitionKey
  *   ttl?: number, // default 33 days
  *   expire: boolean | string
+ *   parallel?: number;
  * }
  */
 

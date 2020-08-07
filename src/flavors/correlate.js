@@ -25,9 +25,10 @@ import { put } from '../utils/dynamodb';
  *   eventType: string | string[] | Function,
  *   filters: Function[],
  *   correlationKey: string | Function,
- *   correlationKeySuffix?: string,
+ *   correlationKeySuffix?: string, // used to create alternate correlations on the same key
  *   ttl?: number, // default ttl of collected event
  *   expire: boolean | string
+ *   parallel?: number;
  * }
  */
 
@@ -90,7 +91,7 @@ const toPutRequest = (rule) => faulty(
         sequenceNumber: uow.meta.sequenceNumber,
         ttl: rule.ttl ? ttlRule(rule, uow) : uow.meta.ttl,
         expire: rule.expire,
-        correlationKeySuffix: rule.correlationKeySuffix,
+        suffix: rule.correlationKeySuffix,
         ruleId: rule.id,
         event: uow.event,
       },
