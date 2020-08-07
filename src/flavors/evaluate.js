@@ -82,10 +82,10 @@ const complex = (rule) => {
       .filter(onCorrelationKeySuffix(rule))
 
       .map(toQueryRequest(rule))
-      .through(query({ ...rule, queryResponseField: 'window' }))
+      .through(query({ ...rule, queryResponseField: 'correlated' }))
       .map((uow) => ({
         ...uow,
-        window: uow.window.map((i) => i.event),
+        correlated: uow.correlated.map((i) => i.event),
       }))
 
       .map(expression(rule))
