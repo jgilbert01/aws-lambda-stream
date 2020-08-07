@@ -137,7 +137,6 @@ const toQueryRequest = (rule) => (uow) => ({
         },
         ConsistentRead: true,
         // TODO filter out expired events
-        // TODO cache and clear on init
       },
 });
 
