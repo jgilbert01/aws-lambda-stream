@@ -1,5 +1,6 @@
 import _ from 'highland';
 import merge from 'lodash/merge';
+import memoryCache from 'memory-cache';
 
 import Connector from '../connectors/dynamodb';
 
@@ -65,7 +66,7 @@ export const put = ({
     .parallel(parallel);
 };
 
-export const query = ({
+export const query = (/* istanbul ignore next */{
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME,
   queryRequestField = 'queryRequest',
@@ -77,7 +78,17 @@ export const query = ({
   const invoke = (uow) => {
     if (!uow[queryRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.query(uow[queryRequestField])
+    const req = JSON.stringify(uow[queryRequestField]);
+    const cached = memoryCache.get(req);
+
+    const p = (cached
+      ? Promise.resolve(cached)
+      : connector.query(uow[queryRequestField])
+        .then((queryResponse) => {
+          memoryCache.put(req, queryResponse);
+          return queryResponse;
+        })
+    )
       .then((queryResponse) => ({ ...uow, [queryResponseField]: queryResponse }))
       .catch(rejectWithFault(uow));
 

@@ -1,4 +1,5 @@
 import _ from 'highland';
+import memoryCache from 'memory-cache';
 
 import { faults, flushFaults } from '../faults';
 
@@ -24,6 +25,8 @@ export const initialize = (pipelines, opt) => {
     }),
     {},
   );
+
+  memoryCache.clear();
 
   return { assemble: assemble(opt) };
 };

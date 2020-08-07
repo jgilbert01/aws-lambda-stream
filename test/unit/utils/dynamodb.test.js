@@ -142,15 +142,28 @@ describe('utils/dynamodb.js', () => {
       {
         queryRequest: undefined,
       },
+      { // cached
+        queryRequest: {
+          IndexName: 'DataIndex',
+          KeyConditionExpression: '#data = :data',
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          ConsistentRead: true,
+        },
+      },
     ];
 
     _(uows)
-      .through(query())
+      .through(query({ parallel: 1 }))
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
 
-        expect(collected.length).to.equal(2);
+        expect(collected.length).to.equal(3);
         expect(stub).to.have.been.calledWith({
           IndexName: 'DataIndex',
           KeyConditionExpression: '#data = :data',
@@ -170,6 +183,13 @@ describe('utils/dynamodb.js', () => {
         }]);
 
         expect(collected[1].queryResponse).to.be.undefined;
+
+        expect(collected[2].queryResponse).to.deep.equal([{
+          pk: '1',
+          sk: 'EVENT',
+          data: '11',
+          event: {},
+        }]);
       })
       .done(done);
   });
