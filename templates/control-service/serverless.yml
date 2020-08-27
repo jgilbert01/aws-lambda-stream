@@ -91,6 +91,10 @@ resources:
             AttributeType: S
           - AttributeName: data
             AttributeType: S
+          - AttributeName: sequenceNumber
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: N
         KeySchema:
           - AttributeName: pk
             KeyType: HASH
@@ -101,7 +105,7 @@ resources:
         #     KeySchema:
         #       - AttributeName: data
         #         KeyType: HASH
-        #       - AttributeName: pk
+        #       - AttributeName: timestamp
         #         KeyType: RANGE
         #     Projection:
         #       ProjectionType: ALL
