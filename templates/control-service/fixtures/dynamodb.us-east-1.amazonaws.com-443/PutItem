@@ -1,0 +1,16 @@
+POST /
+content-type: application/x-amz-json-1.0
+x-amz-target: DynamoDB_20120810.PutItem
+host: dynamodb.us-east-1.amazonaws.com
+body: {\"TableName\":\"stg-my-service-events\",\"Item\":{\"pk\":{\"S\":\"47e22140-f3df-11ea-a205-2dda2b90a8e1\"},\"sk\":{\"S\":\"EVENT\"},\"discriminator\":{\"S\":\"EVENT\"},\"timestamp\":{\"N\":\"1599795089749\"},\"sequenceNumber\":{\"S\":\"49610671311194420218916278992418406327582890665088909314\"},\"ttl\":{\"N\":\"1602646289\"},\"data\":{\"S\":\"9dc85aab-de5e-45ac-b105-90d25fa764d1\"},\"event\":{\"M\":{\"id\":{\"S\":\"47e22140-f3df-11ea-a205-2dda2b90a8e1\"},\"partitionKey\":{\"S\":\"9dc85aab-de5e-45ac-b105-90d25fa764d1\"},\"timestamp\":{\"N\":\"1599795089749\"},\"tags\":{\"M\":{\"region\":{\"S\":\"us-east-1\"},\"functionname\":{\"S\":\"event-test-stg-publish\"}}},\"type\":{\"S\":\"thing-submitted\"}}}}}
+
+HTTP/1.1 200 OK
+server: Server
+date: Fri, 11 Sep 2020 04:03:10 GMT
+content-type: application/x-amz-json-1.0
+content-length: 2
+connection: keep-alive
+x-amzn-requestid: HT7GOKAFBGB3E1FMIB4O299CPBVV4KQNSO5AEMVJF66Q9ASUAAJG
+x-amz-crc32: 2745614147
+
+{}

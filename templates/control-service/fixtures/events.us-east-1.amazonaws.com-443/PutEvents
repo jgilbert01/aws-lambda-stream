@@ -1,0 +1,13 @@
+POST /
+content-type: application/x-amz-json-1.1
+x-amz-target: AWSEvents.PutEvents
+host: events.us-east-1.amazonaws.com
+body: {\"Entries\":[{\"EventBusName\":\"stg-event-hub-bus\",\"Source\":\"custom\",\"DetailType\":\"thing-xyz\",\"Detail\":\"{\\\"partitionKey\\\":\\\"9dc85aab-de5e-45ac-b105-90d25fa764d1\\\",\\\"id\\\":\\\"9dc83f7f895c9ec2e521dc3c40f6f1b5.eval1\\\",\\\"type\\\":\\\"thing-xyz\\\",\\\"timestamp\\\":1599795089749,\\\"tags\\\":{\\\"account\\\":\\\"dev\\\",\\\"region\\\":\\\"us-east-1\\\",\\\"stage\\\":\\\"stg\\\",\\\"source\\\":\\\"my-service\\\",\\\"functionname\\\":\\\"event-test-stg-publish\\\",\\\"pipeline\\\":\\\"eval1\\\",\\\"skip\\\":true},\\\"triggers\\\":[{\\\"id\\\":\\\"47e22140-f3df-11ea-a205-2dda2b90a8e1\\\",\\\"type\\\":\\\"thing-submitted\\\",\\\"timestamp\\\":1599795089749}]}\"}]}
+
+HTTP/1.1 200 OK
+x-amzn-requestid: 1426dd17-e7d2-47c5-b406-b33e9931c1d4
+content-type: application/x-amz-json-1.1
+content-length: 85
+date: Fri, 11 Sep 2020 04:03:30 GMT
+
+{"Entries":[{"EventId":"53f93680-a9ae-3618-19cc-5f707eddb509"}],"FailedEntryCount":0}

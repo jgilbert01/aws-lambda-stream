@@ -24,6 +24,7 @@ import {
  *   filters?: Function[],                    // evaluate event content
  *   expression?: Function;                   // evaluate correlated events, triggers query for correlated events
  *   emit: string | Function;                 // create higher-order event(s) to publish
+ *   index?: string;
  *   batchSize?: number;
  *   parallel?: number;
  * }
@@ -82,10 +83,10 @@ const complex = (rule) => {
       .filter(onCorrelationKeySuffix(rule))
 
       .map(toQueryRequest(rule))
-      .through(query({ ...rule, queryResponseField: 'window' }))
+      .through(query({ ...rule, queryResponseField: 'correlated' }))
       .map((uow) => ({
         ...uow,
-        window: uow.window.map((i) => i.event),
+        correlated: uow.correlated.map((i) => i.event),
       }))
 
       .map(expression(rule))
@@ -127,7 +128,7 @@ const toQueryRequest = (rule) => (uow) => ({
         },
         ConsistentRead: true,
       } : {
-        IndexName: 'DataIndex',
+        IndexName: rule.index ? /* istanbul ignore next */ rule.index : 'DataIndex',
         KeyConditionExpression: '#data = :data',
         ExpressionAttributeNames: {
           '#data': 'data',
@@ -146,7 +147,7 @@ const expression = (rule) => faulty((uow) => {
 
   return {
     ...uow,
-    expression: result,
+    expression: Array.isArray(result) ? result.length > 0 : result,
     triggers: isBoolean(result) ? [uow.event] : castArray(result),
   };
 });

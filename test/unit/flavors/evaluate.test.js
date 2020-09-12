@@ -321,7 +321,7 @@ describe('flavors/evaluate.js', () => {
           },
           ConsistentRead: true,
         });
-        expect(collected[0].window).to.deep.equal([
+        expect(collected[0].correlated).to.deep.equal([
           { id: '4', type: 'e4', timestamp: 1548967022000 },
         ]);
         expect(collected[0].emit).to.deep.equal({
@@ -510,7 +510,7 @@ describe('flavors/evaluate.js', () => {
           },
           ConsistentRead: true,
         });
-        expect(collected[0].window).to.deep.equal([
+        expect(collected[0].correlated).to.deep.equal([
           { id: '66', type: 'e66', timestamp: 1548967022000 },
         ]);
         expect(collected[0].emit).to.deep.equal({
@@ -564,7 +564,7 @@ describe('flavors/evaluate.js', () => {
           },
           ConsistentRead: true,
         });
-        expect(collected[1].window).to.deep.equal([
+        expect(collected[1].correlated).to.deep.equal([
           { id: '77', type: 'e77', timestamp: 1548967022000 },
         ]);
         expect(collected[1].emit.triggers).to.deep.equal([
@@ -644,7 +644,7 @@ const RULES = [
     id: 'eval6',
     flavor: evaluate,
     eventType: 'e6',
-    expression: (uow) => uow.window.find((e) => e.type === 'e66'),
+    expression: (uow) => uow.correlated.find((e) => e.type === 'e66'),
     emit: 'e666',
   },
   {

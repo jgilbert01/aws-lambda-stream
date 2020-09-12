@@ -1,0 +1,34 @@
+name: 3 - CD - Production - West - Canary
+
+# a regional canary deploy is initiated when a pull request is merged to master
+
+on:
+  workflow_dispatch: # manual
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      - run: npm ci
+      # test against dev
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.DEV_AWS_ROLE }}
+      - run: npm test
+      - run: npm run test:int
+      # deploy to prod
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.PRD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PRD_AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.PRD_AWS_ROLE }}
+      - run: npm run dp:prd:w
+
