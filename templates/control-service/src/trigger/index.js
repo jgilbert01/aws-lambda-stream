@@ -4,7 +4,7 @@ import {
   defaultOptions,
   fromDynamodb,
   toPromise,
-  debug,
+  debug as d,
   expired,
 } from 'aws-lambda-stream';
 
@@ -18,6 +18,8 @@ const PIPELINES = {
   ...initializeFrom(EVAL_RULES),
   expired,
 };
+
+const debug = d('handler');
 
 export class Handler {
   handle(event, includeErrors = true) {

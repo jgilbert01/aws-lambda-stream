@@ -4,7 +4,7 @@ import {
   defaultOptions,
   fromKinesis,
   toPromise,
-  debug,
+  debug as d,
 } from 'aws-lambda-stream';
 
 import RULES from './collect-rules';
@@ -14,6 +14,8 @@ const OPTIONS = { ...defaultOptions };
 const PIPELINES = {
   ...initializeFrom(RULES),
 };
+
+const debug = d('handler');
 
 export class Handler {
   handle(event, includeErrors = true) {

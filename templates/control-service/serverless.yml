@@ -10,7 +10,7 @@ provider:
     PROJECT: ${self:service}
     STAGE: ${opt:stage}
     DEBUG: ${self:custom.accounts.${opt:acct}.debug}
-    EVENTS_TABLE: ${opt:stage}-${self:service}-events
+    EVENT_TABLE_NAME: ${opt:stage}-${self:service}-events
     BUS_NAME: ${cf:event-hub-${opt:stage}.busName}
     BUS_ARN: ${cf:event-hub-${opt:stage}.busArn}
     STREAM_ARN: ${cf:event-hub-${opt:stage}.stream1Arn}
@@ -83,18 +83,18 @@ resources:
     EventsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.EVENTS_TABLE}
+        TableName: ${self:provider.environment.EVENT_TABLE_NAME}
         AttributeDefinitions:
           - AttributeName: pk
             AttributeType: S
           - AttributeName: sk
             AttributeType: S
-          - AttributeName: data
-            AttributeType: S
-          - AttributeName: sequenceNumber
-            AttributeType: S
-          - AttributeName: timestamp
-            AttributeType: N
+          # - AttributeName: data
+          #   AttributeType: S
+          # - AttributeName: sequenceNumber
+          #   AttributeType: S
+          # - AttributeName: timestamp
+          #   AttributeType: N
         KeySchema:
           - AttributeName: pk
             KeyType: HASH
