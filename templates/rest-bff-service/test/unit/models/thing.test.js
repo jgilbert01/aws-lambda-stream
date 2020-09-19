@@ -3,8 +3,11 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import debug from 'debug';
 
+import * as utils from '../../../src/utils';
 import Connector from '../../../src/connectors/dynamodb';
-import { save, get, toEvent, toUpdateRequest } from '../../../src/models/thing';
+import {
+  save, get, toEvent, toUpdateRequest,
+} from '../../../src/models/thing';
 
 describe('models/thing.js', () => {
   afterEach(() => {
@@ -12,7 +15,7 @@ describe('models/thing.js', () => {
   });
 
   it('should save', async () => {
-    sinon.stub(Date, 'now').returns(1600144863435);
+    sinon.stub(utils, 'now').returns(1600349040394);
     const stub = sinon.stub(Connector.prototype, 'update')
       .resolves({});
 
@@ -39,8 +42,8 @@ describe('models/thing.js', () => {
       lastModifiedBy: 'system',
       latched: null,
       name: 'thing0',
-      timestamp: 1600144863435,
-      ttl: 1602996063,
+      timestamp: 1600349040394,
+      ttl: 1603200240,
     });
     expect(data).to.deep.equal({});
   });
