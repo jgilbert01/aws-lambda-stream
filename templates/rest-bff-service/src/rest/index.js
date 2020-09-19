@@ -27,7 +27,7 @@ export const handle = async (event, context) => { // eslint-disable-line import/
       process.env.ENTITY_TABLE_NAME,
     ),
     username: (event.requestContext.authorizer.claims
-      && event.requestContext.authorizer.claims['cognito:username'])
+      && /* istanbul ignore next */ event.requestContext.authorizer.claims['cognito:username'])
       || event.requestContext.authorizer.principalId,
   });
 

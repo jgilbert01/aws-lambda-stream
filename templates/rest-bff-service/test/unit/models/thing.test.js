@@ -88,9 +88,6 @@ describe('models/thing.js', () => {
     const data = await del(
       { connector },
       '00000000-0000-0000-0000-000000000000',
-      {
-        name: 'thing0',
-      },
     );
 
     expect(stub).to.have.been.calledOnce;
@@ -102,9 +99,8 @@ describe('models/thing.js', () => {
       discriminator: 'thing',
       lastModifiedBy: 'system',
       latched: null,
-      name: 'thing0',
       timestamp: 1600349040394,
-      ttl: 1603200240,
+      ttl: 1601299440,
     });
     expect(data).to.deep.equal({});
   });
