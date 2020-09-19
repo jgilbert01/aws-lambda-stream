@@ -6,7 +6,7 @@ import debug from 'debug';
 import * as utils from '../../../src/utils';
 import Connector from '../../../src/connectors/dynamodb';
 import {
-  save, get, toEvent, toUpdateRequest,
+  save, get, del, toEvent, toUpdateRequest,
 } from '../../../src/models/thing';
 
 describe('models/thing.js', () => {
@@ -73,6 +73,40 @@ describe('models/thing.js', () => {
       name: 'thing0',
       timestamp: 1600144863435,
     }]);
+  });
+
+  it('should delete', async () => {
+    sinon.stub(utils, 'now').returns(1600349040394);
+    const stub = sinon.stub(Connector.prototype, 'update')
+      .resolves({});
+
+    const connector = new Connector(
+      debug('db'),
+      't1',
+    );
+
+    const data = await del(
+      { connector },
+      '00000000-0000-0000-0000-000000000000',
+      {
+        name: 'thing0',
+      },
+    );
+
+    expect(stub).to.have.been.calledOnce;
+    expect(stub).to.have.been.calledWith({
+      pk: '00000000-0000-0000-0000-000000000000',
+      sk: 'thing',
+    }, {
+      deleted: true,
+      discriminator: 'thing',
+      lastModifiedBy: 'system',
+      latched: null,
+      name: 'thing0',
+      timestamp: 1600349040394,
+      ttl: 1603200240,
+    });
+    expect(data).to.deep.equal({});
   });
 
   it('should map to update request', () => {
