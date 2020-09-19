@@ -1,7 +1,7 @@
 {
   "presets": [
     [
-      "@babel/env",
+      "@babel/preset-env",
       {
         "targets": {
           "node": "12"
@@ -16,6 +16,17 @@
     "test": {
       "plugins": [
         "istanbul"
+      ],
+      "presets": [
+        [
+          "@babel/preset-env",
+          {
+            "targets": {
+              "node": "12"
+            },
+            "modules": "umd"
+          }
+        ]
       ]
     }
   }
