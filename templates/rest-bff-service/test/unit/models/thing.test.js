@@ -10,9 +10,7 @@ import {
 } from '../../../src/models/thing';
 
 describe('models/thing.js', () => {
-  afterEach(() => {
-    sinon.restore();
-  });
+  afterEach(sinon.restore);
 
   it('should save', async () => {
     sinon.stub(utils, 'now').returns(1600349040394);
