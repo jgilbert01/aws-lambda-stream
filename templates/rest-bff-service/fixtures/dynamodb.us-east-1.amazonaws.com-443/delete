@@ -2,15 +2,15 @@ POST /
 content-type: application/x-amz-json-1.0
 x-amz-target: DynamoDB_20120810.UpdateItem
 host: dynamodb.us-east-1.amazonaws.com
-body: {\"TableName\":\"stg-my-rest-bff-service-entities\",\"Key\":{\"pk\":{\"S\":\"00000000-0000-0000-0000-000000000000\"},\"sk\":{\"S\":\"thing\"}},\"ExpressionAttributeNames\":{\"#deleted\":\"deleted\",\"#lastModifiedBy\":\"lastModifiedBy\",\"#timestamp\":\"timestamp\",\"#latched\":\"latched\",\"#ttl\":\"ttl\"},\"ExpressionAttributeValues\":{\":deleted\":{\"BOOL\":true},\":lastModifiedBy\":{\"S\":\"offlineContext_authorizer_principalId\"},\":timestamp\":{\"N\":\"1600349040394\"},\":latched\":{\"NULL\":true},\":ttl\":{\"N\":\"1601299440\"}},\"UpdateExpression\":\"SET #deleted = :deleted, #lastModifiedBy = :lastModifiedBy, #timestamp = :timestamp, #latched = :latched, #ttl = :ttl\",\"ReturnValues\":\"ALL_NEW\"}
+body: {\"TableName\":\"stg-my-rest-bff-service-entities\",\"Key\":{\"pk\":{\"S\":\"00000000-0000-0000-0000-000000000000\"},\"sk\":{\"S\":\"thing\"}},\"ExpressionAttributeNames\":{\"#discriminator\":\"discriminator\",\"#deleted\":\"deleted\",\"#lastModifiedBy\":\"lastModifiedBy\",\"#timestamp\":\"timestamp\",\"#latched\":\"latched\",\"#ttl\":\"ttl\"},\"ExpressionAttributeValues\":{\":discriminator\":{\"S\":\"thing\"},\":deleted\":{\"BOOL\":true},\":lastModifiedBy\":{\"S\":\"offlineContext_authorizer_principalId\"},\":timestamp\":{\"N\":\"1600349040394\"},\":latched\":{\"NULL\":true},\":ttl\":{\"N\":\"1601299440\"}},\"UpdateExpression\":\"SET #discriminator = :discriminator, #deleted = :deleted, #lastModifiedBy = :lastModifiedBy, #timestamp = :timestamp, #latched = :latched, #ttl = :ttl\",\"ReturnValues\":\"ALL_NEW\"}
 
 HTTP/1.1 200 OK
 server: Server
-date: Sat, 19 Sep 2020 03:31:05 GMT
+date: Sat, 19 Sep 2020 21:16:56 GMT
 content-type: application/x-amz-json-1.0
-content-length: 399
+content-length: 335
 connection: keep-alive
-x-amzn-requestid: 6RI6P4FORR18GO6SML7GTRBE8JVV4KQNSO5AEMVJF66Q9ASUAAJG
-x-amz-crc32: 56816672
+x-amzn-requestid: KVQLSJ6CSOKQHT2SQ67R0HM1IBVV4KQNSO5AEMVJF66Q9ASUAAJG
+x-amz-crc32: 39833894
 
-{"Attributes":{"deleted":{"BOOL":true},"timestamp":{"N":"1600349040394"},"sk":{"S":"thing"},"ttl":{"N":"1601299440"},"discriminator":{"S":"thing"},"lastModifiedBy":{"S":"offlineContext_authorizer_principalId"},"latched":{"NULL":true},"description":{"S":"This is thing zero."},"id":{"S":"00000000-0000-0000-0000-000000000000"},"pk":{"S":"00000000-0000-0000-0000-000000000000"},"name":{"S":"thing0"}}}
+{"Attributes":{"deleted":{"BOOL":true},"timestamp":{"N":"1600349040394"},"sk":{"S":"thing"},"ttl":{"N":"1601299440"},"discriminator":{"S":"thing"},"lastModifiedBy":{"S":"offlineContext_authorizer_principalId"},"latched":{"NULL":true},"id":{"S":"00000000-0000-0000-0000-000000000000"},"pk":{"S":"00000000-0000-0000-0000-000000000000"}}}
