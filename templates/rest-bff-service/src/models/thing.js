@@ -9,7 +9,7 @@ const MAPPINGS = mapper();
 
 export const get = async ({ connector }, id) => connector.get(id, MAPPINGS);
 
-export const save = ({ connector, /* istanbul ignore next */username = 'system' }, id, input) => {
+export const save = async ({ connector, /* istanbul ignore next */username = 'system' }, id, input) => {
   const timestamp = now();
   return connector.update(
     {
@@ -28,7 +28,24 @@ export const save = ({ connector, /* istanbul ignore next */username = 'system' 
   );
 };
 
-export const toUpdateRequest = uow => ({
+export const del = async ({ connector, /* istanbul ignore next */username = 'system' }, id) => {
+  const timestamp = now();
+  return connector.update(
+    {
+      pk: id,
+      sk: DISCRIMINATOR,
+    },
+    {
+      deleted: true,
+      lastModifiedBy: username,
+      timestamp,
+      latched: null,
+      ttl: ttl(timestamp, 11),
+    },
+  );
+};
+
+export const toUpdateRequest = (uow) => ({
   Key: {
     pk: uow.event.thing.id,
     sk: DISCRIMINATOR,
@@ -45,7 +62,7 @@ export const toUpdateRequest = uow => ({
   ...timestampCondition(),
 });
 
-export const toEvent = uow => ({
+export const toEvent = (uow) => ({
   thing: MAPPINGS(uow.event.raw.new),
   raw: undefined,
 });
