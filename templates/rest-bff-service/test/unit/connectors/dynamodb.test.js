@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import debug from 'debug';
 
-import Connector, { mapper, updateExpression, timestampCondition } from '../../../src/connectors/dynamodb';
+import Connector, { mapper, updateExpression } from '../../../src/connectors/dynamodb';
 
 const AWS = require('aws-sdk-mock');
 
@@ -37,7 +37,6 @@ describe('connectors/dynamodb.js', () => {
       ExpressionAttributeNames: { '#name': 'name', '#timestamp': 'timestamp' },
       ExpressionAttributeValues: { ':name': 'thing0', ':timestamp': 1600051691001 },
       UpdateExpression: 'SET #name = :name, #timestamp = :timestamp',
-      ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
       ReturnValues: 'ALL_NEW',
     });
     expect(data).to.deep.equal({});
@@ -105,18 +104,12 @@ describe('connectors/dynamodb.js', () => {
     });
   });
 
-  it('should calculate timestampCondition', () => {
-    expect(timestampCondition()).to.deep.equal({
-      ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
-    });
-  });
-
   it('should map an object', () => {
     const mappings = mapper({
       rename: {
         pk: 'id', data: 'name', f1: 'f2', x1: 'else-coverage',
       },
-      transform: { f1: v => v.toUpperCase(), f9: v => 'else-coverage' },
+      transform: { f1: (v) => v.toUpperCase(), f9: (v) => 'else-coverage' },
     });
 
     expect(mappings({

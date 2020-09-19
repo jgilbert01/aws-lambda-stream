@@ -6,21 +6,17 @@ import _omit from 'lodash/omit';
 
 config.setPromisesDependency(Promise);
 
-export const updateExpression = Item => ({
+export const updateExpression = (Item) => ({
   ExpressionAttributeNames: Object.keys(Item)
-    .map(attrName => ({ [`#${attrName}`]: attrName }))
+    .map((attrName) => ({ [`#${attrName}`]: attrName }))
     .reduce(merge, {}),
   ExpressionAttributeValues: Object.keys(Item)
-    .map(attrName => ({ [`:${attrName}`]: Item[attrName] }))
+    .map((attrName) => ({ [`:${attrName}`]: Item[attrName] }))
     .reduce(merge, {}),
   UpdateExpression: `SET ${Object.keys(Item)
-    .map(attrName => `#${attrName} = :${attrName}`)
+    .map((attrName) => `#${attrName} = :${attrName}`)
     .join(', ')}`,
   ReturnValues: 'ALL_NEW',
-});
-
-export const timestampCondition = (fieldName = 'timestamp') => ({
-  ConditionExpression: `attribute_not_exists(#${fieldName}) OR #${fieldName} < :${fieldName}`,
 });
 
 const DEFAULT_OMIT_FIELDS = [
@@ -43,29 +39,28 @@ export const mapper = ({
   rename = DEFAULT_RENAME,
   omit = DEFAULT_OMIT_FIELDS,
   transform = {},
-} = {}) =>
-  (o) => {
-    const transformed = {
-      ...o,
-      ...Object.keys(transform).reduce((a, k) => {
-        if (o[k]) a[k] = transform[k](o[k]);
-        return a;
-      }, {}),
-    };
-
-    const renamed = {
-      ...o,
-      ...Object.keys(rename).reduce((a, k) => {
-        if (transformed[k]) a[rename[k]] = transformed[k];
-        return a;
-      }, {}),
-    };
-
-    return ({
-      ...defaults,
-      ..._omit(renamed, [...omit, ...Object.keys(rename)]),
-    });
+} = {}) => (o) => {
+  const transformed = {
+    ...o,
+    ...Object.keys(transform).reduce((a, k) => {
+      if (o[k]) a[k] = transform[k](o[k]);
+      return a;
+    }, {}),
   };
+
+  const renamed = {
+    ...o,
+    ...Object.keys(rename).reduce((a, k) => {
+      if (transformed[k]) a[rename[k]] = transformed[k];
+      return a;
+    }, {}),
+  };
+
+  return ({
+    ...defaults,
+    ..._omit(renamed, [...omit, ...Object.keys(rename)]),
+  });
+};
 
 class Connector {
   constructor(
@@ -80,28 +75,21 @@ class Connector {
         timeout,
         // agent: sslAgent,
       },
-      logger: { log: /* istanbul ignore next */ msg => this.debug(msg) },
+      logger: { log: /* istanbul ignore next */ (msg) => this.debug(msg) },
       convertEmptyValues: true,
     });
   }
 
-  update(Key, inputParams, timestampFieldName = 'timestamp') {
+  update(Key, inputParams) {
     const params = {
       TableName: this.tableName,
       Key,
       ...updateExpression(inputParams),
-      ...timestampCondition(timestampFieldName),
     };
 
     return this.db.update(params).promise()
       .tap(this.debug)
-      .tapCatch(this.debug)
-      .catch(/* istanbul ignore next */(err) => {
-        if (err.code === 'ConditionalCheckFailedException') {
-          return {};
-        }
-        return Promise.reject(err);
-      });
+      .tapCatch(this.debug);
   }
 
   get(id, mappings = mapper()) {
@@ -120,7 +108,8 @@ class Connector {
     return this.db.query(params).promise()
       .tap(this.debug)
       .tapCatch(this.debug)
-      .then(data => data.Items.map(mappings));
+      .then((data) => data.Items.map(mappings));
+    // TODO assert data.LastEvaluatedKey
   }
 }
 
