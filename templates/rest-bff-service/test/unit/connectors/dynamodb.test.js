@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import debug from 'debug';
 
-import Connector, { mapper, updateExpression } from '../../../src/connectors/dynamodb';
+import Connector, { updateExpression } from '../../../src/connectors/dynamodb';
 
 const AWS = require('aws-sdk-mock');
 
@@ -45,7 +45,8 @@ describe('connectors/dynamodb.js', () => {
   it('should get by id', async () => {
     const spy = sinon.spy((params, cb) => cb(null, {
       Items: [{
-        id: '00000000-0000-0000-0000-000000000000',
+        pk: '00000000-0000-0000-0000-000000000000',
+        sk: 'thing',
         name: 'thing0',
         timestamp: 1600051691001,
       }],
@@ -65,7 +66,8 @@ describe('connectors/dynamodb.js', () => {
       ConsistentRead: true,
     });
     expect(data).to.deep.equal([{
-      id: '00000000-0000-0000-0000-000000000000',
+      pk: '00000000-0000-0000-0000-000000000000',
+      sk: 'thing',
       name: 'thing0',
       timestamp: 1600051691001,
     }]);
@@ -73,7 +75,6 @@ describe('connectors/dynamodb.js', () => {
 
   it('should calculate updateExpression', () => {
     expect(updateExpression({
-      id: '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
       name: 'Thing One',
       description: 'This is thing one.',
       discriminator: 'thing',
@@ -84,7 +85,6 @@ describe('connectors/dynamodb.js', () => {
       ExpressionAttributeNames: {
         '#description': 'description',
         '#discriminator': 'discriminator',
-        '#id': 'id',
         '#latched': 'latched',
         '#name': 'name',
         '#timestamp': 'timestamp',
@@ -93,34 +93,13 @@ describe('connectors/dynamodb.js', () => {
       ExpressionAttributeValues: {
         ':description': 'This is thing one.',
         ':discriminator': 'thing',
-        ':id': '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
         ':latched': true,
         ':name': 'Thing One',
         ':timestamp': 1540454400000,
         ':ttl': 1543046400,
       },
-      UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp',
+      UpdateExpression: 'SET #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp',
       ReturnValues: 'ALL_NEW',
-    });
-  });
-
-  it('should map an object', () => {
-    const mappings = mapper({
-      rename: {
-        pk: 'id', data: 'name', f1: 'f2', x1: 'else-coverage',
-      },
-      transform: { f1: (v) => v.toUpperCase(), f9: (v) => 'else-coverage' },
-    });
-
-    expect(mappings({
-      pk: '1',
-      sk: 'thing',
-      data: 'thing0',
-      f1: 'v1',
-    })).to.deep.equal({
-      id: '1',
-      name: 'thing0',
-      f2: 'V1',
     });
   });
 });

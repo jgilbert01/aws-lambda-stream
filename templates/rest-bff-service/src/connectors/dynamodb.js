@@ -2,7 +2,6 @@
 import { config, DynamoDB } from 'aws-sdk';
 import Promise from 'bluebird';
 import merge from 'lodash/merge';
-import _omit from 'lodash/omit';
 
 config.setPromisesDependency(Promise);
 
@@ -18,49 +17,6 @@ export const updateExpression = (Item) => ({
     .join(', ')}`,
   ReturnValues: 'ALL_NEW',
 });
-
-const DEFAULT_OMIT_FIELDS = [
-  'pk',
-  'sk',
-  'data',
-  'discriminator',
-  'ttl',
-  'latched',
-  'deleted',
-  'aws:rep:updateregion',
-  'aws:rep:updatetime',
-  'aws:rep:deleting',
-];
-
-const DEFAULT_RENAME = { pk: 'id' };
-
-export const mapper = ({
-  defaults = {},
-  rename = DEFAULT_RENAME,
-  omit = DEFAULT_OMIT_FIELDS,
-  transform = {},
-} = {}) => (o) => {
-  const transformed = {
-    ...o,
-    ...Object.keys(transform).reduce((a, k) => {
-      if (o[k]) a[k] = transform[k](o[k]);
-      return a;
-    }, {}),
-  };
-
-  const renamed = {
-    ...o,
-    ...Object.keys(rename).reduce((a, k) => {
-      if (transformed[k]) a[rename[k]] = transformed[k];
-      return a;
-    }, {}),
-  };
-
-  return ({
-    ...defaults,
-    ..._omit(renamed, [...omit, ...Object.keys(rename)]),
-  });
-};
 
 class Connector {
   constructor(
@@ -92,7 +48,7 @@ class Connector {
       .tapCatch(this.debug);
   }
 
-  get(id, mappings = mapper()) {
+  get(id) {
     const params = {
       TableName: this.tableName,
       KeyConditionExpression: '#pk = :pk',
@@ -108,7 +64,7 @@ class Connector {
     return this.db.query(params).promise()
       .tap(this.debug)
       .tapCatch(this.debug)
-      .then((data) => data.Items.map(mappings));
+      .then((data) => data.Items);
     // TODO assert data.LastEvaluatedKey
   }
 }
