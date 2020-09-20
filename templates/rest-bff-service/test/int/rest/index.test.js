@@ -26,12 +26,12 @@ describe('rest/index.js', () => {
     .expect(200)
     .expect((res) => {
       // console.log('RES: %s', JSON.stringify(res, null, 2));
-      expect(JSON.parse(res.text)).to.deep.equal([{
+      expect(JSON.parse(res.text)).to.deep.equal({
         id: '00000000-0000-0000-0000-000000000000',
         lastModifiedBy: 'offlineContext_authorizer_principalId',
         timestamp: 1600349040394,
         ...THING,
-      }]);
+      });
     }));
 
   it('should delete', () => client.delete('/v1/things/00000000-0000-0000-0000-000000000000')

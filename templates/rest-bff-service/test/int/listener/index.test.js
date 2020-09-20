@@ -1,11 +1,9 @@
 import 'mocha';
 import { expect } from 'chai';
 
-import { toKinesisRecords } from 'aws-lambda-stream';
-
 import { handle } from '../../../src/listener';
 
-describe.only('listener/index.js', () => {
+describe('listener/index.js', () => {
   before(() => {
     require('baton-vcr-replay-for-aws-sdk'); // eslint-disable-line global-require
   });

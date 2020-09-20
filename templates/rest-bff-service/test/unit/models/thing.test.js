@@ -49,7 +49,9 @@ describe('models/thing.js', () => {
   it('should get by id', async () => {
     const stub = sinon.stub(Connector.prototype, 'get')
       .resolves([{
-        id: '00000000-0000-0000-0000-000000000000',
+        pk: '00000000-0000-0000-0000-000000000000',
+        sk: 'thing',
+        discriminator: 'thing',
         name: 'thing0',
         timestamp: 1600144863435,
       }]);
@@ -66,11 +68,11 @@ describe('models/thing.js', () => {
 
     expect(stub).to.have.been.calledOnce;
     expect(stub).to.have.been.calledWith('00000000-0000-0000-0000-000000000000');
-    expect(data).to.deep.equal([{
+    expect(data).to.deep.equal({
       id: '00000000-0000-0000-0000-000000000000',
       name: 'thing0',
       timestamp: 1600144863435,
-    }]);
+    });
   });
 
   it('should delete', async () => {
