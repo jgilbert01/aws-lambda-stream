@@ -1,13 +1,23 @@
 import { updateExpression, timestampCondition } from 'aws-lambda-stream';
 
-import { now, ttl } from '../utils';
-import { mapper } from '../connectors/dynamodb';
+import {
+  now, ttl, aggregateMapper, mapper,
+} from '../utils';
 
-const DISCRIMINATOR = 'thing';
+export const DISCRIMINATOR = 'thing';
 
-const MAPPINGS = mapper();
+export const MAPPER = mapper();
 
-export const get = async ({ connector }, id) => connector.get(id, MAPPINGS);
+const AGGREGATE_MAPPER = aggregateMapper({
+  aggregate: DISCRIMINATOR,
+  cardinality: {
+  },
+  mappers: {
+    [DISCRIMINATOR]: MAPPER,
+  },
+});
+
+export const get = async ({ connector }, id) => connector.get(id).then((data) => AGGREGATE_MAPPER(data));
 
 export const save = async ({ connector, /* istanbul ignore next */username = 'system' }, id, input) => {
   const timestamp = now();
@@ -19,11 +29,11 @@ export const save = async ({ connector, /* istanbul ignore next */username = 'sy
     {
       discriminator: DISCRIMINATOR,
       lastModifiedBy: username,
-      timestamp,
       deleted: null,
       latched: null,
       ttl: ttl(timestamp, 33),
       ...input,
+      timestamp,
     },
   );
 };
@@ -36,11 +46,12 @@ export const del = async ({ connector, /* istanbul ignore next */username = 'sys
       sk: DISCRIMINATOR,
     },
     {
+      discriminator: DISCRIMINATOR,
       deleted: true,
       lastModifiedBy: username,
-      timestamp,
       latched: null,
       ttl: ttl(timestamp, 11),
+      timestamp,
     },
   );
 };
@@ -51,7 +62,7 @@ export const toUpdateRequest = (uow) => ({
     sk: DISCRIMINATOR,
   },
   ...updateExpression({
-    ...uow.event.thing,
+    ...uow.event.thing, // TODO minus id, others ???
     discriminator: DISCRIMINATOR,
     lastModifiedBy: 'system',
     timestamp: uow.event.timestamp,
@@ -63,6 +74,6 @@ export const toUpdateRequest = (uow) => ({
 });
 
 export const toEvent = (uow) => ({
-  thing: MAPPINGS(uow.event.raw.new),
+  thing: MAPPER(uow.event.raw.new),
   raw: undefined,
 });
