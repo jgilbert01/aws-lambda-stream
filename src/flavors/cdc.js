@@ -5,7 +5,7 @@ import {
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
 
-export const crud = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
+export const cdc = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   .filter(outLatched)
 
   .filter(onEventType(rule))

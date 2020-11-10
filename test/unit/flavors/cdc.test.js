@@ -12,10 +12,10 @@ import { toDynamodbRecords, fromDynamodb } from '../../../src/from/dynamodb';
 import { defaultOptions } from '../../../src/utils/opt';
 import Connector from '../../../src/connectors/eventbridge';
 
-import { crud } from '../../../src/flavors/crud';
+import { cdc } from '../../../src/flavors/cdc';
 import { skipTag } from '../../../src/filters';
 
-describe('flavors/crud.js', () => {
+describe('flavors/cdc.js', () => {
   beforeEach(() => {
     sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
   });
@@ -66,7 +66,7 @@ describe('flavors/crud.js', () => {
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
         expect(collected.length).to.equal(2);
-        expect(collected[0].pipeline).to.equal('crud1');
+        expect(collected[0].pipeline).to.equal('cdc1');
         expect(collected[0].event.type).to.equal('thing-created');
         expect(collected[0].event.thing).to.deep.equal({
           id: '1',
@@ -76,7 +76,7 @@ describe('flavors/crud.js', () => {
         expect(collected[0].event.tags).to.deep.equal({
           region: 'us-west-2',
           field1: 'v1',
-          ...envTags('crud1'),
+          ...envTags('cdc1'),
           ...skipTag(),
         });
       })
@@ -98,20 +98,20 @@ const toEvent = (uow) => ({
 
 const rules = [
   {
-    id: 'crud1',
-    flavor: crud,
+    id: 'cdc1',
+    flavor: cdc,
     eventType: /thing-*/,
     filters: [() => true],
     toEvent,
   },
   {
-    id: 'crud2',
-    flavor: crud,
+    id: 'cdc2',
+    flavor: cdc,
     eventType: /other-*/,
   },
   {
-    id: 'crud-other1',
-    flavor: crud,
+    id: 'cdc-other1',
+    flavor: cdc,
     eventType: 'x9',
   },
 ];
