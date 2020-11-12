@@ -2,6 +2,7 @@ export * from './batch';
 export * from './dynamodb';
 export * from './eventbridge';
 export * from './faults';
+export * from './firehose';
 export * from './handler';
 export * from './kinesis';
 export * from './opt';
