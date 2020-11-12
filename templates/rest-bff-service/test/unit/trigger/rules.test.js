@@ -12,7 +12,7 @@ describe('trigger/rules.js', () => {
   });
   afterEach(sinon.restore);
 
-  it('should verify crud rule crud1', (done) => {
+  it('should verify cdc rule cdc1', (done) => {
     new Handler()
       .handle(toDynamodbRecords([
         {

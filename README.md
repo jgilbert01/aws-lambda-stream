@@ -282,7 +282,7 @@ Many of the pipelines we write follow the exact same steps and only the filters 
 
 The following _flavors_ are included and you can package your own into libaries.
 * `materialize` - used in `listener` functions to materialize an `entity` from an `event` into a DynamoDB single table
-* `crud` - used in `trigger` functions to `publish` events to Kinesis as entities are maintained in a DynamoDB single table
+* `cdc` - used in `trigger` functions to `publish` events to Kinesis as entities are maintained in a DynamoDB single table
 * `collect` - used in `listener` functions to collect events in a micro event store for complex event processing
 * `correlate` - used in `trigger` functions to correlate related events for complex event processing
 * `evaluate` - used in `trigger` functions to run rules against correlated events and produce higher-order events
