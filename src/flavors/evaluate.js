@@ -136,7 +136,6 @@ const toQueryRequest = (rule) => (uow) => ({
         ExpressionAttributeValues: {
           ':data': uow.meta.data,
         },
-        ConsistentRead: true,
         // TODO filter out expired events
       },
 });

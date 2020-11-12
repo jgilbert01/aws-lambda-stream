@@ -319,7 +319,6 @@ describe('flavors/evaluate.js', () => {
           ExpressionAttributeValues: {
             ':data': '44',
           },
-          ConsistentRead: true,
         });
         expect(collected[0].correlated).to.deep.equal([
           { id: '4', type: 'e4', timestamp: 1548967022000 },
