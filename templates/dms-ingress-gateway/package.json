@@ -1,0 +1,20 @@
+{
+  "name": "dms-ingress-gateway",
+  "private": true,
+  "scripts": {
+    "test": "sls package -r us-east-1 -s stg --acct dev",
+    "dp:lcl": "sls deploy -v -r us-east-1 --acct dev",
+    "rm:lcl": "sls remove -r us-east-1 --acct dev",
+    "dp:stg:e": "eval \"$(assume-role) sls deploy -v -r us-east-1 -s stg --acct dev --force\"",
+    "dp:stg:w": "eval \"$(assume-role) sls deploy -v -r us-west-2 -s stg --acct dev --force\"",
+    "dp:prd:e": "eval \"$(assume-role) sls deploy -v -r us-east-1 -s prd --acct prod --force\"",
+    "dp:prd:w": "eval \"$(assume-role) sls deploy -v -r us-west-2 -s prd --acct prod --force\""
+  },
+  "devDependencies": {
+    "aws-assume-role-cicd": "^1.0.0",
+    "serverless": "^1.67.0"
+  },
+  "dependencies": {
+    "highland": "^2.13.5"
+  }
+}
