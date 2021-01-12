@@ -54,9 +54,9 @@ resources:
         EndpointType: source
         EngineName: postgres
         DatabaseName: postgres
-        ServerName: # dr9vbxgosi0tzz.cku5z2zpigae.us-east-1.rds.amazonaws.com
+        ServerName:
           Fn::GetAtt: [ Rds, Endpoint.Address ]
-        Port: # 5432
+        Port:
           Fn::GetAtt: [ Rds, Endpoint.Port ]
         Username: demo
         Password: demo001!
