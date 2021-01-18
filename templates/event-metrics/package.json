@@ -75,7 +75,7 @@
   "dependencies": {
     "@babel/runtime": "^7.10.0",
     "aws-kms-ee": "^0.6.0",
-    "aws-lambda-stream": "file:../../../aws-lambda-stream-build",
+    "aws-lambda-stream": "^0.6.0",
     "bluebird": "^3.4.7",
     "debug": "^3.1.0",
     "highland": "^2.13.0",
