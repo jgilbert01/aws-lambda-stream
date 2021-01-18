@@ -1,6 +1,6 @@
 const _ = require('highland');
 
-module.exports.listener = (event, context, cb) => {
+module.exports.trigger = (event, context, cb) => {
   console.log('event: %j', event);
 
   _(event.Records)

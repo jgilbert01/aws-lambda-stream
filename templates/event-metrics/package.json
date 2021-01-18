@@ -1,5 +1,5 @@
 {
-  "name": "my-service",
+  "name": "my-event-metrics",
   "private": true,
   "scripts": {
     "clean": "rm -rf .nyc_output/ .webpack/ .serverless/ coverage/",
@@ -64,8 +64,6 @@
     "nyc": "^11.8.0",
     "pre-commit": "^1.2.2",
     "serverless": "^1.26.0",
-    "serverless-dynamodb-autoscaling-plugin": "1.0.0",
-    "serverless-dynamodb-global-table-plugin": "1.0.1",
     "serverless-offline": "^4.5.0",
     "serverless-webpack": "^5.0.0",
     "sinon": "^7.2.4",
@@ -84,7 +82,6 @@
     "lodash": "^4.17.11",
     "moment": "^2.24.0",
     "regenerator-runtime": "^0.12.1",
-    "serverless-datadog-metrics": "^1.0.1",
     "uuid": "^3.2.1"
   }
 }
