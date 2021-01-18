@@ -47,9 +47,9 @@ const map = (uow) => {
     }, {
       Name: 'region',
       Value: uow.record.awsRegion || /* istanbul ignore next */ (uow.event.tags && uow.event.tags.region) || /* istanbul ignore next */ process.env.AWS_REGION,
-      // }, {
-      //   Name: 'stream',
-      //   Value: uow.record.eventSourceARN.split('/')[1],
+    }, {
+      Name: 'stream',
+      Value: (uow.record.eventSourceARN && /* istanbul ignore next */ uow.record.eventSourceARN.split('/')[1]) || 'not-specified',
     }, {
       Name: 'shard',
       Value: uow.record.eventID.split('-')[1].split(':')[0],

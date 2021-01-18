@@ -27,6 +27,8 @@ custom:
     dev:
       # accountNumber: 123456789012
       debug: '*'
+      # warningAlarmTopicArn: #{cf:my-monitoring-${opt:stage}.warningAlarmTopicArn}
+      # criticalAlarmTopicArn: #{cf:my-monitoring-${opt:stage}.criticalAlarmTopicArn}
     prod:
       # accountNumber: 123456789012
       debug: ''
@@ -45,3 +47,48 @@ functions:
           arn: ${self:provider.environment.STREAM_ARN}
           batchSize: 100
           startingPosition: TRIM_HORIZON
+
+resources:
+  Resources:
+    IteratorAgeAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmDescription: 'IteratorAge avg in the last 5 minutes has been over .5 hours'
+        Namespace: AWS/Lambda
+        MetricName: IteratorAge
+        Statistic: Average
+        Period: 300
+        EvaluationPeriods: 1
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        # Threshold: 7200 # 20 hours
+        Threshold: 1800 # .5 hours
+        # AlarmActions:
+        #   - ${self:custom.accounts.${opt:acct}.warningAlarmTopicArn}
+
+    DomainEventRateAnomalyDetector:
+      Type: AWS::CloudWatch::AnomalyDetector
+      Properties:
+        Namespace: ${self:provider.environment.NAMESPACE}
+        MetricName: domain.event
+        Stat: Sum
+
+    DomainEventRateAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmDescription: Domain Event rate anomoly detection
+        ComparisonOperator: LessThanLowerOrGreaterThanUpperThreshold
+        EvaluationPeriods: 1
+        Metrics:
+        - Id: ad1
+          Expression: ANOMALY_DETECTION_BAND(m1, 2)
+        - Id: m1
+          MetricStat:
+            Metric:
+              Namespace: ${self:provider.environment.NAMESPACE}
+              MetricName: domain.event
+            Period: 900 # 15 minutes
+            Stat: Sum
+        ThresholdMetricId: ad1
+        TreatMissingData: breaching
+        # AlarmActions:
+        #   - ${self:custom.accounts.${opt:acct}.criticalAlarmTopicArn}

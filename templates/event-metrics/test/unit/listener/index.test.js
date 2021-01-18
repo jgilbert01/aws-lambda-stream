@@ -36,6 +36,10 @@ describe('listener/index.js', () => {
               Value: 'us-west-2',
             },
             {
+              Name: 'stream',
+              Value: 'not-specified',
+            },
+            {
               Name: 'shard',
               Value: '000000000000',
             },
