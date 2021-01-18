@@ -16,8 +16,8 @@ custom:
       shardCount: 1
 
 functions:
-  listener:
-    handler: handler.listener
+  trigger:
+    handler: handler.trigger
     events:
       - stream:
           type: kinesis
