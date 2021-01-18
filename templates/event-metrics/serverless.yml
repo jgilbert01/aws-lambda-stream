@@ -1,0 +1,47 @@
+service: my-event-metrics
+
+provider:
+  name: aws
+  # cfnRole: arn:aws:iam::${self:custom.accounts.${opt:acct}.accountNumber}:role/cfnRole
+  # deploymentBucket: myprefix-${opt:acct}-${opt:region}-serverlessdeploymentbucket
+  runtime: nodejs12.x
+  environment:
+    ACCOUNT_NAME: ${opt:acct}
+    PROJECT: ${self:service}
+    STAGE: ${opt:stage}
+    DEBUG: ${self:custom.accounts.${opt:acct}.debug}
+    STREAM_ARN: ${cf:event-hub-${opt:stage}.stream1Arn}
+    NAMESPACE: my-ns
+  iamRoleStatements:
+    - Effect: Allow
+      Action: cloudwatch:PutMetricData
+      Resource: '*'
+
+package:
+  individually: true
+
+custom:
+  webpack:
+    includeModules: true
+  accounts:
+    dev:
+      # accountNumber: 123456789012
+      debug: '*'
+    prod:
+      # accountNumber: 123456789012
+      debug: ''
+
+plugins:
+  - serverless-webpack
+  - baton-vcr-serverless-plugin
+  - serverless-offline
+
+functions:
+  listener:
+    handler: src/listener/index.handle
+    events:
+      - stream:
+          type: kinesis
+          arn: ${self:provider.environment.STREAM_ARN}
+          batchSize: 100
+          startingPosition: TRIM_HORIZON
