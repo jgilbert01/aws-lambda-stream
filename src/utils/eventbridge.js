@@ -12,7 +12,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   busName = process.env.BUS_NAME || 'undefined',
   source = 'custom',
   eventField = 'event',
-  batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
+  batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
 } = {}) => {

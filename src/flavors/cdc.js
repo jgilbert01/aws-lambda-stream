@@ -1,6 +1,6 @@
 import {
   printStartPipeline, printEndPipeline,
-  faulty, faultyAsync,
+  faulty, faultyAsync, query,
 } from '../utils';
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
@@ -13,6 +13,9 @@ export const cdc = (rule) => (s) => s // eslint-disable-line import/prefer-defau
 
   .filter(onContent(rule))
 
+  .map(toQueryRequest(rule))
+  .through(query(rule))
+
   .map(toEvent(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
@@ -22,6 +25,21 @@ export const cdc = (rule) => (s) => s // eslint-disable-line import/prefer-defau
 
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
+
+const toQueryRequest = (rule) => (uow) => ({
+  ...uow,
+  queryRequest: !rule.queryRelated ? undefined
+    : {
+      KeyConditionExpression: '#pk = :pk',
+      ExpressionAttributeNames: {
+        '#pk': rule.pkFn || 'pk',
+      },
+      ExpressionAttributeValues: {
+        ':pk': uow.event.partitionKey,
+      },
+      ConsistentRead: true,
+    },
+});
 
 const toEvent = (rule) => faultyAsync((uow) =>
   (!rule.toEvent ? Promise.resolve(uow)

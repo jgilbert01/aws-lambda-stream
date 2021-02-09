@@ -1,15 +1,11 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import Promise from 'bluebird';
+import AWS from 'aws-sdk-mock';
 
 import Connector from '../../../src/connectors/firehose';
 
 import { debug } from '../../../src/utils';
-
-const AWS = require('aws-sdk-mock');
-
-AWS.Promise = Promise;
 
 describe('connectors/firehose.js', () => {
   afterEach(() => {
