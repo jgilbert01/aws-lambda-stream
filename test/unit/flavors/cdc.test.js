@@ -10,19 +10,21 @@ import {
 import { toDynamodbRecords, fromDynamodb } from '../../../src/from/dynamodb';
 
 import { defaultOptions } from '../../../src/utils/opt';
-import Connector from '../../../src/connectors/eventbridge';
+import { DynamoDBConnector, EventBridgeConnector } from '../../../src/connectors';
 
 import { cdc } from '../../../src/flavors/cdc';
 import { skipTag } from '../../../src/filters';
 
 describe('flavors/cdc.js', () => {
   beforeEach(() => {
-    sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
+    sinon.stub(EventBridgeConnector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
   });
 
   afterEach(sinon.restore);
 
   it('should execute', (done) => {
+    sinon.stub(DynamoDBConnector.prototype, 'query').resolves([]);
+
     const events = toDynamodbRecords([
       {
         timestamp: 1572832690,
@@ -79,6 +81,9 @@ describe('flavors/cdc.js', () => {
           ...envTags('cdc1'),
           ...skipTag(),
         });
+        expect(collected[0].queryRequest).to.be.undefined;
+        expect(collected[1].queryRequest).to.not.be.undefined;
+        expect(collected[1].queryResponse).to.not.be.undefined;
       })
       .done(done);
   });
@@ -108,6 +113,7 @@ const rules = [
     id: 'cdc2',
     flavor: cdc,
     eventType: /other-*/,
+    queryRelated: true,
   },
   {
     id: 'cdc-other1',
