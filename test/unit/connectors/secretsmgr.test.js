@@ -14,7 +14,7 @@ describe('connectors/secretsmgr.js', () => {
   it('should get the secret', async () => {
     const SecretString = Buffer.from(JSON.stringify({ MY_SECRET: '123456' })).toString('base64');
     // use this string in the fixtures/.../secrets recording
-    console.log('SecretString: ', SecretString);
+    // console.log('SecretString: ', SecretString);
 
     const spy = sinon.spy((params, cb) => cb(null, {
       ARN: 'arn:aws:secretsmanager:us-west-2:123456789012:secret:MyTestDatabaseSecret-xxxxxx',
