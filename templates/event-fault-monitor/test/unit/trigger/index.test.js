@@ -24,7 +24,7 @@ describe('trigger/index.js', () => {
       ]))
       .collect()
       .tap((collected) => {
-        expect(collected.length).to.equal(0);
+        expect(collected.length).to.equal(1);
       })
       .done(done);
   });

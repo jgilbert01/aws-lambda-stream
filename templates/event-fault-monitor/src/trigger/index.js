@@ -6,6 +6,7 @@ import {
 } from 'aws-lambda-stream';
 
 import alert from './alert';
+import getFaults from './get-faults';
 import metrics from './metrics';
 
 const OPTIONS = { ...defaultOptions };
@@ -20,7 +21,8 @@ const { debug } = OPTIONS;
 export class Handler {
   handle(event, includeErrors = true) {
     return initialize(PIPELINES, OPTIONS)
-      .assemble(fromS3(event), includeErrors);
+      .assemble(fromS3(event)
+        .through(getFaults(OPTIONS)), includeErrors);
   }
 }
 

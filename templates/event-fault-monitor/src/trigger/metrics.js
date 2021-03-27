@@ -13,7 +13,7 @@ const toPutRequest = (uow) => {
   const Dimensions = [
     {
       Name: 'account',
-      Value: (uow.event.tags && uow.event.tags.account) || process.env.ACCOUNT_NAME || 'not-specified',
+      Value: (uow.event.tags && uow.event.tags.account) || /* istanbul ignore next */ process.env.ACCOUNT_NAME || /* istanbul ignore next */ 'not-specified',
     }, {
       Name: 'region',
       Value: uow.record.awsRegion || /* istanbul ignore next */ (uow.event.tags && uow.event.tags.region) || /* istanbul ignore next */ process.env.AWS_REGION,
@@ -25,10 +25,10 @@ const toPutRequest = (uow) => {
       Value: (uow.event.tags && uow.event.tags.source) || 'not-specified',
     }, {
       Name: 'functionname',
-      Value: (uow.event.tags && uow.event.tags.functionname) || 'not-specified',
+      Value: (uow.event.tags && uow.event.tags.functionname) || /* istanbul ignore next */ 'not-specified',
     }, {
       Name: 'pipeline',
-      Value: (uow.event.tags && uow.event.tags.pipeline) || 'not-specified',
+      Value: (uow.event.tags && uow.event.tags.pipeline) || /* istanbul ignore next */ 'not-specified',
     }, {
       Name: 'type',
       Value: uow.event.type,
