@@ -125,7 +125,7 @@ describe('utils/s3.js', () => {
       .done(done);
   });
 
-  it.only('should page objects', (done) => {
+  it('should page objects', (done) => {
     const responses = [
       {
         IsTruncated: true,
