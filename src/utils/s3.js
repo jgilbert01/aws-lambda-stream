@@ -26,6 +26,14 @@ export const putObjectToS3 = ({
     .parallel(parallel);
 };
 
+export const toGetObjectRequest = (uow) => ({
+  ...uow,
+  getRequest: {
+    Bucket: uow.record.s3.bucket.name,
+    Key: uow.record.s3.object.key,
+  },
+});
+
 export const getObjectFromS3 = ({
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,
@@ -45,6 +53,25 @@ export const getObjectFromS3 = ({
   return (s) => s
     .map(getObject)
     .parallel(parallel);
+};
+
+export const split = ({
+  delimiter = '\n',
+  getResponseField = 'getResponse',
+} = {}) => (uow) => {
+  const { Body, ...rest } = uow[getResponseField];
+  return _(
+    Buffer.from(Body).toString()
+      .split(delimiter)
+      .filter((line) => line.length !== 0)
+      .map((line) => ({
+        ...uow,
+        [getResponseField]: {
+          ...rest,
+          line,
+        },
+      })),
+  );
 };
 
 export const listObjectsFromS3 = ({
@@ -108,7 +135,7 @@ export const pageObjectsFromS3 = ({
             });
           });
         })
-        .catch((err) => /* istanbul ignore next */ {
+        .catch(/* istanbul ignore next */ (err) => {
           err.uow = uow;
           push(err, null);
         })

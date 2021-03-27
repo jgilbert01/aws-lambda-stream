@@ -7,11 +7,11 @@ import { debug as d } from './print';
 
 export const publishToSns = ({ // eslint-disable-line import/prefer-default-export
   debug = d('sns'),
-  topicName = process.env.TOPIC_NAME,
+  topicArn = process.env.TOPIC_ARN,
   messageField = 'message',
   parallel = Number(process.env.SNS_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
-  const connector = new Connector({ debug, topicName });
+  const connector = new Connector({ debug, topicArn });
 
   const publish = (uow) => {
     const p = connector.publish(uow[messageField])
