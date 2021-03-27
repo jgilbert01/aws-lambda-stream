@@ -1,28 +1,14 @@
-import _ from 'highland';
-import {
-  fromS3,
-  toPromise,
-  printStart,
-  printEnd,
-  debug as d,
-} from 'aws-lambda-stream';
+import { putMetrics } from 'aws-lambda-stream';
 
-import Connector from '../connectors/cloudwatch';
+const pipeline = options => s => s
+  .tap(uow => console.log(uow.event))
 
-export const pipeline = options => s => s // eslint-disable-line import/prefer-default-export
-  .tap(printStart)
+  // TODO switch to embedded metrics
+  // https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html
+  .map(toPutRequest)
+  .through(putMetrics(options));
 
-  // TODO group
-  // TODO batch 20 / count & size
-  .map(map)
-
-  // TODO structured log - cw vs datadog vs other
-  .map(put(options))
-  .parallel(Number(process.env.PARALLEL) || 4)
-
-  .tap(printEnd);
-
-const map = (uow) => {
+const toPutRequest = (uow) => {
   const Timestamp = Number(uow.event.timestamp.toString().substring(0, 10));
   const Dimensions = [
     {
@@ -31,12 +17,6 @@ const map = (uow) => {
     }, {
       Name: 'region',
       Value: uow.record.awsRegion || /* istanbul ignore next */ (uow.event.tags && uow.event.tags.region) || /* istanbul ignore next */ process.env.AWS_REGION,
-    }, {
-      Name: 'stream',
-      Value: (uow.record.eventSourceARN && /* istanbul ignore next */ uow.record.eventSourceARN.split('/')[1]) || 'not-specified',
-    }, {
-      Name: 'shard',
-      Value: uow.record.eventID.split('-')[1].split(':')[0],
     }, {
       Name: 'stage',
       Value: (uow.event.tags && uow.event.tags.stage) || 'not-specified',
@@ -69,20 +49,11 @@ const map = (uow) => {
         MetricName: 'domain.event.size',
         Timestamp,
         Unit: 'Bytes',
-        Value: uow.record.kinesis.data.length,
+        Value: JSON.stringify(uow.event).length,
         Dimensions,
       },
     ],
   };
 };
 
-const put = _debug => (uow) => {
-  const p = new Connector(_debug)
-    .put(uow.Namespace, uow.MetricData)
-    .then(response => ({
-      ...uow,
-      response,
-    }));
-
-  return _(p);
-};
+export default pipeline;

@@ -1,88 +1,24 @@
 import _ from 'highland';
 import {
-  fromS3,
-  toPromise,
   printStart,
   printEnd,
-  debug as d,
+  publishToSns,
 } from 'aws-lambda-stream';
 
-import Connector from '../connectors/cloudwatch';
-
-export const pipeline = options => s => s // eslint-disable-line import/prefer-default-export
+const pipeline = options => s => s
   .tap(printStart)
 
-  // TODO group
-  // TODO batch 20 / count & size
-  .map(map)
-
-  // TODO structured log - cw vs datadog vs other
-  .map(put(options))
-  .parallel(Number(process.env.PARALLEL) || 4)
+  .map(toMessage)
+  .through(publishToSns(options))
 
   .tap(printEnd);
 
-const map = (uow) => {
-  const Timestamp = Number(uow.event.timestamp.toString().substring(0, 10));
-  const Dimensions = [
-    {
-      Name: 'account',
-      Value: (uow.event.tags && uow.event.tags.account) || process.env.ACCOUNT_NAME || 'not-specified',
-    }, {
-      Name: 'region',
-      Value: uow.record.awsRegion || /* istanbul ignore next */ (uow.event.tags && uow.event.tags.region) || /* istanbul ignore next */ process.env.AWS_REGION,
-    }, {
-      Name: 'stream',
-      Value: (uow.record.eventSourceARN && /* istanbul ignore next */ uow.record.eventSourceARN.split('/')[1]) || 'not-specified',
-    }, {
-      Name: 'shard',
-      Value: uow.record.eventID.split('-')[1].split(':')[0],
-    }, {
-      Name: 'stage',
-      Value: (uow.event.tags && uow.event.tags.stage) || 'not-specified',
-    }, {
-      Name: 'source',
-      Value: (uow.event.tags && uow.event.tags.source) || 'not-specified',
-    }, {
-      Name: 'functionname',
-      Value: (uow.event.tags && uow.event.tags.functionname) || 'not-specified',
-    }, {
-      Name: 'pipeline',
-      Value: (uow.event.tags && uow.event.tags.pipeline) || 'not-specified',
-    }, {
-      Name: 'type',
-      Value: uow.event.type,
-    },
-  ];
+const toMessage = uow => ({
+  ...uow,
+  message: {
+    Subject: `Fault: ${Object.values(uow.event.tags).join()}`,
+    Message: uow.event,
+  },
+});
 
-  return {
-    ...uow,
-    Namespace: process.env.NAMESPACE,
-    MetricData: [
-      {
-        MetricName: 'domain.event',
-        Timestamp,
-        Unit: 'Count',
-        Value: 1,
-        Dimensions,
-      }, {
-        MetricName: 'domain.event.size',
-        Timestamp,
-        Unit: 'Bytes',
-        Value: uow.record.kinesis.data.length,
-        Dimensions,
-      },
-    ],
-  };
-};
-
-const put = _debug => (uow) => {
-  const p = new Connector(_debug)
-    .put(uow.Namespace, uow.MetricData)
-    .then(response => ({
-      ...uow,
-      response,
-    }));
-
-  return _(p);
-};
+export default pipeline;

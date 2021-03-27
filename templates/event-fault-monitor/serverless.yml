@@ -12,6 +12,7 @@ provider:
     DEBUG:  ${self:custom.accounts.${opt:acct}.debug}
     STREAM_ARN: ${cf:event-hub-${opt:stage}.stream1Arn}
     NAMESPACE: my-ns
+    TOPIC_ARN: ${self:custom.accounts.${opt:acct}.criticalAlarmTopicArn}
   iamRoleStatements:
     - Effect: Allow
       Action: cloudwatch:PutMetricData
@@ -32,7 +33,7 @@ custom:
       # accountNumber: 123456789012
       debug: '*'
       # warningAlarmTopicArn: #{cf:my-monitoring-${opt:stage}.warningAlarmTopicArn}
-      # criticalAlarmTopicArn: #{cf:my-monitoring-${opt:stage}.criticalAlarmTopicArn}
+      # criticalAlarmTopicArn: #{cf:my-monitoring-${opt:stage}.criticalAlarmTopicArn} 
     prod:
       # accountNumber: 123456789012
       debug: ''
