@@ -12,10 +12,14 @@
     "start": "sls offline --port 3001 --apiKey test-int-api-key-123456 -r us-east-1 -s stg --acct dev",
     "dp:lcl": "sls deploy -v -r us-east-1 --acct dev",
     "rm:lcl": "sls remove -r us-east-1 --acct dev",
-    "dp:stg:e": "eval \"$(assume-role) sls deploy -v -r us-east-1 -s stg --acct dev --force\"",
-    "dp:stg:w": "eval \"$(assume-role) sls deploy -v -r us-west-2 -s stg --acct dev --force\"",
-    "dp:prd:e": "eval \"$(assume-role) sls deploy -v -r us-east-1 -s prd --acct prod --force\"",
-    "dp:prd:w": "eval \"$(assume-role) sls deploy -v -r us-west-2 -s prd --acct prod --force\""
+    "dp:stg:e": "sls deploy -v -r us-east-1 -s stg --acct dev --force",
+    "dp:stg:w": "sls deploy -v -r us-west-2 -s stg --acct dev --force",
+    "dp:prd:e": "sls deploy -v -r us-east-1 -s prd --acct prod --force",
+    "dp:prd:w": "sls deploy -v -r us-west-2 -s prd --acct prod --force",
+    "dp:stg:e:ci": "eval \"$(assume-role) npm run dp:stg:e\"",
+    "dp:stg:w:ci": "eval \"$(assume-role) npm run dp:stg:w\"",
+    "dp:prd:e:ci": "eval \"$(assume-role) npm run dp:prd:e\"",
+    "dp:prd:w:ci": "eval \"$(assume-role) npm run dp:prd:w\""
   },
   "betterScripts": {
     "test": {
@@ -45,7 +49,7 @@
     "@babel/plugin-transform-runtime": "^7.10.0",
     "@babel/preset-env": "^7.10.0",
     "@babel/register": "^7.10.0",
-    "aws-assume-role-cicd": "^1.0.0",
+    "aws-assume-role-cicd": "^1.0.4",
     "aws-sdk": "^2.94.0",
     "aws-sdk-mock": "^4.2.0",
     "babel-eslint": "^10.0.0",
