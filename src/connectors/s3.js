@@ -42,6 +42,17 @@ class Connector {
       .tap(this.debug)
       .tapCatch(this.debug);
   }
+
+  listObjects(inputParams) {
+    const params = {
+      Bucket: this.bucketName,
+      ...inputParams,
+    };
+
+    return this.bucket.listObjects(params).promise()
+      .tap(this.debug)
+      .tapCatch(this.debug);
+  }
 }
 
 export default Connector;

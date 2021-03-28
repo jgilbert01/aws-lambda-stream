@@ -1,5 +1,5 @@
 {
-  "name": "my-event-metrics",
+  "name": "event-fault-monitor",
   "private": true,
   "scripts": {
     "clean": "rm -rf .nyc_output/ .webpack/ .serverless/ coverage/",
@@ -8,7 +8,8 @@
     "lint:staged": "lint-staged",
     "pretest": "npm run clean && npm run lint",
     "test": "better-npm-run test",
-    "test:int": "eval \"$(assume-role) better-npm-run test:int\"",
+    "test:int": "better-npm-run test:int",
+    "test:int:ci": "eval \"$(assume-role) npm run test:int\"",
     "start": "sls offline --port 3001 --apiKey test-int-api-key-123456 -r us-east-1 -s stg --acct dev",
     "dp:lcl": "sls deploy -v -r us-east-1 --acct dev",
     "rm:lcl": "sls remove -r us-east-1 --acct dev",
@@ -79,7 +80,7 @@
   "dependencies": {
     "@babel/runtime": "^7.10.0",
     "aws-kms-ee": "^0.6.0",
-    "aws-lambda-stream": "^0.6.0",
+    "aws-lambda-stream": "^0.9.0",
     "bluebird": "^3.4.7",
     "debug": "^3.1.0",
     "highland": "^2.13.0",

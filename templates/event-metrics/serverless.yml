@@ -4,7 +4,7 @@ provider:
   name: aws
   # cfnRole: arn:aws:iam::${self:custom.accounts.${opt:acct}.accountNumber}:role/cfnRole
   # deploymentBucket: myprefix-${opt:acct}-${opt:region}-serverlessdeploymentbucket
-  runtime: nodejs12.x
+  runtime: nodejs14.x
   environment:
     ACCOUNT_NAME: ${opt:acct}
     PROJECT: ${self:service}
