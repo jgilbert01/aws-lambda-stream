@@ -94,7 +94,8 @@ resources:
         EventBusName: ${cf:event-hub-${opt:stage}.busName}
         EventPattern: 
           detail: 
-            type: fault
+            type: 
+              - fault
         State: ENABLED
         Targets: 
           - Id: EventFaults

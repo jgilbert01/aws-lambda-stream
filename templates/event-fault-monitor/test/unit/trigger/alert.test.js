@@ -27,13 +27,13 @@ describe('trigger/alert.js', () => {
         expect(collected.length).to.equal(1);
 
         expect(stub).to.have.been.calledWith({
-          Subject: 'Fault: dev,f1,p1',
-          Message: EVENT,
+          Subject: 'Fault: dev,us-west-2,stg,f1,p1',
+          Message: JSON.stringify(EVENT, null, 2),
         });
 
         expect(collected[0].message).to.deep.equal({
-          Subject: 'Fault: dev,f1,p1',
-          Message: EVENT,
+          Subject: 'Fault: dev,us-west-2,stg,f1,p1',
+          Message: JSON.stringify(EVENT, null, 2),
         });
       })
       .done(done);
@@ -45,6 +45,8 @@ const EVENT = {
   timestamp: 1441121600000,
   tags: {
     account: 'dev',
+    region: 'us-west-2',
+    stage: 'stg',
     functionname: 'f1',
     pipeline: 'p1',
   },

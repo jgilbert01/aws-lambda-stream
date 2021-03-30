@@ -5,10 +5,7 @@ const pipeline = options => stream => stream
   .through(getObjectFromS3(options))
   .flatMap(split(options))
   .map(toEvent);
-// .tap(uow => console.log(JSON.stringify(uow, null, 2)));
-// .tap(uow => console.log('%j', uow));
 
-// TODO error handling
 const toEvent = (uow) => {
   const { detail, ...eb } = JSON.parse(uow.getResponse.line);
   return ({
@@ -20,10 +17,5 @@ const toEvent = (uow) => {
     event: detail,
   });
 };
-
-// uow => ({
-//   ...uow,
-//   event: uow.getResponse.err ? {} : JSON.parse(Buffer.from(uow.getResponse.Body)),
-// });
 
 export default pipeline;

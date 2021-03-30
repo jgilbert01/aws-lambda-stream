@@ -19,25 +19,11 @@ describe('trigger/index.js', () => {
 
 const EVENT = toS3Records([
   {
-    type: 'thing-created',
-    timestamp: 1610992656000,
-    tags: {
-      account: 'dev',
-      region: 'us-east-1',
-      stg: 'stg',
-      source: 's1',
-      functionname: 'f1',
+    bucket: {
+      name: 'b1',
     },
-  },
-  {
-    type: 'thing-updated',
-    timestamp: 1610992657000,
-    tags: {
-      account: 'dev',
-      region: 'us-east-1',
-      stg: 'stg',
-      source: 's1',
-      functionname: 'f2',
+    object: {
+      key: 'k1',
     },
   },
 ]);

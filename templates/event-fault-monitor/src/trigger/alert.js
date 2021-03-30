@@ -16,8 +16,8 @@ const pipeline = options => s => s
 const toMessage = uow => ({
   ...uow,
   message: {
-    Subject: `Fault: ${Object.values(uow.event.tags).join()}`,
-    Message: uow.event,
+    Subject: `Fault: ${uow.event.tags.account},${uow.event.tags.region},${uow.event.tags.stage},${uow.event.tags.functionname},${uow.event.tags.pipeline}`,
+    Message: JSON.stringify(uow.event, null, 2),
   },
 });
 
