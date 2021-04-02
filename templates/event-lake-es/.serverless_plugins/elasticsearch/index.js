@@ -37,7 +37,7 @@ const putTemplate = (serverless, options) => {
               }
             }]
           },
-          event: {
+          detail: {
             properties: {
               type: {
                 type: 'keyword',
