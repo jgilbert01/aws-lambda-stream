@@ -12,7 +12,7 @@ export const updateExpression = (Item) => ({
     .map((attrName) => ({ [`#${attrName}`]: attrName }))
     .reduce(merge, {}),
   ExpressionAttributeValues: Object.keys(Item)
-    .map((attrName) => ({ [`:${attrName}`]: Item[attrName] }))
+    .map((attrName) => ({ [`:${attrName}`]: Item[attrName] || null }))
     .reduce(merge, {}),
   UpdateExpression: `SET ${Object.keys(Item)
     .map((attrName) => `#${attrName} = :${attrName}`)
