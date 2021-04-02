@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import _ from 'highland';
 
 import {
-  putObjectToS3, getObjectFromS3, listObjectsFromS3, pageObjectsFromS3, split, toGetObjectRequest,
+  putObjectToS3, getObjectFromS3, listObjectsFromS3, pageObjectsFromS3, split, toGetObjectRequest, toGetObjectRequest2,
 } from '../../../src/utils/s3';
 
 import Connector from '../../../src/connectors/s3';
@@ -119,6 +119,36 @@ describe('utils/s3.js', () => {
         // console.log(JSON.stringify(collected[0], null, 2));
 
         expect(collected[0].event.type).to.equal('thing-created');
+      })
+      .done(done);
+  });
+
+  it('should get from s3 sns', (done) => {
+    const uows = [{
+      record: {
+        s3: {
+          s3: {
+            bucket: {
+              name: 'b1',
+            },
+            object: {
+              key: 'k1',
+            },
+          },
+        },
+      },
+    }];
+
+    _(uows)
+      .map(toGetObjectRequest2)
+      .collect()
+      .tap((collected) => {
+        console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(1);
+        expect(collected[0].getRequest).to.deep.equal({
+          Bucket: 'b1',
+          Key: 'k1',
+        });
       })
       .done(done);
   });

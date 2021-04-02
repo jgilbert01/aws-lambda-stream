@@ -47,17 +47,16 @@ functions:
   trigger:
     handler: src/trigger/index.handle
     events:
-      - s3:
-          bucket:
-            Ref: Bucket
-          event: s3:ObjectCreated:Put
-          existing: true
+      - sqs:
+          arn:
+            Fn::GetAtt: [ Queue, Arn ]
 
 resources:
   Resources:
     Bucket:
       Type: AWS::S3::Bucket
       DeletionPolicy: Retain
+      DependsOn: [ Topic, TopicPolicy ]
       Properties:
         BucketEncryption:
           ServerSideEncryptionConfiguration:
@@ -65,6 +64,13 @@ resources:
                 SSEAlgorithm: AES256
         VersioningConfiguration:
           Status: Enabled
+        NotificationConfiguration: ${file(includes.yml):NotificationConfiguration}
+    
+    Topic: ${file(includes.yml):Topic}
+    TopicPolicy: ${file(includes.yml):TopicPolicy}
+    Queue: ${file(includes.yml):Queue}
+    QueuePolicy: ${file(includes.yml):QueuePolicy}
+    Subscription: ${file(includes.yml):Subscription}
 
     DeliveryStream:
       Type: AWS::KinesisFirehose::DeliveryStream
@@ -94,7 +100,8 @@ resources:
         EventBusName: ${cf:event-hub-${opt:stage}.busName}
         EventPattern: 
           detail: 
-            type: fault
+            type: 
+              - fault
         State: ENABLED
         Targets: 
           - Id: EventFaults

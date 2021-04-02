@@ -35,7 +35,7 @@ describe('trigger/metrics.js', () => {
         // });
 
         // TODO Namespace
-        expect(collected[0].MetricData[0]).to.deep.equal({
+        expect(collected[0].putRequest.MetricData[0]).to.deep.equal({
           MetricName: 'domain.event',
           Timestamp: 1441121600,
           Unit: 'Count',

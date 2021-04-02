@@ -1,61 +1,3 @@
-Topic:
-  Type: AWS::SNS::Topic
-  Properties:
-    TopicName: ${self:service}-${opt:stage}-bucket-topic
-
-TopicPolicy:
-  Type: AWS::SNS::TopicPolicy
-  Properties:
-    PolicyDocument:
-      Statement:
-        - Effect: Allow
-          Principal:
-            Service: s3.amazonaws.com
-          Action:
-            - SNS:Publish
-          Resource:
-            Ref: Topic
-          Condition:
-            ArnLike:
-              aws:SourceArn: arn:aws:s3:::${self:service}-${opt:stage}-bucket-*
-    Topics:
-      - Ref: Topic
-
-NotificationConfiguration:
-  TopicConfigurations:
-    - Event: s3:ObjectCreated:Put
-      Topic:
-        Ref: Topic
-
-Queue:
-  Type: AWS::SQS::Queue
-QueuePolicy:
-  Type: AWS::SQS::QueuePolicy
-  Properties:
-    Queues:
-      - Ref: Queue
-    PolicyDocument:
-      Statement:
-        - Effect: Allow
-          Principal:
-            Service: sns.amazonaws.com
-          Action: sqs:SendMessage
-          Resource:
-            Fn::GetAtt: [ Queue, Arn ]
-          Condition:
-            ArnEquals:
-              aws:SourceArn:
-                Ref: Topic
-
-Subscription:
-  Type: AWS::SNS::Subscription
-  Properties:
-    Protocol: sqs
-    Endpoint:
-      Fn::GetAtt: [ Queue, Arn ]
-    TopicArn:
-      Ref: Topic
-
 CloudWatchLoggingOptions: 
   Enabled: true
   LogGroupName:
@@ -71,7 +13,7 @@ LogStream:
   Properties: 
     LogGroupName:
       Ref: LogGroup
-    LogStreamName: event-faults
+    LogStreamName: ${self:service}-${opt:stage}
 
 EventBridgeRole:
   Type: AWS::IAM::Role
@@ -108,6 +50,20 @@ DeliveryRole:
           Statement:
             - Effect: Allow
               Action:
+                - es:DescribeElasticsearchDomain
+                - es:DescribeElasticsearchDomains
+                - es:DescribeElasticsearchDomainConfig
+                - es:ESHttpPost
+                - es:ESHttpPut
+                - es:ESHttpGet
+              Resource:
+                - Fn::GetAtt: [ Domain, DomainArn ]
+                - Fn::Join:
+                    - /
+                    - - Fn::GetAtt: [ Domain, DomainArn ]
+                      - '*'
+            - Effect: Allow
+              Action:
                 - s3:AbortMultipartUpload
                 - s3:GetBucketLocation
                 - s3:GetObject
@@ -125,3 +81,15 @@ DeliveryRole:
                 - logs:PutLogEvents
               Resource:
                 - Fn::GetAtt: [ LogGroup, Arn ]
+
+S3Configuration:
+  BucketARN:
+    Fn::GetAtt: [ Bucket, Arn ]
+  Prefix: ${opt:stage}
+  BufferingHints:
+    IntervalInSeconds: 120
+    SizeInMBs: 128
+  CompressionFormat: UNCOMPRESSED
+  RoleARN:
+    Fn::GetAtt: [ DeliveryRole, Arn ]
+  CloudWatchLoggingOptions: ${file(includes.yml):CloudWatchLoggingOptions}

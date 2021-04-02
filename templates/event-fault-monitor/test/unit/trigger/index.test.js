@@ -3,8 +3,6 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
-import { toS3Records } from 'aws-lambda-stream';
-
 import { handle, Handler } from '../../../src/trigger';
 
 describe('trigger/index.js', () => {
@@ -12,19 +10,29 @@ describe('trigger/index.js', () => {
 
   it('should verify Handler', (done) => {
     new Handler()
-      .handle(toS3Records([
-        {
-          bucket: {
-            name: 'b1',
-          },
-          object: {
-            key: 'k1',
-          },
-        },
-      ]))
+      .handle({
+        Records: ([{
+          body: JSON.stringify({
+            Message: JSON.stringify({
+              Records: [
+                // {
+                //   s3: {
+                //     bucket: {
+                //       name: 'b1',
+                //     },
+                //     object: {
+                //       key: 'k1',
+                //     },
+                //   },
+                // }
+              ],
+            }),
+          }),
+        }]),
+      })
       .collect()
       .tap((collected) => {
-        expect(collected.length).to.equal(1);
+        expect(collected.length).to.equal(0);
       })
       .done(done);
   });

@@ -37,22 +37,24 @@ const toPutRequest = (uow) => {
 
   return {
     ...uow,
-    Namespace: process.env.NAMESPACE,
-    MetricData: [
-      {
-        MetricName: 'domain.event',
-        Timestamp,
-        Unit: 'Count',
-        Value: 1,
-        Dimensions,
-      }, {
-        MetricName: 'domain.event.size',
-        Timestamp,
-        Unit: 'Bytes',
-        Value: JSON.stringify(uow.event).length,
-        Dimensions,
-      },
-    ],
+    putRequest: {
+      Namespace: process.env.NAMESPACE,
+      MetricData: [
+        {
+          MetricName: 'domain.event',
+          Timestamp,
+          Unit: 'Count',
+          Value: 1,
+          Dimensions,
+        }, {
+          MetricName: 'domain.event.size',
+          Timestamp,
+          Unit: 'Bytes',
+          Value: JSON.stringify(uow.event).length,
+          Dimensions,
+        },
+      ],
+    },
   };
 };
 

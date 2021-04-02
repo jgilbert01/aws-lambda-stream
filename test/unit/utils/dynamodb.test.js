@@ -23,6 +23,7 @@ describe('utils/dynamodb.js', () => {
       id: '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
       name: 'Thing One',
       description: 'This is thing one.',
+      status: undefined,
       discriminator: 'thing',
       latched: true,
       ttl: ttl(1540454400000, 30),
@@ -34,6 +35,7 @@ describe('utils/dynamodb.js', () => {
         '#id': 'id',
         '#latched': 'latched',
         '#name': 'name',
+        '#status': 'status',
         '#timestamp': 'timestamp',
         '#ttl': 'ttl',
       },
@@ -43,10 +45,11 @@ describe('utils/dynamodb.js', () => {
         ':id': '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
         ':latched': true,
         ':name': 'Thing One',
+        ':status': null,
         ':timestamp': 1540454400000,
         ':ttl': 1543046400,
       },
-      UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp',
+      UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #status = :status, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp',
       ReturnValues: 'ALL_NEW',
     });
   });

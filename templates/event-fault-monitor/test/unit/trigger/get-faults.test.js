@@ -15,11 +15,13 @@ describe('trigger/get-faults.js', () => {
     const uows = [{
       record: {
         s3: {
-          bucket: {
-            name: 'event-fault-monitor-stg-bucket-xxxxx',
-          },
-          object: {
-            key: 'us-east-1/2020/04/22/19/event-fault-monitor-stg-DeliveryStream-1A6OO953Z8EU4-1-2020-04-22-19-16-13-013a227d-d7fe-47e9-878a-97763ce279b7',
+          s3: {
+            bucket: {
+              name: 'event-fault-monitor-stg-bucket-xxxxx',
+            },
+            object: {
+              key: 'us-east-1/2020/04/22/19/event-fault-monitor-stg-DeliveryStream-1A6OO953Z8EU4-1-2020-04-22-19-16-13-013a227d-d7fe-47e9-878a-97763ce279b7',
+            },
           },
         },
       },

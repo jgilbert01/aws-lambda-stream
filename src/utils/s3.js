@@ -34,6 +34,14 @@ export const toGetObjectRequest = (uow) => ({
   },
 });
 
+export const toGetObjectRequest2 = (uow) => ({
+  ...uow,
+  getRequest: {
+    Bucket: uow.record.s3.s3.bucket.name,
+    Key: uow.record.s3.s3.object.key,
+  },
+});
+
 export const getObjectFromS3 = ({
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,
