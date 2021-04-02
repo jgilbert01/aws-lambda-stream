@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-stream",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
@@ -34,6 +34,7 @@
       "command": "nyc mocha --recursive \"./test/unit/**/*.test.js\"",
       "env": {
         "AWS_REGION": "us-west-2",
+        "KMS_REGIONS": "us-west-2",
         "NODE_ENV": "test"
       }
     }
@@ -47,15 +48,15 @@
     "url": "https://github.com/jgilbert01/aws-lambda-stream.git"
   },
   "devDependencies": {
-    "aws-sdk": "^2.578.0",
-    "aws-sdk-mock": "^4.5.0",
     "@babel/cli": "^7.10.0",
     "@babel/core": "^7.10.0",
+    "@babel/plugin-transform-runtime": "^7.10.0",
     "@babel/preset-env": "^7.10.0",
     "@babel/register": "^7.10.0",
-    "@babel/plugin-transform-runtime": "^7.10.0",
-    "babel-plugin-istanbul": "^5.2.0",
+    "aws-sdk": "^2.578.0",
+    "aws-sdk-mock": "^4.5.0",
     "babel-eslint": "^10.0.0",
+    "babel-plugin-istanbul": "^5.2.0",
     "better-npm-run": "^0.1.1",
     "chai": "^4.2.0",
     "eslint": "^6.7.0",
@@ -70,6 +71,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.10.0",
+    "aws-kms-ee": "^0.7.0",
     "bluebird": "^3.7.1",
     "debug": "^4.1.1",
     "highland": "^2.13.5",

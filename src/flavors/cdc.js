@@ -1,6 +1,7 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsync, query,
+  encryptEvent,
 } from '../utils';
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
@@ -19,6 +20,7 @@ export const cdc = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .map(toEvent(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
+  .through(encryptEvent(rule))
   .through(rule.publish(rule))
 
   .tap(printEndPipeline);
