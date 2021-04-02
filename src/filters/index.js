@@ -15,6 +15,10 @@ export const filterOnEventType = (rule, uow) => {
   }
 };
 
+export const prefilterOnEventTypes = (rules) =>
+  (uow) =>
+    rules.reduce((a, c) => a || filterOnEventType(c, uow), false);
+
 export const filterOnContent = (rule, uow) => {
   /* istanbul ignore else */
   if (rule.filters) {

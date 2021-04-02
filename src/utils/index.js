@@ -1,6 +1,7 @@
 export * from './batch';
 export * from './cloudwatch';
 export * from './dynamodb';
+export * from './encryption';
 export * from './eventbridge';
 export * from './faults';
 export * from './firehose';

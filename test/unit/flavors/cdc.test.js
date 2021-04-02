@@ -2,6 +2,8 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
+import { KmsConnector, MOCK_GEN_DK_RESPONSE } from 'aws-kms-ee';
+
 import {
   initialize, initializeFrom,
   envTags,
@@ -24,6 +26,7 @@ describe('flavors/cdc.js', () => {
 
   it('should execute', (done) => {
     sinon.stub(DynamoDBConnector.prototype, 'query').resolves([]);
+    sinon.stub(KmsConnector.prototype, 'generateDataKey').resolves(MOCK_GEN_DK_RESPONSE);
 
     const events = toDynamodbRecords([
       {
@@ -62,28 +65,31 @@ describe('flavors/cdc.js', () => {
 
     initialize({
       ...initializeFrom(rules),
-    }, defaultOptions)
+    }, { ...defaultOptions, AES: false })
       .assemble(fromDynamodb(events), false)
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
         expect(collected.length).to.equal(2);
-        expect(collected[0].pipeline).to.equal('cdc1');
-        expect(collected[0].event.type).to.equal('thing-created');
-        expect(collected[0].event.thing).to.deep.equal({
+        expect(collected[1].pipeline).to.equal('cdc1');
+        expect(collected[1].event.type).to.equal('thing-created');
+        expect(collected[1].event.thing).to.deep.equal({
           id: '1',
-          name: 'Thing One',
+          name: 'VGhpbmcgT25l', // 'Thing One',
           description: 'This is thing one',
         });
-        expect(collected[0].event.tags).to.deep.equal({
+        expect(collected[1].event.tags).to.deep.equal({
           region: 'us-west-2',
           field1: 'v1',
           ...envTags('cdc1'),
           ...skipTag(),
         });
-        expect(collected[0].queryRequest).to.be.undefined;
-        expect(collected[1].queryRequest).to.not.be.undefined;
-        expect(collected[1].queryResponse).to.not.be.undefined;
+        expect(collected[1].queryRequest).to.be.undefined;
+
+        // this pipeline speeds ahead since it does less async
+        expect(collected[0].pipeline).to.equal('cdc2');
+        expect(collected[0].queryRequest).to.not.be.undefined;
+        expect(collected[0].queryResponse).to.not.be.undefined;
       })
       .done(done);
   });
@@ -108,6 +114,9 @@ const rules = [
     eventType: /thing-*/,
     filters: [() => true],
     toEvent,
+    eem: {
+      fields: ['name'],
+    },
   },
   {
     id: 'cdc2',
