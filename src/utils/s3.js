@@ -34,7 +34,7 @@ export const toGetObjectRequest = (uow) => ({
   },
 });
 
-export const toGetObjectRequest2 = uow => ({
+export const toGetObjectRequest2 = (uow) => ({
   ...uow,
   getRequest: {
     Bucket: uow.record.s3.s3.bucket.name,

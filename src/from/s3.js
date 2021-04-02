@@ -85,7 +85,7 @@ export const toS3Records = (notifications) => ({
     })),
 });
 
-export const toSqsSnsS3Records = (notifications) =>  ({
+export const toSqsSnsS3Records = (notifications) => ({
   Records: ([{
     body: JSON.stringify({
       Message: JSON.stringify({
