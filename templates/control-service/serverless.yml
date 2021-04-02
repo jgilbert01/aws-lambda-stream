@@ -115,3 +115,5 @@ resources:
         TimeToLiveSpecification:
           AttributeName: ttl
           Enabled: true
+        # SSESpecification:
+        #   SSEEnabled: true
