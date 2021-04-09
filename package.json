@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-stream",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
@@ -63,6 +63,7 @@
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-formatter-pretty": "^3.0.1",
     "eslint-plugin-import": "^2.18.2",
+    "fetch-mock": "^9.11.0",
     "lint-staged": "^9.4.3",
     "mocha": "^6.2.2",
     "nyc": "^14.1.1",
@@ -75,8 +76,10 @@
     "bluebird": "^3.7.1",
     "debug": "^4.1.1",
     "highland": "^2.13.5",
+    "isomorphic-fetch": "^3.0.0",
     "lodash": "^4.17.15",
     "memory-cache": "^0.2.0",
+    "node-fetch": "^2.6.1",
     "uuid": "^3.3.3"
   }
 }

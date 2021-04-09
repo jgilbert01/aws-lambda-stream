@@ -143,7 +143,7 @@ describe('utils/s3.js', () => {
       .map(toGetObjectRequest2)
       .collect()
       .tap((collected) => {
-        console.log(JSON.stringify(collected, null, 2));
+        // console.log(JSON.stringify(collected, null, 2));
         expect(collected.length).to.equal(1);
         expect(collected[0].getRequest).to.deep.equal({
           Bucket: 'b1',

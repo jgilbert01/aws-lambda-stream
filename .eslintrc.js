@@ -38,5 +38,7 @@ module.exports = {
     "class-methods-use-this": 0,
     "implicit-arrow-linebreak": 0,
   },
-  "globals": {}
+  "globals": {
+    "fetch": false,
+  }
 };

@@ -4,6 +4,7 @@ export * from './dynamodb';
 export * from './encryption';
 export * from './eventbridge';
 export * from './faults';
+export * from './fetch';
 export * from './firehose';
 export * from './handler';
 export * from './kinesis';
