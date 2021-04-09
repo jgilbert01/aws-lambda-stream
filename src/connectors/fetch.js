@@ -32,6 +32,7 @@ class Connector {
       timeout: this.timeout,
       ...request,
     })
+      .tap(this.debug)
       .then((res) => res[responseType]())
       .tap(this.debug)
       .tapCatch(this.debug);

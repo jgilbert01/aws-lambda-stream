@@ -5,7 +5,7 @@ import Connector from '../connectors/fetch';
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
 
-export const putMetrics = ({ // eslint-disable-line import/prefer-default-export
+export const fetch = ({ // eslint-disable-line import/prefer-default-export
   debug = d('fetch'),
   prefix = 'fetch',
   httpsAgent,
@@ -13,7 +13,7 @@ export const putMetrics = ({ // eslint-disable-line import/prefer-default-export
 } = {}) => {
   const connector = new Connector({ debug, httpsAgent });
 
-  const fetch = (uow) => {
+  const invoke = (uow) => {
     const { url, responseType = 'json', ...request } = uow[`${prefix}Request`];
     const p = connector.fetch(url, request, responseType)
       .then((response) => ({ ...uow, [`${prefix}Response`]: response }))
@@ -23,6 +23,6 @@ export const putMetrics = ({ // eslint-disable-line import/prefer-default-export
   };
 
   return (s) => s
-    .map(fetch)
+    .map(invoke)
     .parallel(parallel);
 };
