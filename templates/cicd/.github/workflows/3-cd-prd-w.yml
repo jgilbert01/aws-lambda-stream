@@ -1,9 +1,9 @@
-name: 4 - CD - Production - East - Manual Only
-
-# manually deploy to the remaining regions after the regional canary deployment is certified
+name: 3 - CD - Production - West - Canary
 
 on:
   workflow_dispatch: # manual
+  push:
+    branches: [ master ]
 
 jobs:
   deploy:
@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 14.x
       - run: npm ci
       # test against dev
       - uses: aws-actions/configure-aws-credentials@v1
@@ -21,12 +21,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
           role-to-assume: ${{ secrets.DEV_AWS_ROLE }}
       - run: npm test
-      - run: npm run test:int
+      - run: npm run test:int:ci
       # deploy to prod
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.PRD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.PRD_AWS_SECRET_ACCESS_KEY }}
           role-to-assume: ${{ secrets.PRD_AWS_ROLE }}
-      - run: npm run dp:prd:e
+      - run: npm run dp:prd:w:ci
 

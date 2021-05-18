@@ -1,22 +1,20 @@
-name: 2 - CD - Staging - East
-
-# manually test a deployment in west and east before moving a pull request out of draft
-# the deployments will be checked once a pull requests is ready for review
+name: 0 - CI
 
 on:
   workflow_dispatch: # manual
+  push:
+    branches-ignore: [ master ]
   pull_request:
-    types: [ ready_for_review, closed ]
     branches: [ master ]
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 14.x
       - run: npm ci
       - uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -24,6 +22,4 @@ jobs:
           aws-secret-access-key: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
           role-to-assume: ${{ secrets.DEV_AWS_ROLE }}
       - run: npm test
-      - run: npm run test:int
-      - run: npm run dp:stg:e
-
+      - run: npm run test:int:ci

@@ -1,0 +1,53 @@
+image: node:14
+
+before_script:
+  - cp .npmrc-conf .npmrc
+  - npm ci
+
+variables:
+  AWS_ACCESS_KEY_ID: $DEV_AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY: $DEV_AWS_SECRET_ACCESS_KEY
+
+ci:
+  stage: test
+  script:
+    - npm test
+    - npm run test:int:ci
+
+cd-stg-west:
+  stage: deploy
+  script:
+    - npm run dp:stg:w:ci
+  only:
+    - merge_requests
+
+cd-stg-east:
+  stage: deploy
+  script:
+    - npm run dp:stg:e:ci
+  only:
+    - merge_requests
+  except:
+    variables:
+      - $CI_MERGE_REQUEST_TITLE =~ /^WIP-/
+
+cd-prd-west:
+  stage: deploy
+  variables:
+    AWS_ACCESS_KEY_ID: $PROD_AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $PROD_AWS_SECRET_ACCESS_KEY
+  script:
+    - npm run dp:prd:w:ci
+  only:
+    - master
+
+cd-prd-east:
+  stage: deploy
+  variables:
+    AWS_ACCESS_KEY_ID: $PROD_AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $PROD_AWS_SECRET_ACCESS_KEY
+  script:
+    - npm run dp:prd:e:ci
+  only:
+    - master
+  when: manual

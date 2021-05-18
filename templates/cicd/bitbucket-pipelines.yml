@@ -1,0 +1,91 @@
+image: node:14
+
+pipelines:
+  default:
+    - step:
+        name: CI
+        trigger: automatic
+        caches:
+          - node
+        script:
+          - cp .npmrc-conf ~/.npmrc
+          - npm ci
+          - export AWS_ACCESS_KEY_ID=$DEV_AWS_ACCESS_KEY_ID
+          - export AWS_SECRET_ACCESS_KEY=$DEV_AWS_SECRET_ACCESS_KEY
+          - export AWS_ROLE=$DEV_AWS_ROLE
+          - npm test
+          - npm run test:int:ci
+  pull-requests:
+    task/*:
+      - step:
+          name: CI - staging
+          trigger: automatic
+          script:
+            - cp .npmrc-conf ~/.npmrc
+            - npm ci
+            - export AWS_ACCESS_KEY_ID=$DEV_AWS_ACCESS_KEY_ID
+            - export AWS_SECRET_ACCESS_KEY=$DEV_AWS_SECRET_ACCESS_KEY
+            - export AWS_ROLE=$DEV_AWS_ROLE
+            - npm test
+            - npm run test:int:ci
+          artifacts:
+            - node_modules/**
+            - package-lock.json
+      - step:
+          name: CD - staging - west
+          trigger: manual
+          script:
+            - cp .npmrc-conf ~/.npmrc
+            - export AWS_ACCESS_KEY_ID=$DEV_AWS_ACCESS_KEY_ID
+            - export AWS_SECRET_ACCESS_KEY=$DEV_AWS_SECRET_ACCESS_KEY
+            - export AWS_ROLE=$DEV_AWS_ROLE
+            - npm run dp:stg:w:ci
+          artifacts:
+            - node_modules/**
+            - package-lock.json
+      - step:
+          name: CD - staging - east
+          trigger: manual
+          script:
+            - cp .npmrc-conf ~/.npmrc
+            - export AWS_ACCESS_KEY_ID=$DEV_AWS_ACCESS_KEY_ID
+            - export AWS_SECRET_ACCESS_KEY=$DEV_AWS_SECRET_ACCESS_KEY
+            - export AWS_ROLE=$DEV_AWS_ROLE
+            - npm run dp:stg:e:ci
+  branches:
+    master:
+      - step:
+          name: CI - production
+          trigger: automatic
+          script:
+            - cp .npmrc-conf ~/.npmrc
+            - npm ci
+            - export AWS_ACCESS_KEY_ID=$DEV_AWS_ACCESS_KEY_ID
+            - export AWS_SECRET_ACCESS_KEY=$DEV_AWS_SECRET_ACCESS_KEY
+            - export AWS_ROLE=$DEV_AWS_ROLE
+            - npm test
+            - npm run test:int:ci
+          artifacts:
+            - node_modules/**
+            - package-lock.json
+      - step:
+          name: CD - production - west
+          trigger: automatic
+          script:
+            - cp .npmrc-conf ~/.npmrc
+            - export AWS_ACCESS_KEY_ID=$PRD_AWS_ACCESS_KEY_ID
+            - export AWS_SECRET_ACCESS_KEY=$PRD_AWS_SECRET_ACCESS_KEY
+            - export AWS_ROLE=$PRD_AWS_ROLE
+            - npm run dp:prd:w:ci
+          artifacts:
+            - node_modules/**
+            - package-lock.json
+      - step:
+          name: CD - production - east
+          trigger: manual
+          script:
+            - cp .npmrc-conf ~/.npmrc
+            - export AWS_ACCESS_KEY_ID=$PRD_AWS_ACCESS_KEY_ID
+            - export AWS_SECRET_ACCESS_KEY=$PRD_AWS_SECRET_ACCESS_KEY
+            - export AWS_ROLE=$PRD_AWS_ROLE
+            - npm run dp:prd:e:ci

@@ -1,20 +1,18 @@
-name: 0 - CI
+name: 1 - CD - Staging - West
 
 on:
   workflow_dispatch: # manual
-  push:
-    branches-ignore: [ master ]
   pull_request:
     branches: [ master ]
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 14.x
       - run: npm ci
       - uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -22,4 +20,5 @@ jobs:
           aws-secret-access-key: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
           role-to-assume: ${{ secrets.DEV_AWS_ROLE }}
       - run: npm test
-      - run: npm run test:int
+      - run: npm run test:int:ci
+      - run: npm run dp:stg:w:ci

@@ -1,13 +1,7 @@
-name: 1 - CD - Staging - West
-
-# manually test a deployment in west and east before moving a pull request out of draft
-# the deployments will be checked once a pull requests is ready for review
+name: 4 - CD - Production - East - Manual Only
 
 on:
   workflow_dispatch: # manual
-  pull_request:
-    types: [ ready_for_review, closed ]
-    branches: [ master ]
 
 jobs:
   deploy:
@@ -16,13 +10,21 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 14.x
       - run: npm ci
+      # test against dev
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
           role-to-assume: ${{ secrets.DEV_AWS_ROLE }}
       - run: npm test
-      - run: npm run test:int
-      - run: npm run dp:stg:w
+      - run: npm run test:int:ci
+      # deploy to prod
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.PRD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PRD_AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.PRD_AWS_ROLE }}
+      - run: npm run dp:prd:e:ci
+
