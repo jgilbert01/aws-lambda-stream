@@ -155,6 +155,8 @@ describe('utils/dynamodb.js', () => {
           },
         },
       },
+    }, {
+      batchGetRequest: undefined,
     }];
 
     _(uows)
@@ -163,7 +165,7 @@ describe('utils/dynamodb.js', () => {
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
 
-        expect(collected.length).to.equal(1);
+        expect(collected.length).to.equal(2);
         expect(stub).to.have.been.calledWith({
           RequestItems: {
             'stg-my-service-events': {

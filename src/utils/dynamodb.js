@@ -99,6 +99,8 @@ export const batchGet = ({
   const connector = new Connector({ debug, tableName, timeout });
 
   const invoke = (uow) => {
+    if (!uow[batchGetRequestField]) return _(Promise.resolve(uow));
+
     const p = connector.batchGet(uow[batchGetRequestField])
       .then((batchGetResponse) => ({ ...uow, [batchGetResponseField]: batchGetResponse }))
       .catch(rejectWithFault(uow));
