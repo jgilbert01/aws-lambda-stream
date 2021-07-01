@@ -6,7 +6,7 @@ import _ from 'highland';
 import { ttl } from '../../../src/utils';
 
 import {
-  updateExpression, timestampCondition, update, put, query,
+  updateExpression, timestampCondition, update, put, query, batchGet,
 } from '../../../src/utils/dynamodb';
 
 import Connector from '../../../src/connectors/dynamodb';
@@ -24,6 +24,7 @@ describe('utils/dynamodb.js', () => {
       name: 'Thing One',
       description: 'This is thing one.',
       status: undefined,
+      status2: null,
       discriminator: 'thing',
       latched: true,
       ttl: ttl(1540454400000, 30),
@@ -35,7 +36,8 @@ describe('utils/dynamodb.js', () => {
         '#id': 'id',
         '#latched': 'latched',
         '#name': 'name',
-        '#status': 'status',
+        // '#status': 'status',
+        '#status2': 'status2',
         '#timestamp': 'timestamp',
         '#ttl': 'ttl',
       },
@@ -45,11 +47,12 @@ describe('utils/dynamodb.js', () => {
         ':id': '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
         ':latched': true,
         ':name': 'Thing One',
-        ':status': null,
+        // ':status': undefined,
+        // ':status2': null,
         ':timestamp': 1540454400000,
         ':ttl': 1543046400,
       },
-      UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #status = :status, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp',
+      UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp REMOVE #status2',
       ReturnValues: 'ALL_NEW',
     });
   });
@@ -116,6 +119,80 @@ describe('utils/dynamodb.js', () => {
           },
         });
         expect(collected[0].putResponse).to.deep.equal({});
+      })
+      .done(done);
+  });
+
+  it('should call batchGet', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'batchGet').resolves({
+      Responses: {
+        'stg-my-service-events': [
+          {
+            'aws:rep:deleting': false,
+            'timestamp': 1548967022000,
+            'sk': 'thing',
+            'discriminator': 'thing',
+            'aws:rep:updateregion': 'us-east-1',
+            'latched': true,
+            'aws:rep:updatetime': 1625157459.122001,
+            'description': 'This is thing 1',
+            'pk': '1',
+            'name': 'Thing One',
+          },
+        ],
+      },
+      UnprocessedKeys: {},
+    });
+
+    const uows = [{
+      batchGetRequest: {
+        RequestItems: {
+          'stg-my-service-events': {
+            Keys: [{
+              pk: '1',
+              sk: 'thing',
+            }],
+          },
+        },
+      },
+    }];
+
+    _(uows)
+      .through(batchGet())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(stub).to.have.been.calledWith({
+          RequestItems: {
+            'stg-my-service-events': {
+              Keys: [{
+                pk: '1',
+                sk: 'thing',
+              }],
+            },
+          },
+        });
+        expect(collected[0].batchGetResponse).to.deep.equal({
+          Responses: {
+            'stg-my-service-events': [
+              {
+                'aws:rep:deleting': false,
+                'timestamp': 1548967022000,
+                'sk': 'thing',
+                'discriminator': 'thing',
+                'aws:rep:updateregion': 'us-east-1',
+                'latched': true,
+                'aws:rep:updatetime': 1625157459.122001,
+                'description': 'This is thing 1',
+                'pk': '1',
+                'name': 'Thing One',
+              },
+            ],
+          },
+          UnprocessedKeys: {},
+        });
       })
       .done(done);
   });

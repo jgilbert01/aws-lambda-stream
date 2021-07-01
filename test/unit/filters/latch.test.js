@@ -7,11 +7,11 @@ import { outSourceIsSelf, outLatched } from '../../../src/filters/latch';
 
 describe('filters/latch.js', () => {
   afterEach(() => {
-    delete process.env.SERVERLESS_PROJECT;
+    delete process.env.PROJECT;
   });
 
   it('should ignore its own events', (done) => {
-    process.env.SERVERLESS_PROJECT = 'my-service';
+    process.env.PROJECT = 'my-service';
 
     const event = toKinesisRecords([
       {
