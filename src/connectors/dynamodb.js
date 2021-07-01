@@ -51,6 +51,16 @@ class Connector {
       .tapCatch(this.debug);
   }
 
+  batchGet(inputParams) {
+    const params = {
+      ...inputParams,
+    };
+
+    return this.db.batchGet(params).promise()
+      .tap(this.debug)
+      .tapCatch(this.debug);
+  }
+
   query(inputParams) {
     const params = {
       TableName: this.tableName,

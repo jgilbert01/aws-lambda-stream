@@ -120,6 +120,76 @@ describe('connectors/dynamodb.js', () => {
     expect(data).to.deep.equal({});
   });
 
+  it('should batchGet', async () => {
+    const spy = sinon.spy((params, cb) => cb(null, {
+      Responses: {
+        'stg-my-service-events': [
+          {
+            'aws:rep:deleting': false,
+            'timestamp': 1548967022000,
+            'sk': 'thing',
+            'discriminator': 'thing',
+            'aws:rep:updateregion': 'us-east-1',
+            'latched': true,
+            'aws:rep:updatetime': 1625157459.122001,
+            'description': 'This is thing 1',
+            'pk': '1',
+            'name': 'Thing One',
+          },
+        ],
+      },
+      UnprocessedKeys: {},
+    }));
+    AWS.mock('DynamoDB.DocumentClient', 'batchGet', spy);
+
+    const GET_REQUEST = {
+      RequestItems: {
+        'stg-my-service-events': {
+          Keys: [{
+            pk: '1',
+            sk: 'thing',
+          }],
+        },
+      },
+    };
+
+    const data = await new Connector({
+      debug: debug('dynamodb'),
+      tableName: 'stg-my-service-events',
+    })
+      .batchGet(GET_REQUEST);
+
+    expect(spy).to.have.been.calledWith({
+      RequestItems: {
+        'stg-my-service-events': {
+          Keys: [{
+            pk: '1',
+            sk: 'thing',
+          }],
+        },
+      },
+    });
+    expect(data).to.deep.equal({
+      Responses: {
+        'stg-my-service-events': [
+          {
+            'aws:rep:deleting': false,
+            'timestamp': 1548967022000,
+            'sk': 'thing',
+            'discriminator': 'thing',
+            'aws:rep:updateregion': 'us-east-1',
+            'latched': true,
+            'aws:rep:updatetime': 1625157459.122001,
+            'description': 'This is thing 1',
+            'pk': '1',
+            'name': 'Thing One',
+          },
+        ],
+      },
+      UnprocessedKeys: {},
+    });
+  });
+
   it('should query', async () => {
     const correlationKey = '11';
 
