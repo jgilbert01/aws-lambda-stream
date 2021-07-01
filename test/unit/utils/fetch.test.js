@@ -23,7 +23,7 @@ describe('utils/fetch.js', () => {
       .through(fetch())
       .collect()
       .tap((collected) => {
-        console.log(JSON.stringify(collected, null, 2));
+        // console.log(JSON.stringify(collected, null, 2));
 
         expect(stub).to.have.been.calledWith('https://example.com', {}, 'json');
 
