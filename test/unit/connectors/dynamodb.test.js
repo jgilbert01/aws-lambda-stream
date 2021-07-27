@@ -247,4 +247,118 @@ describe('connectors/dynamodb.js', () => {
       },
     ]);
   });
+
+  it('should query with limiting Limit param', async () => {
+    const correlationKey = '11';
+
+    const spy = sinon.spy((params, cb) => cb(null, {
+      Items: [{
+        pk: params.ExclusiveStartKey === undefined ? '1' : '2',
+        sk: 'EVENT',
+        data: correlationKey,
+        event: {},
+      }],
+      LastEvaluatedKey: params.ExclusiveStartKey === undefined ? '1' : undefined,
+    }));
+
+    AWS.mock('DynamoDB.DocumentClient', 'query', spy);
+
+    const QUERY_REQUEST = {
+      IndexName: 'DataIndex',
+      KeyConditionExpression: '#data = :data',
+      ExpressionAttributeNames: {
+        '#data': 'data',
+      },
+      ExpressionAttributeValues: {
+        ':data': correlationKey,
+      },
+      ConsistentRead: true,
+      Limit: 1,
+    };
+
+    const data = await new Connector({
+      debug: debug('dynamodb'),
+      tableName: 'my-service-entities',
+    })
+      .query(QUERY_REQUEST);
+
+    expect(spy).to.have.been.calledWith({
+      TableName: 'my-service-entities',
+      IndexName: 'DataIndex',
+      KeyConditionExpression: '#data = :data',
+      ExpressionAttributeNames: { '#data': 'data' },
+      ExpressionAttributeValues: { ':data': '11' },
+      ConsistentRead: true,
+      Limit: 1,
+      ExclusiveStartKey: undefined,
+    });
+    expect(data).to.deep.equal([
+      {
+        pk: '1',
+        sk: 'EVENT',
+        data: correlationKey,
+        event: {},
+      },
+    ]);
+  });
+
+  it('should query with non-limiting Limit param', async () => {
+    const correlationKey = '11';
+
+    const spy = sinon.spy((params, cb) => cb(null, {
+      Items: [{
+        pk: params.ExclusiveStartKey === undefined ? '1' : '2',
+        sk: 'EVENT',
+        data: correlationKey,
+        event: {},
+      }],
+      LastEvaluatedKey: params.ExclusiveStartKey === undefined ? '1' : undefined,
+    }));
+
+    AWS.mock('DynamoDB.DocumentClient', 'query', spy);
+
+    const QUERY_REQUEST = {
+      IndexName: 'DataIndex',
+      KeyConditionExpression: '#data = :data',
+      ExpressionAttributeNames: {
+        '#data': 'data',
+      },
+      ExpressionAttributeValues: {
+        ':data': correlationKey,
+      },
+      ConsistentRead: true,
+      Limit: 10,
+    };
+
+    const data = await new Connector({
+      debug: debug('dynamodb'),
+      tableName: 'my-service-entities',
+    })
+      .query(QUERY_REQUEST);
+
+    expect(spy).to.have.been.calledWith({
+      TableName: 'my-service-entities',
+      IndexName: 'DataIndex',
+      KeyConditionExpression: '#data = :data',
+      ExpressionAttributeNames: { '#data': 'data' },
+      ExpressionAttributeValues: { ':data': '11' },
+      ConsistentRead: true,
+      ExclusiveStartKey: '1',
+      Limit: 10,
+    });
+    expect(data).to.deep.equal([
+      {
+        pk: '1',
+        sk: 'EVENT',
+        data: correlationKey,
+        event: {},
+      },
+      {
+        pk: '2',
+        sk: 'EVENT',
+        data: correlationKey,
+        event: {},
+      },
+    ]);
+  });
 });
