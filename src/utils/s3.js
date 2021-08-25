@@ -89,7 +89,6 @@ export const listObjectsFromS3 = ({
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
   const connector = new Connector({ debug, bucketName });
-
   const listObjects = (uow) => {
     const p = connector.listObjects(uow[listRequestField])
       .then((listResponse) => ({ ...uow, listResponse }))
@@ -127,7 +126,7 @@ export const pageObjectsFromS3 = ({
           debug('listObjects: %j', rest);
 
           if (rest.IsTruncated) {
-            Marker = rest.NextMarker;
+            Marker = rest.NextContinuationToken;
           } else {
             Marker = undefined;
           }
