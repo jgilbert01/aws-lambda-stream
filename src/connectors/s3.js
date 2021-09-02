@@ -49,7 +49,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this.bucket.listObjects(params).promise()
+    return this.bucket.listObjectsV2(params).promise()
       .tap(this.debug)
       .tapCatch(this.debug);
   }

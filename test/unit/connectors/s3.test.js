@@ -58,7 +58,7 @@ describe('connectors/s3.js', () => {
   it('should list objects', async () => {
     const spy = sinon.spy((params, cb) => cb(null, {
       IsTruncated: false,
-      Marker: '',
+      NextContinuationToken: '',
       Contents: [
         {
           Key: 'p1/2021/03/26/19/1234',
@@ -74,7 +74,7 @@ describe('connectors/s3.js', () => {
       MaxKeys: 1000,
       CommonPrefixes: [],
     }));
-    AWS.mock('S3', 'listObjects', spy);
+    AWS.mock('S3', 'listObjectsV2', spy);
 
     const inputParams = {
       Prefix: 'p1',
