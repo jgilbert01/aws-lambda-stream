@@ -241,18 +241,18 @@ describe('utils/s3.js', () => {
 
         expect(stub).to.have.been.calledWith({
           Prefix: 'p1',
-          Marker: undefined,
+          ContinuationToken: undefined,
         });
         expect(stub).to.have.been.calledWith({
           Prefix: 'p1',
-          Marker: 'm1',
+          ContinuationToken: 'm1',
         });
 
         expect(collected.length).to.equal(3);
         expect(collected[0]).to.deep.equal({
           listRequest: {
             Prefix: 'p1',
-            Marker: undefined,
+            ContinuationToken: undefined,
           },
           listResponse: {
             IsTruncated: true,
@@ -265,7 +265,7 @@ describe('utils/s3.js', () => {
         expect(collected[1]).to.deep.equal({
           listRequest: {
             Prefix: 'p1',
-            Marker: undefined,
+            ContinuationToken: undefined,
           },
           listResponse: {
             IsTruncated: true,
@@ -278,7 +278,7 @@ describe('utils/s3.js', () => {
         expect(collected[2]).to.deep.equal({
           listRequest: {
             Prefix: 'p1',
-            Marker: 'm1',
+            ContinuationToken: 'm1',
           },
           listResponse: {
             IsTruncated: false,
