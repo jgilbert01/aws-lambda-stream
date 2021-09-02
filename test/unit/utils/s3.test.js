@@ -156,7 +156,7 @@ describe('utils/s3.js', () => {
   it('should list objects', (done) => {
     const stub = sinon.stub(Connector.prototype, 'listObjects').resolves({
       IsTruncated: false,
-      Marker: '',
+      NextContinuationToken: '',
       Contents: [
         {
           Key: 'p1/2021/03/26/19/1234',
@@ -187,7 +187,7 @@ describe('utils/s3.js', () => {
           },
           listResponse: {
             IsTruncated: false,
-            Marker: '',
+            NextContinuationToken: '',
             Contents: [
               {
                 Key: 'p1/2021/03/26/19/1234',
@@ -203,7 +203,7 @@ describe('utils/s3.js', () => {
     const responses = [
       {
         IsTruncated: true,
-        NextMarker: 'm1',
+        NextContinuationToken: 'm1',
         Contents: [
           {
             Key: 'p1/2021/03/26/19/1234',
@@ -215,7 +215,7 @@ describe('utils/s3.js', () => {
       },
       {
         IsTruncated: false,
-        NextMarker: undefined,
+        NextContinuationToken: undefined,
         Contents: [
           {
             Key: 'p1/2021/03/26/19/9012',
@@ -256,7 +256,7 @@ describe('utils/s3.js', () => {
           },
           listResponse: {
             IsTruncated: true,
-            NextMarker: 'm1',
+            NextContinuationToken: 'm1',
             Content: {
               Key: 'p1/2021/03/26/19/1234',
             },
@@ -269,7 +269,7 @@ describe('utils/s3.js', () => {
           },
           listResponse: {
             IsTruncated: true,
-            NextMarker: 'm1',
+            NextContinuationToken: 'm1',
             Content: {
               Key: 'p1/2021/03/26/19/5678',
             },
@@ -282,7 +282,7 @@ describe('utils/s3.js', () => {
           },
           listResponse: {
             IsTruncated: false,
-            NextMarker: undefined,
+            NextContinuationToken: undefined,
             Content: {
               Key: 'p1/2021/03/26/19/9012',
             },

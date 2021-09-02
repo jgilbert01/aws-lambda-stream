@@ -127,7 +127,7 @@ export const pageObjectsFromS3 = ({
           debug('listObjects: %j', rest);
 
           if (rest.IsTruncated) {
-            Marker = rest.NextMarker;
+            Marker = rest.NextContinuationToken;
           } else {
             Marker = undefined;
           }
