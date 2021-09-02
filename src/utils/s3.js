@@ -112,12 +112,12 @@ export const pageObjectsFromS3 = ({
   const connector = new Connector({ debug, bucketName });
 
   const listObjects = (uow) => {
-    let Marker;
+    let ContinuationToken = uow[listRequestField].ContinuationToken;
 
     return _((push, next) => {
       const params = {
         ...uow[listRequestField],
-        Marker,
+        ContinuationToken,
       };
 
       connector.listObjects(params)
@@ -127,9 +127,9 @@ export const pageObjectsFromS3 = ({
           debug('listObjects: %j', rest);
 
           if (rest.IsTruncated) {
-            Marker = rest.NextContinuationToken;
+            ContinuationToken = rest.NextContinuationToken;
           } else {
-            Marker = undefined;
+            ContinuationToken = undefined;
           }
 
           Contents.forEach((obj) => {
@@ -148,7 +148,7 @@ export const pageObjectsFromS3 = ({
           push(err, null);
         })
         .finally(() => {
-          if (Marker) {
+          if (ContinuationToken) {
             next();
           } else {
             push(null, _.nil);
