@@ -1,6 +1,6 @@
 import 'isomorphic-fetch';
 
-import realFetch from 'node-fetch';
+import realFetch, { FetchError } from 'node-fetch';
 import Promise from 'bluebird';
 
 realFetch.Promise = Promise;
@@ -33,6 +33,7 @@ class Connector {
       ...request,
     })
       .tap(this.debug)
+      .then((res) => (res.ok ? res : Promise.reject(new FetchError(`HTTP Error Response: ${res.status} ${res.statusText}`, 'status-code'))))
       .then((res) => res[responseType]())
       .tap(this.debug)
       .tapCatch(this.debug);
