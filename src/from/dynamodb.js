@@ -64,7 +64,7 @@ const calculateEventTypeSuffix = (record) => {
     REMOVE: 'deleted',
   }[record.eventName]);
 
-  if (suffix === 'updated') {
+  if (suffix !== 'deleted') {
     const { NewImage, OldImage } = record.dynamodb;
 
     if ((NewImage && NewImage.deleted) || (OldImage && OldImage.deleted)) {

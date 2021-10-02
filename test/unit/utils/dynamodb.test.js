@@ -73,6 +73,8 @@ describe('utils/dynamodb.js', () => {
           sk: 'thing',
         },
       },
+    }, {
+      updateRequest: undefined,
     }];
 
     _(uows)
@@ -103,6 +105,8 @@ describe('utils/dynamodb.js', () => {
           sk: 'thing',
         },
       },
+    }, {
+      putRequest: undefined,
     }];
 
     _(uows)
