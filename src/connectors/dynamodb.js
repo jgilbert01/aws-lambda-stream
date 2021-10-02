@@ -68,15 +68,17 @@ class Connector {
     };
 
     let cursor;
+    let itemsCount = 0;
 
     return _((push, next) => {
       params.ExclusiveStartKey = cursor;
-
       return this.db.query(params).promise()
         .tap(this.debug)
         .tapCatch(this.debug)
         .then((data) => {
-          if (data.LastEvaluatedKey) {
+          itemsCount += data.Items.length;
+
+          if (data.LastEvaluatedKey && (!params.Limit || (params.Limit && itemsCount < params.Limit))) {
             cursor = data.LastEvaluatedKey;
           } else {
             cursor = undefined;
