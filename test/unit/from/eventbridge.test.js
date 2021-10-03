@@ -23,10 +23,10 @@ describe('from/eventbridge.js', () => {
             'source': 'test',
             'region': 'us-west-1',
             'detail-type': 't1',
-            'detail': JSON.stringify({
+            'detail': {
               type: 't1',
               partitionKey: '1',
-            }),
+            },
           },
           event: {
             id: '0',
@@ -35,21 +35,6 @@ describe('from/eventbridge.js', () => {
           },
         });
       })
-      .done(done);
-  });
-
-  it('test handled json parse error', (done) => {
-    fromEventBridge({
-      detail: '{bad}',
-    })
-      .tap(expect.fail)
-      .errors((err, push) => {
-        // console.log(err);
-        expect(err.name).to.equal('SyntaxError');
-        expect(err.message.substring(0, 18)).to.equal('Unexpected token b');
-        expect(err.uow).to.be.not.null;
-      })
-      // .tap(console.log)
       .done(done);
   });
 });
