@@ -35,6 +35,11 @@ describe('faults/index.js', () => {
       },
       {
         type: 'f2',
+        entity: {
+          f1: 'v1',
+          f2: 'v2',
+        },
+        eem: { fields: ['f2'] },
       },
       {
         type: 'f3',
@@ -42,6 +47,13 @@ describe('faults/index.js', () => {
     ]);
 
     fromKinesis(events)
+      .map((uow) => ({
+        ...uow,
+        someResponse: {
+          f3: Buffer.from('v1'),
+          f4: uow.event.eem,
+        },
+      }))
       .map(simulateHandledError)
       .errors(faults)
       .through(flushFaults(defaultOptions))
@@ -62,18 +74,28 @@ describe('faults/index.js', () => {
         expect(collected[2].event.tags.pipeline).to.equal('undefined');
 
         expect(collected[2].event.uow).to.deep.equal({
+          pipeline: undefined,
           record: {
             eventSource: 'aws:kinesis',
             eventID: 'shardId-000000000000:1',
             awsRegion: 'us-west-2',
             kinesis: {
               sequenceNumber: '1',
-              data: 'eyJ0eXBlIjoiZjIifQ==',
+              data: 'eyJ0eXBlIjoiZjIiLCJlbnRpdHkiOnsiZjEiOiJ2MSIsImYyIjoidjIifSwiZWVtIjp7ImZpZWxkcyI6WyJmMiJdfX0=',
             },
           },
           event: {
             id: 'shardId-000000000000:1',
             type: 'f2',
+            entity: {
+              f1: 'v1',
+              f2: '[REDACTED]',
+            },
+            eem: { fields: ['f2'] },
+          },
+          someResponse: {
+            f3: '[BUFFER: 2]',
+            f4: '[CIRCULAR]',
           },
         });
       })

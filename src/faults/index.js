@@ -1,5 +1,6 @@
 import _ from 'highland';
 import * as uuid from 'uuid';
+import cloneDeepWith from 'lodash/cloneDeepWith';
 
 import { now } from '../utils';
 
@@ -27,7 +28,7 @@ export const faults = (err, push) => {
         message: err.message,
         stack: err.stack,
       },
-      uow: err.uow,
+      uow: trimAndRedact(err.uow),
     });
 
     logErr(err);
@@ -95,4 +96,40 @@ const logErr = (err) => {
       console.error(err);
     }
   }
+};
+
+const trimAndRedact = (uow) => {
+  const {
+    pipeline, record, event, decryptResponse, undecryptedEvent, ...rest
+  } = uow;
+  const eem = event.eem || undecryptedEvent?.eem;
+  const cache = [];
+
+  const cloneCustomizer = (value, key) => {
+    if (eem?.fields.includes(key)) {
+      return '[REDACTED]';
+    } else {
+      if (Buffer.isBuffer(value)) {
+        return `[BUFFER: ${value.length}]`;
+      }
+
+      if (typeof value === 'object' && value !== null) {
+        if (cache.includes(value)) {
+          return '[CIRCULAR]';
+        } else {
+          cache.push(value);
+        }
+      }
+    }
+    return undefined;
+  };
+
+  return {
+    pipeline,
+    record, // DO NOT redact so we can resubmit // if undecryptedEvent then it was encrypted, otherwise encrypt from db - need eem
+    ...cloneDeepWith({
+      event: undecryptedEvent || event,
+      ...rest,
+    }, cloneCustomizer),
+  };
 };

@@ -2,7 +2,7 @@ import Promise from 'bluebird';
 
 import {
   printStartPipeline, printEndPipeline,
-  faulty, faultyAsync,
+  faulty, faultyAsync, toResolve,
 } from '../utils';
 
 import {
@@ -32,7 +32,7 @@ const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 
 const toUpdateRequest = (rule) => faultyAsync((uow) =>
-  Promise.resolve(rule.toUpdateRequest(uow, rule))
+  toResolve(rule.toUpdateRequest, uow, rule)
     .then((updateRequest) => ({
       ...uow,
       updateRequest,

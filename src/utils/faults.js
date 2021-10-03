@@ -32,5 +32,13 @@ export const faulty = (funct) => (uow) => { // eslint-disable-line consistent-re
 export const faultyAsync = (funct) => (uow) =>
   _(
     funct(uow)
-      .catch(rejectWithFault),
+      .catch(rejectWithFault(uow)),
   );
+
+export const toResolve = (func, uow, rule) => new Promise((resolve, reject) => {
+  try {
+    resolve(func(uow, rule));
+  } catch (e) {
+    reject(e);
+  }
+});
