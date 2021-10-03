@@ -21,23 +21,25 @@ export const rejectWithFault = (uow, ignore = false) => (err) => {
   return Promise.reject(err);
 };
 
-export const faulty = (funct) => (uow) => { // eslint-disable-line consistent-return
+export const faulty = (funct, ignore = false) => (uow, ...args) => { // eslint-disable-line consistent-return
   try {
-    return funct(uow);
+    return funct(uow, ...args);
   } catch (e) {
-    throwFault(uow)(e);
+    throwFault(uow, ignore)(e);
   }
 };
 
-export const faultyAsync = (funct) => (uow) =>
-  _(
-    funct(uow)
-      .catch(rejectWithFault(uow)),
-  );
+export const faultyasync = (funct, ignore = false) => (uow, ...args) =>
+  funct(uow, ...args)
+    .catch(rejectWithFault(uow, ignore));
 
-export const toResolve = (func, uow, rule) => new Promise((resolve, reject) => {
+export const faultyAsyncStream = (funct, ignore = false) => (...args) => _(faultyasync(funct, ignore)(...args));
+
+export const faultyAsync = faultyAsyncStream; // backwards compatibility
+
+export const faultify = (func) => (...args) => new Promise((resolve, reject) => {
   try {
-    resolve(func(uow, rule));
+    resolve(func(...args));
   } catch (e) {
     reject(e);
   }
