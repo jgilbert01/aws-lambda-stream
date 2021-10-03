@@ -13,7 +13,7 @@ export const fromEventBridge = (event) =>
       ...uow,
       event: {
         id: uow.record.detail.id || uow.record.id,
-        ...JSON.parse(uow.record.detail),
+        ...uow.record.detail,
       },
     })));
 
@@ -27,5 +27,5 @@ export const toEventBridgeRecord = (event) => ({
   'region': 'us-west-1',
   // 'resources': [],
   'detail-type': event.type,
-  'detail': JSON.stringify(event),
+  'detail': event,
 });
