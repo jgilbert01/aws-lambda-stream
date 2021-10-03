@@ -73,6 +73,8 @@ describe('utils/dynamodb.js', () => {
           sk: 'thing',
         },
       },
+    }, {
+      updateRequest: undefined,
     }];
 
     _(uows)
@@ -81,7 +83,7 @@ describe('utils/dynamodb.js', () => {
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
 
-        expect(collected.length).to.equal(1);
+        expect(collected.length).to.equal(2);
         expect(stub).to.have.been.calledWith({
           Key: {
             pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
@@ -103,6 +105,8 @@ describe('utils/dynamodb.js', () => {
           sk: 'thing',
         },
       },
+    }, {
+      putRequest: undefined,
     }];
 
     _(uows)
@@ -111,7 +115,7 @@ describe('utils/dynamodb.js', () => {
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
 
-        expect(collected.length).to.equal(1);
+        expect(collected.length).to.equal(2);
         expect(stub).to.have.been.calledWith({
           Item: {
             pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
