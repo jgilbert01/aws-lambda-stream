@@ -126,7 +126,7 @@ const trimAndRedact = (uow) => {
 
   return {
     pipeline,
-    record, // DO NOT redact so we can resubmit // if undecryptedEvent then it was encrypted, otherwise encrypt from db - need eem
+    record, // DO NOT redact so we can resubmit
     ...cloneDeepWith({
       event: undecryptedEvent || event,
       ...rest,
