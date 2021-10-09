@@ -48,7 +48,7 @@ export const handler = async (event) =>
 ```
 
 ## Creating a stream from a lambda event
-The first step of a stream processor transforms the incoming Records into a [stream](https://highlandjs.org/#_(source)), like such: `_(event.Records)`. The various `from` functions, such as `fromKinesis`, `fromDynamodb` and `fromEventBridge`, normialize the records into a standard `Event` format. The output is a stream of `UnitOfWork` objects.
+The first step of a stream processor transforms the incoming Records into a [stream](https://caolan.github.io/highland/#_(source)), like such: `_(event.Records)`. The various `from` functions, such as `fromKinesis`, `fromDynamodb` and `fromEventBridge`, normialize the records into a standard `Event` format. The output is a stream of `UnitOfWork` objects.
 
 ## UnitOfWork Type (aka uow)
 Think of a `uow` as an _immutable_ object that represents the `scope` of a set of `variables` passing through the stream. More so than ever, we should not use global variables in stream processors. Your processor steps will add new variables to the `uow` for use by downstream steps _(see _Mapping_ below)_. This _scoping_ is crucial when we leverage the _parallel processing_ and _pipeline_ features discussed below.
@@ -150,7 +150,7 @@ const toEvent = (uow) => ({
 ## Connectors
 At the end of a stream processor there is usually a _sink_ step that persists the results to a datastore or another stream. These external calls are wrapped in thin `Connector` classes so that they can be easily _mocked_ for unit testing.
 
-These connectors are then wrapped with utility functions, such as `update` and `publish`, to integrate them into the streaming framework. For example, the promise returned from the connector is normalized to a [stream](https://highlandjs.org/#_(source)), fault handling is provided and features such as [parallel](https://highlandjs.org/#parallel) and [batch](https://highlandjs.org/#batch) are utilized.
+These connectors are then wrapped with utility functions, such as `update` and `publish`, to integrate them into the streaming framework. For example, the promise returned from the connector is normalized to a [stream](https://caolan.github.io/highland/#_(source)), fault handling is provided and features such as [parallel](https://caolan.github.io/highland/#parallel) and [batch](https://caolan.github.io/highland/#batch) are utilized.
 
 These utility functions leverage _currying_ to override default configuration settings, such as the _batchSize_ and the number of _parallel_ asyn-non-blocking-io executions.
 
@@ -194,7 +194,7 @@ interface FaultEvent extends Event {
 * `err` - contains the error information
 * `uow` - contains the state of the variables in the `uow` when the error happened
 
-When an error is thrown in a _Highland.js_ stream, the error will skip over all the remaining steps until it is either caught by an [errors](https://highlandjs.org/#errors) step or it reaches the end of the stream and all processing stops with the error.
+When an error is thrown in a _Highland.js_ stream, the error will skip over all the remaining steps until it is either caught by an [errors](https://caolan.github.io/highland/#errors) step or it reaches the end of the stream and all processing stops with the error.
 
 When you want to handle a poison event and raise a `fault` event then simply catch the error, adorn the current `uow` to the error and rethrow the error. Several utilities are provided to assist: `throwFault` for standard try/catch, `rejectWithFault` for promises, and `faulty` and `faultyAsync` are function wrappers.
 
@@ -232,7 +232,7 @@ The `faults` function tests to see if the `err` has a `uow` adorned. If so then 
 ## Pipelines
 As mentioned above, we are multiplexing many event types through a single stream for a variety of good reasons. Therefore, we want to maximize the utilization of each function invocation by acting on as many events as possible. However, we also want to maintain good clean separation of the processing logic for these different event types.
 
-The _Highland.js_ library allows us to [fork](https://highlandjs.org/#observe) streams, passing each fork/observer through a [pipeline](https://highlandjs.org/#pipeline) and [merge](https://highlandjs.org/#merge) the streams back together where they can share common tail logic like `fault` handling.
+The _Highland.js_ library allows us to [fork](https://caolan.github.io/highland/#observe) streams, passing each fork/observer through a [pipeline](https://caolan.github.io/highland/#pipeline) and [merge](https://caolan.github.io/highland/#merge) the streams back together where they can share common tail logic like `fault` handling.
 
 Each pipeline is implemented and tested separately. Each is usually defined in its own module/file.
 
@@ -352,7 +352,7 @@ Here are some highlights of utiltities that are available in this library or Hig
 ### Backpressure
 Unlike imperative programming, functional reactive programming with streams provides natural backpressure because it is pull oriented. In other words, a slow downstream step will not pull the next upstream record until it is finished processing the current record. This helps us avoid overwhelming downstream services and systems.
 
-However, this does not hold true for services, like DynamoDB, that return throttling errors. In these cases we can use the Highland.js [rateLimit](https://highlandjs.org/#ratelimit) feature to provide explicit backpressure.
+However, this does not hold true for services, like DynamoDB, that return throttling errors. In these cases we can use the Highland.js [rateLimit](https://caolan.github.io/highland/#ratelimit) feature to provide explicit backpressure.
 
 ```javascript
   ...
@@ -362,7 +362,7 @@ However, this does not hold true for services, like DynamoDB, that return thrott
 ```
 
 ### Parallel
-Asynchronous Non Blocking IO is probably the most important feature for optimizing throughput. The Highland.js [parallel](https://highlandjs.org/#parallel) feature allows us to take full control. When using this feature, upstream steps will continue to be executed while up to N asyc requests are waiting for responses. This feature along with `pipelines` allows us to optimize the utilization of every lambda invocation.
+Asynchronous Non Blocking IO is probably the most important feature for optimizing throughput. The Highland.js [parallel](https://caolan.github.io/highland/#parallel) feature allows us to take full control. When using this feature, upstream steps will continue to be executed while up to N asyc requests are waiting for responses. This feature along with `pipelines` allows us to optimize the utilization of every lambda invocation.
 
 ```javascript
   ...
@@ -380,7 +380,7 @@ This feature is baked into the DynamoDB `update` and Kinesis `publish` utilities
 ### Batching
 Many `aws-sdk` operations support batching multiple requests into a single call. This can help increase throughput by reducing aggregate network latency.
 
-The Highland.js [batch](https://highlandjs.org/#batch) feature allows us to easily collect a batch of requests. The `toBatchUow` utility provided by this library formats these into a batch unit of work so that we can easily raise a `fault` for a batch and `resubmit` the batch.
+The Highland.js [batch](https://caolan.github.io/highland/#batch) feature allows us to easily collect a batch of requests. The `toBatchUow` utility provided by this library formats these into a batch unit of work so that we can easily raise a `fault` for a batch and `resubmit` the batch.
 
 ```javascript
   ...
@@ -395,7 +395,7 @@ However, be aware that most of the aws-sdk batch apis do not succeed or fail as 
 _I will look at adding selective retry as a feature of this library._
 
 ### Grouping / Reducing
-Another way to increase throughput is by grouping related events and thereby reducing the number external calls you will need to make. The Highland.js [group](https://highlandjs.org/#group) feature allows us to easily group related records.  The `toGroupUows` utility provided by this library formats these into batched units of work so that we can easily raise a `fault` for a group and `resubmit` the group.
+Another way to increase throughput is by grouping related events and thereby reducing the number external calls you will need to make. The Highland.js [group](https://caolan.github.io/highland/#group) feature allows us to easily group related records.  The `toGroupUows` utility provided by this library formats these into batched units of work so that we can easily raise a `fault` for a group and `resubmit` the group.
 
 ```javascript
   ...
