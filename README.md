@@ -2,7 +2,7 @@
 
 **_Create stream processors with AWS Lambda functions._**
 
-The event signature for many Lambda functions is an array containing a micro-batch of `event.Records`. Functional Reactive Programming (FRP) is the cleanest approach for processing these streams. This library provides a light-weight framework for creating these stream processors. The underlying streaming library is [Highland.js](http://highlandjs.org), replete with features like filter, map, reduce, backpressure, batching, parallel processing and more.
+The event signature for many Lambda functions is an array containing a micro-batch of `event.Records`. Functional Reactive Programming (FRP) is the cleanest approach for processing these streams. This library provides a light-weight framework for creating these stream processors. The underlying streaming library is [Highland.js](https://caolan.github.io/highland), replete with features like filter, map, reduce, backpressure, batching, parallel processing and more.
 
 Support is provided for AWS EventBridge, Kinesis, DynamoDB Streams and more.
 
