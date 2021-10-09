@@ -1,10 +1,12 @@
-import {
-  merge, omit, last, castArray, isBoolean,
-} from 'lodash';
+import merge from 'lodash/merge';
+import omit from 'lodash/omit';
+import last from 'lodash/last';
+import castArray from 'lodash/castArray';
+import isBoolean from 'lodash/isBoolean';
 
 import {
   printStartPipeline, printEndPipeline,
-  faulty, faultyAsync,
+  faulty, faultyAsyncStream, faultify,
   query,
 } from '../utils';
 
@@ -151,26 +153,25 @@ const expression = (rule) => faulty((uow) => {
   };
 });
 
-const toHigherOrderEvents = (rule) => faultyAsync((uow) => Promise.resolve()
-  .then(() => {
-    const basic = (typeof rule.emit === 'string');
-    const trigger = last(uow.triggers);
-    const template = {
-      ...(basic ? uow.event : undefined),
-      id: `${uow.meta.id}.${rule.id}`, // plus a suffix if many
-      type: basic ? rule.emit : undefined,
-      timestamp: trigger.timestamp,
-      partitionKey: uow.meta.correlationKey.replace(`.${rule.correlationKeySuffix}`, ''),
-      tags: omit(uow.triggers.reduce((previous, current) =>
-        merge(previous, current.tags), {}), ['region', 'source']),
-      triggers: uow.triggers.map(({ id, type, timestamp }) => ({ id, type, timestamp })),
-    };
+const toHigherOrderEvents = (rule) => faultyAsyncStream(async (uow) => {
+  const basic = (typeof rule.emit === 'string');
+  const trigger = last(uow.triggers);
+  const template = {
+    ...(basic ? uow.event : undefined),
+    id: `${uow.meta.id}.${rule.id}`, // plus a suffix if many
+    type: basic ? rule.emit : undefined,
+    timestamp: trigger.timestamp,
+    partitionKey: uow.meta.correlationKey.replace(`.${rule.correlationKeySuffix}`, ''),
+    tags: omit(uow.triggers.reduce((previous, current) =>
+      merge(previous, current.tags), {}), ['region', 'source']),
+    triggers: uow.triggers.map(({ id, type, timestamp }) => ({ id, type, timestamp })),
+  };
 
-    return Promise.resolve(basic
-      ? template
-      : rule.emit(uow, rule, template))
-      .then((result) => castArray(result).map((emit) => ({
-        ...uow,
-        emit,
-      })));
-  }));
+  return Promise.resolve(basic
+    ? template
+    : faultify(rule.emit)(uow, rule, template))
+    .then((result) => castArray(result).map((emit) => ({
+      ...uow,
+      emit,
+    })));
+});

@@ -1,6 +1,6 @@
 import {
   printStartPipeline, printEndPipeline,
-  faulty, faultyAsync, query,
+  faulty, faultyAsyncStream, faultify, query,
   encryptEvent,
 } from '../utils';
 
@@ -43,13 +43,12 @@ const toQueryRequest = (rule) => (uow) => ({
     },
 });
 
-const toEvent = (rule) => faultyAsync((uow) =>
-  (!rule.toEvent ? Promise.resolve(uow)
-    : Promise.resolve(rule.toEvent(uow, rule))
-      .then((event) => ({
-        ...uow,
-        event: {
-          ...uow.event,
-          ...event,
-        },
-      }))));
+const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent
+  ? uow
+  : ({
+    ...uow,
+    event: {
+      ...uow.event,
+      ...await faultify(rule.toEvent)(uow, rule),
+    },
+  })));
