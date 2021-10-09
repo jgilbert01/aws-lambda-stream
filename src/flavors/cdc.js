@@ -44,7 +44,7 @@ const toQueryRequest = (rule) => (uow) => ({
 });
 
 const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent
-  ? Promise.resolve(uow)
+  ? uow
   : ({
     ...uow,
     event: {
