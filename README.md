@@ -475,7 +475,7 @@ These features are intended for implementing intra-service logic. They are frequ
 
 ## Links
 The following links contain additional information:
-* [Highland.js](https://highlandjs.org) documentation
+* [Highland.js](https://caolan.github.io/highland) documentation
 * My [Blog](https://medium.com/@jgilbert001) covers many topics such as _System Wide Event Sourcing & CQRS_
 
 ## Project Templates
