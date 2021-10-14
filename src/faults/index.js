@@ -98,15 +98,16 @@ const logErr = (err) => {
   }
 };
 
-const trimAndRedact = (uow) => {
-  const {
-    pipeline, record, event, decryptResponse, undecryptedEvent, ...rest
-  } = uow;
-  const eem = event.eem || undecryptedEvent?.eem;
+export const trimAndRedact = (_uow) => {
+  const fields = (_uow.batch || [_uow]).reduce((a, c) => {
+    const eem = c.event?.eem || c.undecryptedEvent?.eem;
+    const f = eem?.fields || [];
+    return [...a, ...f];
+  }, []);
   const cache = [];
 
   const cloneCustomizer = (value, key) => {
-    if (eem?.fields.includes(key)) {
+    if (fields.includes(key)) {
       return '[REDACTED]';
     } else {
       if (Buffer.isBuffer(value)) {
@@ -124,12 +125,30 @@ const trimAndRedact = (uow) => {
     return undefined;
   };
 
-  return {
-    pipeline,
-    record, // DO NOT redact so we can resubmit
-    ...cloneDeepWith({
-      event: undecryptedEvent || event,
-      ...rest,
-    }, cloneCustomizer),
+  const tr = (uow) => {
+    const {
+      pipeline, record, event, decryptResponse, undecryptedEvent, encryptResponse, ...rest
+    } = uow;
+
+    return {
+      pipeline,
+      record, // DO NOT redact so we can resubmit
+      ...cloneDeepWith({
+        event: undecryptedEvent || event,
+        ...rest,
+      }, cloneCustomizer),
+    };
   };
+
+  if (!_uow.batch) {
+    return tr(_uow);
+  } else {
+    const { batch, ...rest2 } = _uow;
+    return {
+      batch: _uow.batch.map((u) => tr(u)),
+      ...cloneDeepWith({
+        ...rest2,
+      }, cloneCustomizer),
+    };
+  }
 };
