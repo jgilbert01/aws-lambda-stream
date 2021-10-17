@@ -6,6 +6,7 @@ provider:
   # deploymentBucket: myprefix-${opt:acct}-${opt:region}-serverlessdeploymentbucket
   runtime: nodejs12.x
   endpointType: REGIONAL
+  logRetentionInDays: 30
   environment:
     ACCOUNT_NAME: ${opt:acct}
     PROJECT: ${self:service}
@@ -26,9 +27,13 @@ provider:
         - dynamodb:Query
         - dynamodb:GetItem
         - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
       Resource:
-        Fn::GetAtt: [ EntitiesTable, Arn ]
+        - Fn::GetAtt: [ EntitiesTable, Arn ]
+        # - Fn::Join:
+        #     - '/'
+        #     - - Fn::GetAtt: EntitiesTable.Arn
+        #       - index
+        #       - DataIndex        
     - Effect: Allow
       Action:
         - events:PutEvents
@@ -93,7 +98,9 @@ functions:
       - http:
           path: v1/{proxy+}
           method: any
-          cors: true
+          cors:
+            maxAge: 86400 # 1 day
+            cacheControl: 'max-age=86400, s-maxage=86400'
           # authorizer:
           #   arn: ${self:provider.environment.USER_POOL}
   listener:
@@ -117,7 +124,8 @@ functions:
 resources:
   Resources:
     EntitiesTable:
-      Type: AWS::DynamoDB::Table
+      Type: AWS::DynamoDB::GlobalTable
+      # DeletionPolicy: Retain
       Properties:
         TableName: ${self:provider.environment.ENTITY_TABLE_NAME}
         AttributeDefinitions:
@@ -141,6 +149,8 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
+        Replicas:
+          - Region: ${opt:region}
         BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: NEW_AND_OLD_IMAGES
@@ -149,3 +159,6 @@ resources:
           Enabled: true
         # SSESpecification:
         #   SSEEnabled: true
+
+    GatewayResponseDefault4XX: ${file(includes.yml):GatewayResponseDefault4XX}
+    GatewayResponseDefault5XX: ${file(includes.yml):GatewayResponseDefault5XX}
