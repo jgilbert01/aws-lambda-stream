@@ -6,6 +6,14 @@ export const now = () => Date.now();
 
 export const ttl = (start, days) => Math.floor(start / 1000) + (60 * 60 * 24 * days);
 
+export const getClaims = (authorizer) => ({
+  ...(authorizer?.claims || authorizer),
+});
+
+export const sortKeyTransform = (v) => v.split('|')[1];
+
+export const deletedFilter = (i) => !i.deleted;
+
 export const DEFAULT_OMIT_FIELDS = [
   'pk',
   'sk',
@@ -26,13 +34,14 @@ export const mapper = ({
   rename = DEFAULT_RENAME,
   omit = DEFAULT_OMIT_FIELDS,
   transform = {},
-} = {}) => (o) => {
+} = {}) => async (o, ctx = {}) => {
   const transformed = {
     ...o,
-    ...Object.keys(transform).reduce((a, k) => {
-      if (o[k]) a[k] = transform[k](o[k]);
+    ...(await Object.keys(transform).reduce(async (a, k) => {
+      a = await a;
+      if (o[k]) a[k] = await transform[k](o[k], ctx);
       return a;
-    }, {}),
+    }, {})),
   };
 
   const renamed = {
@@ -49,32 +58,37 @@ export const mapper = ({
   });
 };
 
+// https://advancedweb.hu/how-to-use-async-functions-with-array-reduce-in-javascript/
+
 export const aggregateMapper = ({
   aggregate,
   cardinality,
   mappers,
   delimiter = '|',
-}) => (items) => items.reduce((a, c) => {
-  const mappings = mappers[c.discriminator] || /* istanbul ignore next */ ((o) => o);
-  const mapped = mappings(c);
+}) => async (items, ctx = {}) => items
+  .filter(deletedFilter)
+  .reduce(async (a, c) => {
+    a = await a;
+    const mappings = mappers[c.discriminator] || /* istanbul ignore next */ (async (o) => o);
+    const mapped = await mappings(c, ctx);
 
-  if (c.discriminator === aggregate) {
-    return {
-      ...mapped,
-      ...a,
-    };
-  } else {
-    const role = c.sk.split(delimiter)[0];
-    if (!a[role]) {
-      if (cardinality[role] > 1) {
-        a[role] = [mapped];
-      } else {
-        a[role] = mapped;
-      }
+    if (c.discriminator === aggregate) {
+      return {
+        ...mapped,
+        ...a,
+      };
     } else {
-      a[role].push(mapped);
-    }
+      const role = c.sk.split(delimiter)[0];
+      if (!a[role]) {
+        if (cardinality[role] > 1) {
+          a[role] = [mapped];
+        } else {
+          a[role] = mapped;
+        }
+      } else {
+        a[role].push(mapped);
+      }
 
-    return a;
-  }
-}, {});
+      return a;
+    }
+  }, {});

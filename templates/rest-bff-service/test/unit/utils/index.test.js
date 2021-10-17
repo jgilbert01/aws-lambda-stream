@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import {
-  now, mapper, aggregateMapper, DEFAULT_OMIT_FIELDS,
+  now, mapper, aggregateMapper, DEFAULT_OMIT_FIELDS, sortKeyTransform, deletedFilter,
 } from '../../../src/utils';
 
 describe('utils/index.js', () => {
@@ -14,7 +14,41 @@ describe('utils/index.js', () => {
     expect(now()).to.equal(1600144863435);
   });
 
-  it('should map an object', () => {
+  it('should filter out soft deleted items', async () => {
+    const items = [
+      {
+      },
+      {
+        deleted: undefined,
+      },
+      {
+        deleted: null,
+      },
+      {
+        deleted: true,
+      },
+      {
+        deleted: false,
+      },
+    ]
+      .filter(deletedFilter);
+    expect(items.length).to.equal(4);
+    expect(items).to.deep.equal([
+      {
+      },
+      {
+        deleted: undefined,
+      },
+      {
+        deleted: null,
+      },
+      {
+        deleted: false,
+      },
+    ]);
+  });
+
+  it('should map an object', async () => {
     const mappings = mapper({
       defaults: { f9: true },
       omit: [...DEFAULT_OMIT_FIELDS, 'f1'],
@@ -25,25 +59,25 @@ describe('utils/index.js', () => {
         x1: 'else-coverage',
       },
       transform: {
-        f1: (v) => v.toUpperCase(),
+        f1: async (v) => v.toUpperCase(),
         f9: (v) => 'else-coverage',
       },
     });
 
-    expect(mappings({
+    expect(await mappings({
       pk: '1',
-      sk: 'thing',
-      data: 'thing0',
+      sk: 'case',
+      data: 'case0',
       f1: 'v1',
     })).to.deep.equal({
       id: '1',
-      name: 'thing0',
+      name: 'case0',
       f2: 'V1',
       f9: true,
     });
   });
 
-  it('should map an aggregate object', () => {
+  it('should map an aggregate object', async () => {
     const mapper1 = mapper({
       rename: {
         pk: 'id',
@@ -56,25 +90,25 @@ describe('utils/index.js', () => {
         sk: 'id',
         data: 'name',
       },
-      transform: { sk: (v) => v.split('|')[1] },
+      transform: { sk: sortKeyTransform },
     });
 
     const mappings = aggregateMapper({
-      aggregate: 'thing', // top level discriminator
+      aggregate: 'case', // top level discriminator
       cardinality: { // per relationship
         one2many: 999,
         many2many: 999,
         one2one: 1,
       },
       mappers: { // per discriminator
-        thing: mapper1,
+        case: mapper1,
         child: mapper2,
         peer: mapper2,
         associate: mapper2,
       },
     });
 
-    const mapped = mappings([
+    const mapped = await mappings([
       {
         pk: '1',
         sk: 'many2many|1', // relationship name is 1st segment of sk
@@ -101,15 +135,21 @@ describe('utils/index.js', () => {
       },
       {
         pk: '1',
+        sk: 'one2many|3',
+        discriminator: 'child',
+        deleted: true,
+      },
+      {
+        pk: '1',
         sk: 'one2one|1',
         discriminator: 'peer',
         data: 'peer',
       },
       {
         pk: '1',
-        sk: 'thing',
-        discriminator: 'thing',
-        data: 'thing0',
+        sk: 'case',
+        discriminator: 'case',
+        data: 'case0',
         f1: 'v1',
       },
     ]);
@@ -118,7 +158,7 @@ describe('utils/index.js', () => {
 
     expect(mapped).to.deep.equal({
       id: '1',
-      name: 'thing0',
+      name: 'case0',
       f1: 'v1',
       one2many: [
         {
