@@ -17,44 +17,64 @@ const AGGREGATE_MAPPER = aggregateMapper({
   },
 });
 
-export const get = async ({ connector }, id) => connector.get(id).then((data) => AGGREGATE_MAPPER(data));
+class Model {
+  constructor(
+    debug,
+    connector,
+    username = 'system',
+    claims,
+  ) {
+    this.debug = debug;
+    this.connector = connector;
+    this.username = username;
+    this.claims = claims;
+  }
 
-export const save = async ({ connector, /* istanbul ignore next */username = 'system' }, id, input) => {
-  const timestamp = now();
-  return connector.update(
-    {
-      pk: id,
-      sk: DISCRIMINATOR,
-    },
-    {
-      discriminator: DISCRIMINATOR,
-      lastModifiedBy: username,
-      deleted: null,
-      latched: null,
-      ttl: ttl(timestamp, 33),
-      ...input,
-      timestamp,
-    },
-  );
-};
+  get(id) {
+    return this.connector.get(id)
+      .then((data) => AGGREGATE_MAPPER(data));
+  }
 
-export const del = async ({ connector, /* istanbul ignore next */username = 'system' }, id) => {
-  const timestamp = now();
-  return connector.update(
-    {
-      pk: id,
-      sk: DISCRIMINATOR,
-    },
-    {
-      discriminator: DISCRIMINATOR,
-      deleted: true,
-      lastModifiedBy: username,
-      latched: null,
-      ttl: ttl(timestamp, 11),
-      timestamp,
-    },
-  );
-};
+  save(id, input) {
+    const timestamp = now();
+
+    return this.connector.update(
+      {
+        pk: id,
+        sk: DISCRIMINATOR,
+      },
+      {
+        discriminator: DISCRIMINATOR,
+        lastModifiedBy: this.username,
+        deleted: null,
+        latched: null,
+        ttl: ttl(timestamp, 33),
+        ...input,
+        timestamp,
+      },
+    );
+  }
+
+  delete(id) {
+    const timestamp = now();
+    return this.connector.update(
+      {
+        pk: id,
+        sk: DISCRIMINATOR,
+      },
+      {
+        discriminator: DISCRIMINATOR,
+        deleted: true,
+        lastModifiedBy: this.username,
+        latched: null,
+        ttl: ttl(timestamp, 11),
+        timestamp,
+      },
+    );
+  }
+}
+
+export default Model;
 
 export const toUpdateRequest = (uow) => ({
   Key: {
@@ -73,7 +93,7 @@ export const toUpdateRequest = (uow) => ({
   ...timestampCondition(),
 });
 
-export const toEvent = (uow) => ({
-  thing: MAPPER(uow.event.raw.new),
+export const toEvent = async (uow) => ({
+  thing: await MAPPER(uow.event.raw.new),
   raw: undefined,
 });

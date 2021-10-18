@@ -5,18 +5,40 @@ import merge from 'lodash/merge';
 
 config.setPromisesDependency(Promise);
 
-export const updateExpression = (Item) => ({
-  ExpressionAttributeNames: Object.keys(Item)
+export const updateExpression = (Item) => {
+  const keys = Object.keys(Item);
+
+  const ExpressionAttributeNames = keys
+    .filter((attrName) => Item[attrName] !== undefined)
     .map((attrName) => ({ [`#${attrName}`]: attrName }))
-    .reduce(merge, {}),
-  ExpressionAttributeValues: Object.keys(Item)
+    .reduce(merge, {});
+
+  const ExpressionAttributeValues = keys
+    .filter((attrName) => Item[attrName] !== undefined && Item[attrName] !== null)
     .map((attrName) => ({ [`:${attrName}`]: Item[attrName] }))
-    .reduce(merge, {}),
-  UpdateExpression: `SET ${Object.keys(Item)
+    .reduce(merge, {});
+
+  let UpdateExpression = `SET ${keys
+    .filter((attrName) => Item[attrName] !== undefined && Item[attrName] !== null)
     .map((attrName) => `#${attrName} = :${attrName}`)
-    .join(', ')}`,
-  ReturnValues: 'ALL_NEW',
-});
+    .join(', ')}`;
+
+  const UpdateExpressionRemove = keys
+    .filter((attrName) => Item[attrName] === null)
+    .map((attrName) => `#${attrName}`)
+    .join(', ');
+
+  if (UpdateExpressionRemove.length) {
+    UpdateExpression = `${UpdateExpression} REMOVE ${UpdateExpressionRemove}`;
+  }
+
+  return {
+    ExpressionAttributeNames,
+    ExpressionAttributeValues,
+    UpdateExpression,
+    ReturnValues: 'ALL_NEW',
+  };
+};
 
 class Connector {
   constructor(

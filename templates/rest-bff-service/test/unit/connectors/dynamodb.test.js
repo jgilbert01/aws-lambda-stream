@@ -1,13 +1,10 @@
 import 'mocha';
 import { expect } from 'chai';
-import * as sinon from 'sinon';
+import sinon from 'sinon';
 import debug from 'debug';
+import AWS from 'aws-sdk-mock';
 
 import Connector, { updateExpression } from '../../../src/connectors/dynamodb';
-
-const AWS = require('aws-sdk-mock');
-
-AWS.Promise = Promise;
 
 describe('connectors/dynamodb.js', () => {
   afterEach(() => {
@@ -77,6 +74,8 @@ describe('connectors/dynamodb.js', () => {
     expect(updateExpression({
       name: 'Thing One',
       description: 'This is thing one.',
+      status: undefined,
+      status2: null,
       discriminator: 'thing',
       latched: true,
       ttl: 1543046400,
@@ -87,6 +86,7 @@ describe('connectors/dynamodb.js', () => {
         '#discriminator': 'discriminator',
         '#latched': 'latched',
         '#name': 'name',
+        '#status2': 'status2',
         '#timestamp': 'timestamp',
         '#ttl': 'ttl',
       },
@@ -98,7 +98,7 @@ describe('connectors/dynamodb.js', () => {
         ':timestamp': 1540454400000,
         ':ttl': 1543046400,
       },
-      UpdateExpression: 'SET #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp',
+      UpdateExpression: 'SET #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp REMOVE #status2',
       ReturnValues: 'ALL_NEW',
     });
   });

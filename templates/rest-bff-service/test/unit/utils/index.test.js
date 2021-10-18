@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import {
-  now, mapper, aggregateMapper, DEFAULT_OMIT_FIELDS,
+  now, mapper, aggregateMapper, DEFAULT_OMIT_FIELDS, sortKeyTransform, deletedFilter, getUsername, getClaims, getUserGroups, forRole,
 } from '../../../src/utils';
 
 describe('utils/index.js', () => {
@@ -14,7 +14,114 @@ describe('utils/index.js', () => {
     expect(now()).to.equal(1600144863435);
   });
 
-  it('should map an object', () => {
+  it('should get claims', () => {
+    expect(getClaims({
+      authorizer: {
+        claims: {
+          'cognito:username': 'offlineContext_authorizer_principalId',
+        },
+      },
+    })).to.deep.equal({
+      'cognito:username': 'offlineContext_authorizer_principalId',
+    });
+
+    expect(getClaims({ authorizer: {} })).to.deep.equal({});
+    expect(getClaims({})).to.deep.equal({});
+  });
+
+  it('should get username', () => {
+    expect(getUsername({
+      authorizer: {
+        claims: {
+          'cognito:username': 'offlineContext_authorizer_principalId',
+        },
+      },
+    })).to.equal('offlineContext_authorizer_principalId');
+  });
+
+  it('should get user grouos', () => {
+    expect(getUserGroups({
+      authorizer: {
+        claims: {
+          'cognito:groups': 'r1,r2',
+        },
+      },
+    })).to.deep.equal(['r1', 'r2']);
+  });
+
+  it('should check role to succeed', () => {
+    const req = {
+      requestContext: {
+        authorizer: {
+          claims: {
+            'cognito:groups': 'r1,r2',
+          },
+        },
+      },
+    };
+    const resp = {};
+    const next = sinon.spy();
+
+    forRole('r1')(req, resp, next);
+
+    expect(next).to.have.been.calledWith();
+  });
+
+  it('should check role to raise error', () => {
+    const req = {
+      requestContext: {
+        authorizer: {
+          claims: {
+            'cognito:groups': 'r3',
+          },
+        },
+      },
+    };
+    const resp = {
+      error: sinon.spy((data) => data),
+    };
+    const next = sinon.spy();
+
+    forRole('r1')(req, resp, next);
+
+    expect(resp.error).to.have.been.calledWith(401, 'Not Authorized');
+  });
+
+  it('should filter out soft deleted items', async () => {
+    const items = [
+      {
+      },
+      {
+        deleted: undefined,
+      },
+      {
+        deleted: null,
+      },
+      {
+        deleted: true,
+      },
+      {
+        deleted: false,
+      },
+    ]
+      .filter(deletedFilter);
+    expect(items.length).to.equal(4);
+    expect(items).to.deep.equal([
+      {
+      },
+      {
+        deleted: undefined,
+      },
+      {
+        deleted: null,
+      },
+      {
+        deleted: false,
+      },
+    ]);
+  });
+
+  it('should map an object', async () => {
     const mappings = mapper({
       defaults: { f9: true },
       omit: [...DEFAULT_OMIT_FIELDS, 'f1'],
@@ -25,12 +132,12 @@ describe('utils/index.js', () => {
         x1: 'else-coverage',
       },
       transform: {
-        f1: (v) => v.toUpperCase(),
+        f1: async (v) => v.toUpperCase(),
         f9: (v) => 'else-coverage',
       },
     });
 
-    expect(mappings({
+    expect(await mappings({
       pk: '1',
       sk: 'thing',
       data: 'thing0',
@@ -43,7 +150,7 @@ describe('utils/index.js', () => {
     });
   });
 
-  it('should map an aggregate object', () => {
+  it('should map an aggregate object', async () => {
     const mapper1 = mapper({
       rename: {
         pk: 'id',
@@ -56,7 +163,7 @@ describe('utils/index.js', () => {
         sk: 'id',
         data: 'name',
       },
-      transform: { sk: (v) => v.split('|')[1] },
+      transform: { sk: sortKeyTransform },
     });
 
     const mappings = aggregateMapper({
@@ -74,7 +181,7 @@ describe('utils/index.js', () => {
       },
     });
 
-    const mapped = mappings([
+    const mapped = await mappings([
       {
         pk: '1',
         sk: 'many2many|1', // relationship name is 1st segment of sk
@@ -98,6 +205,12 @@ describe('utils/index.js', () => {
         sk: 'one2many|2',
         discriminator: 'child',
         data: 'child2',
+      },
+      {
+        pk: '1',
+        sk: 'one2many|3',
+        discriminator: 'child',
+        deleted: true,
       },
       {
         pk: '1',

@@ -1,17 +1,18 @@
-service: my-rest-bff-service
+service: my-bff-service
 
 provider:
   name: aws
   # cfnRole: arn:aws:iam::${self:custom.accounts.${opt:acct}.accountNumber}:role/cfnRole
   # deploymentBucket: myprefix-${opt:acct}-${opt:region}-serverlessdeploymentbucket
-  runtime: nodejs12.x
+  runtime: nodejs14.x
   endpointType: REGIONAL
+  logRetentionInDays: 30
   environment:
     ACCOUNT_NAME: ${opt:acct}
     PROJECT: ${self:service}
     STAGE: ${opt:stage}
     DEBUG: ${self:custom.accounts.${opt:acct}.debug}
-    ENTITY_TABLE_NAME: ${opt:stage}-${self:service}-entities
+    ENTITY_TABLE_NAME: ${self:service}-${opt:stage}-entities
     ENTITY_DATA_INDEX: DataIndex
     # USER_POOL: ${cf:user-pool-${opt:stage}.userPoolArn}
     BUS_NAME: ${cf:event-hub-${opt:stage}.busName}
@@ -26,9 +27,13 @@ provider:
         - dynamodb:Query
         - dynamodb:GetItem
         - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
       Resource:
-        Fn::GetAtt: [ EntitiesTable, Arn ]
+        - Fn::GetAtt: [ EntitiesTable, Arn ]
+        # - Fn::Join:
+        #     - '/'
+        #     - - Fn::GetAtt: EntitiesTable.Arn
+        #       - index
+        #       - DataIndex        
     - Effect: Allow
       Action:
         - events:PutEvents
@@ -91,9 +96,11 @@ functions:
     handler: src/rest/index.handle
     events:
       - http:
-          path: v1/{proxy+}
+          path: '{proxy+}'
           method: any
-          cors: true
+          cors:
+            maxAge: 86400 # 1 day
+            cacheControl: 'max-age=86400, s-maxage=86400'
           # authorizer:
           #   arn: ${self:provider.environment.USER_POOL}
   listener:
@@ -117,7 +124,8 @@ functions:
 resources:
   Resources:
     EntitiesTable:
-      Type: AWS::DynamoDB::Table
+      Type: AWS::DynamoDB::GlobalTable
+      # DeletionPolicy: Retain
       Properties:
         TableName: ${self:provider.environment.ENTITY_TABLE_NAME}
         AttributeDefinitions:
@@ -141,6 +149,8 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
+        Replicas:
+          - Region: ${opt:region}
         BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: NEW_AND_OLD_IMAGES
@@ -149,3 +159,6 @@ resources:
           Enabled: true
         # SSESpecification:
         #   SSEEnabled: true
+
+    GatewayResponseDefault4XX: ${file(includes.yml):GatewayResponseDefault4XX}
+    GatewayResponseDefault5XX: ${file(includes.yml):GatewayResponseDefault5XX}

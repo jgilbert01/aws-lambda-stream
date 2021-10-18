@@ -1,9 +1,11 @@
 import { debug as d } from 'debug';
 
 import Connector from '../connectors/dynamodb';
+import Model from '../models/thing';
 import { getThing, saveThing, deleteThing } from './routes/thing';
+import { getUsername, getClaims/* , forRole */ } from '../utils';
 
-const api = require('lambda-api')({ version: 'v1.0', base: 'v1' });
+const api = require('lambda-api')();
 
 api.use((req, res, next) => {
   res.cors();
@@ -11,8 +13,8 @@ api.use((req, res, next) => {
 });
 
 api.get('/things/:id', getThing);
-api.put('/things/:id', saveThing);
-api.delete('/things/:id', deleteThing);
+api.put('/things/:id', /* forRole('power'), */ saveThing);
+api.delete('/things/:id', /* forRole('admin'), */ deleteThing);
 
 export const handle = async (event, context) => { // eslint-disable-line import/prefer-default-export
   const debug = d(`handler${event.path.split('/').join(':')}`);
@@ -20,15 +22,22 @@ export const handle = async (event, context) => { // eslint-disable-line import/
   // debug(`ctx: %j`, context);
   // debug(`env: %j`, process.env);
 
+  const claims = getClaims(event.requestContext);
+  const username = getUsername(event.requestContext);
+
   api.app({
     debug,
-    connector: new Connector(
-      debug,
-      process.env.ENTITY_TABLE_NAME,
-    ),
-    username: (event.requestContext.authorizer.claims
-      && /* istanbul ignore next */ event.requestContext.authorizer.claims['cognito:username'])
-      || event.requestContext.authorizer.principalId,
+    models: {
+      thing: new Model(
+        debug,
+        new Connector(
+          debug,
+          process.env.ENTITY_TABLE_NAME,
+        ),
+        username,
+        claims,
+      ),
+    },
   });
 
   return api.run(event, context);

@@ -2,7 +2,7 @@ import 'mocha';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 
-import * as Model from '../../../../src/models/thing';
+import Model from '../../../../src/models/thing';
 import { getThing, saveThing, deleteThing } from '../../../../src/rest/routes/thing';
 
 class Response {
@@ -16,10 +16,14 @@ describe('rest/routes/thing.js', () => {
   afterEach(sinon.restore);
 
   it('should save', async () => {
-    const stub = sinon.stub(Model, 'save').resolves({});
+    const stub = sinon.stub(Model.prototype, 'save').resolves({});
 
     const request = {
-      namespace: {},
+      namespace: {
+        models: {
+          thing: new Model(),
+        },
+      },
       params: {
         id: '00000000-0000-0000-0000-000000000000',
       },
@@ -31,7 +35,7 @@ describe('rest/routes/thing.js', () => {
 
     const data = await saveThing(request, response);
 
-    expect(stub).to.have.been.calledWith({}, '00000000-0000-0000-0000-000000000000', { name: 'thing0' });
+    expect(stub).to.have.been.calledWith('00000000-0000-0000-0000-000000000000', { name: 'thing0' });
 
     expect(response.status).to.have.been.calledWith(200);
     expect(response.json).to.have.been.calledWith({});
@@ -39,13 +43,17 @@ describe('rest/routes/thing.js', () => {
   });
 
   it('should get by id', async () => {
-    const stub = sinon.stub(Model, 'get').resolves({
+    const stub = sinon.stub(Model.prototype, 'get').resolves({
       id: '00000000-0000-0000-0000-000000000000',
       name: 'thing0',
     });
 
     const request = {
-      namespace: {},
+      namespace: {
+        models: {
+          thing: new Model(),
+        },
+      },
       params: {
         id: '00000000-0000-0000-0000-000000000000',
       },
@@ -54,7 +62,7 @@ describe('rest/routes/thing.js', () => {
 
     const data = await getThing(request, response);
 
-    expect(stub).to.have.been.calledWith({}, '00000000-0000-0000-0000-000000000000');
+    expect(stub).to.have.been.calledWith('00000000-0000-0000-0000-000000000000');
 
     expect(response.status).to.have.been.calledWith(200);
     expect(response.json).to.have.been.calledWith({
@@ -68,10 +76,14 @@ describe('rest/routes/thing.js', () => {
   });
 
   it('should delete', async () => {
-    const stub = sinon.stub(Model, 'del').resolves({});
+    const stub = sinon.stub(Model.prototype, 'delete').resolves({});
 
     const request = {
-      namespace: {},
+      namespace: {
+        models: {
+          thing: new Model(),
+        },
+      },
       params: {
         id: '00000000-0000-0000-0000-000000000000',
       },
@@ -80,7 +92,7 @@ describe('rest/routes/thing.js', () => {
 
     const data = await deleteThing(request, response);
 
-    expect(stub).to.have.been.calledWith({}, '00000000-0000-0000-0000-000000000000');
+    expect(stub).to.have.been.calledWith('00000000-0000-0000-0000-000000000000');
 
     expect(response.status).to.have.been.calledWith(200);
     expect(response.json).to.have.been.calledWith({});

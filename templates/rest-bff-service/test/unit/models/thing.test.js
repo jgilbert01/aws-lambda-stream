@@ -5,9 +5,7 @@ import debug from 'debug';
 
 import * as utils from '../../../src/utils';
 import Connector from '../../../src/connectors/dynamodb';
-import {
-  save, get, del, toEvent, toUpdateRequest,
-} from '../../../src/models/thing';
+import Model, { toEvent, toUpdateRequest } from '../../../src/models/thing';
 
 describe('models/thing.js', () => {
   afterEach(sinon.restore);
@@ -22,8 +20,12 @@ describe('models/thing.js', () => {
       't1',
     );
 
-    const data = await save(
-      { connector },
+    const model = new Model(
+      debug('model'),
+      connector,
+    );
+
+    const data = await model.save(
       '00000000-0000-0000-0000-000000000000',
       {
         name: 'thing0',
@@ -61,8 +63,12 @@ describe('models/thing.js', () => {
       't1',
     );
 
-    const data = await get(
-      { connector },
+    const model = new Model(
+      debug('model'),
+      connector,
+    );
+
+    const data = await model.get(
       '00000000-0000-0000-0000-000000000000',
     );
 
@@ -85,8 +91,12 @@ describe('models/thing.js', () => {
       't1',
     );
 
-    const data = await del(
-      { connector },
+    const model = new Model(
+      debug('model'),
+      connector,
+    );
+
+    const data = await model.delete(
       '00000000-0000-0000-0000-000000000000',
     );
 
@@ -108,6 +118,7 @@ describe('models/thing.js', () => {
   it('should map to update request', () => {
     const uow = {
       event: {
+        timestamp: 1634177773001,
         type: 'thing-deleted',
         thing: {
           id: '00000000-0000-0000-0000-000000000000',
@@ -135,10 +146,10 @@ describe('models/thing.js', () => {
         ':name': 'thing0',
         ':discriminator': 'thing',
         ':lastModifiedBy': 'system',
-        ':timestamp': undefined,
+        ':timestamp': 1634177773001,
         ':deleted': true,
         ':latched': true,
-        ':ttl': NaN,
+        ':ttl': 1637028973,
       },
       UpdateExpression: 'SET #id = :id, #name = :name, #discriminator = :discriminator, #lastModifiedBy = :lastModifiedBy, #timestamp = :timestamp, #deleted = :deleted, #latched = :latched, #ttl = :ttl',
       ReturnValues: 'ALL_NEW',
@@ -146,7 +157,7 @@ describe('models/thing.js', () => {
     });
   });
 
-  it('should map to event', () => {
+  it('should map to event', async () => {
     const uow = {
       event: {
         raw: {
@@ -161,7 +172,7 @@ describe('models/thing.js', () => {
       },
     };
 
-    expect(toEvent(uow)).to.deep.equal({
+    expect(await toEvent(uow)).to.deep.equal({
       thing: {
         id: '00000000-0000-0000-0000-000000000000',
         name: 'thing0',
