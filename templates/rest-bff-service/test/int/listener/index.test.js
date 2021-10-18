@@ -9,7 +9,7 @@ describe('listener/index.js', () => {
   });
 
   it('should test listener integration', async () => {
-    const res = await handle(EVENT, {});
+    const res = await handle(EVENT, {}, { AES: false });
     expect(res).to.equal('Success');
   });
 });
