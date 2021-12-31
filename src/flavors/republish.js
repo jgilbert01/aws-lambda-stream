@@ -7,6 +7,7 @@ import {
   outSourceIsSelf,
   filterOnEventType,
   filterOnContent,
+  outSkip,
 } from '../filters';
 
 /**
@@ -27,6 +28,7 @@ import {
 
 export const republish = (rule) => (s) => // eslint-disable-line import/prefer-default-export
   s
+    .filter(outSkip)
     .filter(outSourceIsSelf)
 
     .filter(onEventType(rule))
