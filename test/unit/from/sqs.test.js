@@ -1,7 +1,9 @@
 import 'mocha';
 import { expect } from 'chai';
 
-import { fromSqs, toSqsRecords } from '../../../src/from/sqs';
+import {
+  fromSqs, toSqsRecords, fromSqsEvent, toSqsEventRecords,
+} from '../../../src/from/sqs';
 import { fromS3, toS3Records } from '../../../src/from/s3';
 
 describe('from/sqs.js', () => {
@@ -96,6 +98,46 @@ describe('from/sqs.js', () => {
               object: {
                 key: 'k1',
               },
+            },
+          },
+        });
+      })
+      .done(done);
+  });
+
+  it('should parse event records', (done) => {
+    const event = toSqsEventRecords([
+      {
+        type: 'thing-created',
+        timestamp: '1595616620000',
+        thing: {
+          name: 'thing1',
+        },
+      },
+    ]);
+
+    fromSqsEvent(event)
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({
+          record: {
+            eventSource: 'aws:sqs',
+            awsRegion: 'us-west-2',
+            messageId: '00000000-0000-0000-0000-000000000000',
+            body: '{"type":"thing-created","timestamp":"1595616620000","thing":{"name":"thing1"}}',
+            attributes: {
+              SentTimestamp: '1595616620000',
+            },
+          },
+          event: {
+            id: '00000000-0000-0000-0000-000000000000',
+            type: 'thing-created',
+            timestamp: '1595616620000',
+            thing: {
+              name: 'thing1',
             },
           },
         });
