@@ -1,5 +1,7 @@
 import _ from 'highland';
 
+import { faulty } from '../utils';
+
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events
 
@@ -11,6 +13,17 @@ export const fromSqs = (event) =>
       ({
         record,
       }));
+
+export const fromSqsEvent = (event) => _(event.Records)
+  // create a unit-of-work for each event
+  // so we can correlate related work for error handling
+  .map(faulty((record) => ({
+    record,
+    event: {
+      id: record.messageId,
+      ...JSON.parse(record.body),
+    },
+  })));
 
 // test helper
 // https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
@@ -34,7 +47,16 @@ export const toSqsRecords = (messages) => ({
       },
       // messageAttributes: {},
       // md5OfBody: 'e4e68fb7bd0e697a0ae8f1bb342846b3',
-      awsRegion: 'us-west-2',
+      awsRegion: m.region || 'us-west-2',
       // eventSourceARN: 'arn:aws:sqs:us-west-2:123456789012:my-queue',
     })),
 });
+
+export const toSqsEventRecords = (events) =>
+  toSqsRecords(events.map((e) => ({
+    body: JSON.stringify(e),
+    timestamp: e.timestamp,
+    region: e.tags?.region,
+  })));
+
+export const UNKNOWN_SQS_EVENT_TYPE = toSqsEventRecords([{ type: 'unknown-type' }]);
