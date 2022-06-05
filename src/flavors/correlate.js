@@ -47,8 +47,8 @@ export const correlate = (rule) => (s) => s // eslint-disable-line import/prefer
 
   .tap(printEndPipeline);
 
-const forCollectedEvents = (uow) => (uow.record.eventName === 'INSERT' && uow.record.dynamodb.Keys.sk.S === 'EVENT');
-const normalize = (uow) => ({
+export const forCollectedEvents = (uow) => (uow.record.eventName === 'INSERT' && uow.record.dynamodb.Keys.sk.S === 'EVENT');
+export const normalize = (uow) => ({
   ...uow,
   meta: {
     sequenceNumber: uow.event.raw.new.sequenceNumber,
@@ -61,7 +61,7 @@ const normalize = (uow) => ({
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 
-const correlationKey = (rule) => faulty((uow) => {
+export const correlationKey = (rule) => faulty((uow) => {
   let key;
 
   if (isFunction(rule.correlationKey)) {

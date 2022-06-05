@@ -1,6 +1,7 @@
 import {
   printStartPipeline, printEndPipeline,
-  faulty, faultyAsyncStream, faultify, query,
+  faulty, faultyAsyncStream, faultify,
+  query, batchGet, toPkQueryRequest,
   encryptEvent,
 } from '../utils';
 
@@ -17,6 +18,9 @@ export const cdc = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .map(toQueryRequest(rule))
   .through(query(rule))
 
+  .map(toGetRequest(rule))
+  .through(batchGet(rule))
+
   .map(toEvent(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
@@ -30,17 +34,20 @@ const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 
 const toQueryRequest = (rule) => (uow) => ({
   ...uow,
-  queryRequest: !rule.queryRelated ? undefined
-    : {
-      KeyConditionExpression: '#pk = :pk',
-      ExpressionAttributeNames: {
-        '#pk': rule.pkFn || 'pk',
-      },
-      ExpressionAttributeValues: {
-        ':pk': uow.event.partitionKey,
-      },
-      ConsistentRead: true,
-    },
+  queryRequest:
+    rule.toQueryRequest // eslint-disable-line no-nested-ternary
+      ? /* istanbul ignore next */ rule.toQueryRequest(uow, rule)
+      : !rule.queryRelated
+        ? undefined
+        : toPkQueryRequest(uow, rule),
+});
+
+const toGetRequest = (rule) => (uow) => ({
+  ...uow,
+  batchGetRequest:
+    rule.toGetRequest
+      ? /* istanbul ignore next */ rule.toGetRequest(uow, rule)
+      : undefined,
 });
 
 const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent

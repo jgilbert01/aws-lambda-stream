@@ -7,6 +7,7 @@ import { ttl } from '../../../src/utils';
 
 import {
   updateExpression, timestampCondition, update, put, query, batchGet,
+  toGetRequest, toIndexQueryRequest, toPkQueryRequest,
 } from '../../../src/utils/dynamodb';
 
 import Connector from '../../../src/connectors/dynamodb';
@@ -278,5 +279,66 @@ describe('utils/dynamodb.js', () => {
         }]);
       })
       .done(done);
+  });
+
+  it('should calculate pk query request', () => {
+    expect(toPkQueryRequest({
+      event: {
+        partitionKey: '1',
+      },
+    }, {})).to.deep.equal({
+      KeyConditionExpression: '#pk = :pk',
+      ExpressionAttributeNames: {
+        '#pk': 'pk',
+      },
+      ExpressionAttributeValues: {
+        ':pk': '1',
+      },
+      ConsistentRead: true,
+    });
+  });
+
+  it('should calculate index query request', () => {
+    expect(toIndexQueryRequest({
+      event: {
+        partitionKey: '1',
+      },
+    }, {
+      indexNm: 'gsi1',
+      indexFn: 'data',
+    })).to.deep.equal({
+      IndexName: 'gsi1',
+      KeyConditionExpression: '#pk = :pk',
+      ExpressionAttributeNames: {
+        '#pk': 'data',
+      },
+      ExpressionAttributeValues: {
+        ':pk': '1',
+      },
+      ConsistentRead: false,
+    });
+  });
+
+  it('should calculate get query request', () => {
+    expect(toGetRequest({
+      event: {
+        raw: {
+          new: {
+            otherThing: 'thing|2',
+          },
+        },
+      },
+    }, {
+      fks: ['otherThing'],
+    })).to.deep.equal({
+      RequestItems: {
+        undefined: {
+          Keys: [{
+            pk: '2',
+            sk: 'thing',
+          }],
+        },
+      },
+    });
   });
 });

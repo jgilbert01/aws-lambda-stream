@@ -153,3 +153,53 @@ export const query = (/* istanbul ignore next */{
     .map(invoke)
     .parallel(parallel);
 };
+
+export const toPkQueryRequest = (uow, rule) => ({
+  KeyConditionExpression: '#pk = :pk',
+  ExpressionAttributeNames: {
+    '#pk': rule.pkFn || 'pk',
+  },
+  ExpressionAttributeValues: {
+    ':pk': uow.event.partitionKey,
+  },
+  ConsistentRead: true,
+});
+
+export const toIndexQueryRequest = (uow, rule) => ({
+  IndexName: rule.indexNm,
+  KeyConditionExpression: '#pk = :pk',
+  ExpressionAttributeNames: {
+    '#pk': rule.indexFn,
+  },
+  ExpressionAttributeValues: {
+    ':pk': uow.event.partitionKey,
+  },
+  ConsistentRead: false,
+});
+
+export const toGetRequest = (uow, rule) => {
+  const data = uow.event.raw.new || /* istanbul ignore next */ uow.event.raw.old;
+
+  const Keys = rule.fks
+    .reduce((a, fk) => {
+      const value = data[fk];
+      /* istanbul ignore else */
+      if (value) {
+        const [discriminator, pk] = value.split('|');
+        return [...a, {
+          pk,
+          sk: discriminator,
+        }];
+      } else {
+        return a;
+      }
+    }, []);
+
+  return {
+    RequestItems: {
+      [rule.tableName]: {
+        Keys,
+      },
+    },
+  };
+};
