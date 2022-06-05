@@ -112,7 +112,7 @@ export const pageObjectsFromS3 = ({
   const connector = new Connector({ debug, bucketName });
 
   const listObjects = (uow) => {
-    let ContinuationToken = uow[listRequestField].ContinuationToken;
+    let { ContinuationToken } = uow[listRequestField];
 
     return _((push, next) => {
       const params = {
