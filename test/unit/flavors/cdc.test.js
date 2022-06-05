@@ -75,7 +75,7 @@ describe('flavors/cdc.js', () => {
         expect(collected[1].event.type).to.equal('thing-created');
         expect(collected[1].event.thing).to.deep.equal({
           id: '1',
-          name: 'IlRoaW5nIE9uZSI=', // 'Thing One',
+          name: 'VGhpbmcgT25l', // 'Thing One',
           description: 'This is thing one',
         });
         expect(collected[1].event.tags).to.deep.equal({
