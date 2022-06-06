@@ -26,11 +26,12 @@ import { put } from '../utils/dynamodb';
  *   id: string
  *   flavor: collect,
  *   eventType: string | string[] | Function,
- *   filters: Function[],
+ *   filters?: Function[],
  *   correlationKey?: string | Function, // default uow.event.partitionKey
  *   ttl?: number, // default 33 days
- *   expire: boolean | string
+ *   expire?: boolean | string
  *   parallel?: number;
+ *   toPutRequest?: Function,
  * }
  */
 
@@ -71,18 +72,21 @@ const correlationKey = (rule) => faulty((uow) => {
 const toPutRequest = (rule) => faulty(
   (uow) => ({
     ...uow,
-    putRequest: { // variable expected by `put` util
-      Item: {
-        pk: uow.event.id,
-        sk: 'EVENT',
-        discriminator: 'EVENT',
-        timestamp: uow.event.timestamp,
-        sequenceNumber: uow.record.kinesis.sequenceNumber,
-        ttl: ttlRule(rule, uow),
-        expire: rule.expire,
-        data: uow.key,
-        event: rule.includeRaw ? /* istanbul ignore next */ uow.event : omit(uow.event, ['raw']),
-      },
-    },
+    putRequest: // variable expected by `put` util
+      rule.toPutRequest
+        ? /* istanbul ignore next */ rule.toPutRequest(uow, rule)
+        : {
+          Item: {
+            pk: uow.event.id,
+            sk: 'EVENT',
+            discriminator: 'EVENT',
+            timestamp: uow.event.timestamp,
+            sequenceNumber: uow.record.kinesis?.sequenceNumber || /* istanbul ignore next */ uow.record.attributes?.SequenceNumber,
+            ttl: ttlRule(rule, uow),
+            expire: rule.expire,
+            data: uow.key,
+            event: rule.includeRaw ? /* istanbul ignore next */ uow.event : omit(uow.event, ['raw']),
+          },
+        },
   }),
 );

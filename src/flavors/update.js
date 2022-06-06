@@ -8,7 +8,12 @@ import {
 
 import { filterOnEventType, filterOnContent } from '../filters';
 
+import { normalize } from './correlate';
+
 export const update = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
+  // reacting to collected events vs change events
+  .map((uow) => (uow.record.dynamodb.Keys.sk.S === 'EVENT' ? /* istanbul ignore next */ normalize(uow) : uow))
+
   .filter(onEventType(rule))
   .tap(printStartPipeline)
 
