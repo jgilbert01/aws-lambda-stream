@@ -17,7 +17,7 @@ import {
 } from '../../../src/utils/dynamodb';
 import { DynamoDBConnector } from '../../../src/connectors';
 
-import { update } from '../../../src/flavors/update';
+import { upd as update } from '../../../src/flavors/update';
 
 describe('flavors/update.js', () => {
   beforeEach(() => {

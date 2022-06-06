@@ -4,3 +4,4 @@ export * from './cdc';
 export * from './evaluate';
 export * from './expired';
 export * from './materialize';
+export * from './update';
