@@ -11,7 +11,7 @@ import {
   filterOnEventType, filterOnContent,
 } from '../filters';
 
-import { put } from '../utils/dynamodb';
+import { putDynamoDB } from '../utils/dynamodb';
 
 /**
  * used when you need to correlate the same events under multiple keys
@@ -43,7 +43,7 @@ export const correlate = (rule) => (s) => s // eslint-disable-line import/prefer
 
   .map(correlationKey(rule))
   .map(toPutRequest(rule))
-  .through(put(rule))
+  .through(putDynamoDB(rule))
 
   .tap(printEndPipeline);
 

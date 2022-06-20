@@ -13,7 +13,7 @@ import {
   outSkip,
 } from '../filters';
 
-import { put } from '../utils/dynamodb';
+import { putDynamoDB } from '../utils/dynamodb';
 
 /**
  * collects events in a micro event store
@@ -45,7 +45,7 @@ export const collect = (rule) => (s) => s // eslint-disable-line import/prefer-d
 
   .map(correlationKey(rule))
   .map(toPutRequest(rule))
-  .through(put(rule))
+  .through(putDynamoDB(rule))
 
   .tap(printEndPipeline);
 

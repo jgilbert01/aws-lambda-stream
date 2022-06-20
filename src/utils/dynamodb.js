@@ -46,7 +46,7 @@ export const timestampCondition = (fieldName = 'timestamp') => ({
   ConditionExpression: `attribute_not_exists(#${fieldName}) OR #${fieldName} < :${fieldName}`,
 });
 
-export const update = ({
+export const updateDynamoDB = ({
   debug = d('dynamodb'),
   tableName = process.env.ENTITY_TABLE_NAME || process.env.EVENT_TABLE_NAME,
   updateRequestField = 'updateRequest',
@@ -70,7 +70,9 @@ export const update = ({
     .parallel(parallel);
 };
 
-export const put = ({
+export const update = updateDynamoDB; // deprecated export
+
+export const putDynamoDB = ({
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME,
   putRequestField = 'putRequest',
@@ -94,7 +96,9 @@ export const put = ({
     .parallel(parallel);
 };
 
-export const batchGet = ({
+export const put = putDynamoDB; // deprecated export
+
+export const batchGetDynamoDB = ({
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME,
   batchGetRequestField = 'batchGetRequest',
@@ -119,7 +123,9 @@ export const batchGet = ({
     .parallel(parallel);
 };
 
-export const query = (/* istanbul ignore next */{
+export const batchGet = batchGetDynamoDB; // deprecated export
+
+export const queryDynamoDB = (/* istanbul ignore next */{
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME,
   queryRequestField = 'queryRequest',
@@ -153,6 +159,8 @@ export const query = (/* istanbul ignore next */{
     .map(invoke)
     .parallel(parallel);
 };
+
+export const query = queryDynamoDB; // deprecated export
 
 export const toPkQueryRequest = (uow, rule) => ({
   KeyConditionExpression: '#pk = :pk',
