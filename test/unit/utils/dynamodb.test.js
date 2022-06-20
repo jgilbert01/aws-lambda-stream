@@ -6,7 +6,8 @@ import _ from 'highland';
 import { ttl } from '../../../src/utils';
 
 import {
-  updateExpression, timestampCondition, update, put, query, batchGet,
+  updateExpression, timestampCondition,
+  updateDynamoDB, putDynamoDB, queryDynamoDB, batchGetDynamoDB,
   toGetRequest, toIndexQueryRequest, toPkQueryRequest,
 } from '../../../src/utils/dynamodb';
 
@@ -79,7 +80,7 @@ describe('utils/dynamodb.js', () => {
     }];
 
     _(uows)
-      .through(update())
+      .through(updateDynamoDB())
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
@@ -111,7 +112,7 @@ describe('utils/dynamodb.js', () => {
     }];
 
     _(uows)
-      .through(put())
+      .through(putDynamoDB())
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
@@ -165,7 +166,7 @@ describe('utils/dynamodb.js', () => {
     }];
 
     _(uows)
-      .through(batchGet())
+      .through(batchGetDynamoDB())
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
@@ -245,7 +246,7 @@ describe('utils/dynamodb.js', () => {
     ];
 
     _(uows)
-      .through(query({ parallel: 1 }))
+      .through(queryDynamoDB({ parallel: 1 }))
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));

@@ -1,7 +1,7 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  query, batchGet, toPkQueryRequest,
+  queryDynamoDB, batchGetDynamoDB, toPkQueryRequest,
   encryptEvent,
 } from '../utils';
 
@@ -16,10 +16,10 @@ export const cdc = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .filter(onContent(rule))
 
   .map(toQueryRequest(rule))
-  .through(query(rule))
+  .through(queryDynamoDB(rule))
 
   .map(toGetRequest(rule))
-  .through(batchGet(rule))
+  .through(batchGetDynamoDB(rule))
 
   .map(toEvent(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)

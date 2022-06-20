@@ -7,7 +7,7 @@ import isBoolean from 'lodash/isBoolean';
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  query,
+  queryDynamoDB,
 } from '../utils';
 
 import {
@@ -85,7 +85,7 @@ const complex = (rule) => {
       .filter(onCorrelationKeySuffix(rule))
 
       .map(toQueryRequest(rule))
-      .through(query({ ...rule, queryResponseField: 'correlated' }))
+      .through(queryDynamoDB({ ...rule, queryResponseField: 'correlated' }))
       .map((uow) => ({
         ...uow,
         correlated: uow.correlated.map((i) => i.event),

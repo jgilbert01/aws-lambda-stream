@@ -3,7 +3,7 @@ import _ from 'highland';
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream,
-  query, update as updateDynamoDB, batchGet,
+  queryDynamoDB, updateDynamoDB, batchGetDynamoDB,
 } from '../utils';
 
 import { filterOnEventType, filterOnContent } from '../filters';
@@ -13,7 +13,7 @@ import { normalize } from './correlate';
 // TODO qualify dynamodb utils in v1 and rename this back to update
 export const upd = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   // reacting to collected events vs change events
-  .map((uow) => (uow.record.dynamodb.Keys.sk.S === 'EVENT' ? /* istanbul ignore next */ normalize(uow) : uow))
+  .map((uow) => (uow.record.eventName === 'INSERT' && uow.record.dynamodb.Keys.sk.S === 'EVENT' ? /* istanbul ignore next */ normalize(uow) : uow))
 
   .filter(onEventType(rule))
   .tap(printStartPipeline)
@@ -21,10 +21,10 @@ export const upd = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .filter(onContent(rule))
 
   .map(toQuery(rule))
-  .through(query(rule))
+  .through(queryDynamoDB(rule))
 
   .map(toGetRequest(rule))
-  .through(batchGet(rule))
+  .through(batchGetDynamoDB(rule))
 
   .map(toUpdateRequest(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)

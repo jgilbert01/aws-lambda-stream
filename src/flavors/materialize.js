@@ -8,7 +8,7 @@ import {
   outSkip, outSourceIsSelf,
 } from '../filters';
 
-import { update } from '../utils/dynamodb';
+import { updateDynamoDB } from '../utils/dynamodb';
 
 export const materialize = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   .filter(outSkip)
@@ -22,7 +22,7 @@ export const materialize = (rule) => (s) => s // eslint-disable-line import/pref
   .map(toUpdateRequest(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
-  .through(update(rule))
+  .through(updateDynamoDB(rule))
 
   .tap(printEndPipeline);
 
