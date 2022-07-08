@@ -101,6 +101,7 @@ describe('flavors/correlate.js', () => {
             sequenceNumber: '0',
             suffix: undefined,
             ruleId: 'crl1',
+            awsregion: 'us-west-2',
             event: {
               id: '1',
               type: 'c1',

@@ -90,9 +90,17 @@ export const outReplicas = (record) => {
   const image = record.dynamodb.NewImage || record.dynamodb.OldImage;
 
   // is this a global table event
+  // v1
+  /* istanbul ignore next */
   if (image['aws:rep:updateregion']) {
     // only process events from the current region
     return image['aws:rep:updateregion'].S === process.env.AWS_REGION;
+  }
+
+  // v2
+  if (image.awsregion) {
+    // only process events from the current region
+    return image.awsregion.S === process.env.AWS_REGION;
   }
 
   return true;
@@ -102,7 +110,15 @@ export const outReplicas = (record) => {
 export const outGlobalTableExtraModify = (record) => {
   const { NewImage, OldImage } = record.dynamodb;
 
+  // v1
+  /* istanbul ignore next */
   if (NewImage && NewImage['aws:rep:updateregion'] && OldImage && !OldImage['aws:rep:updateregion']) {
+    // skip
+    return false;
+  }
+
+  // v2
+  if (NewImage && NewImage.awsregion && OldImage && !OldImage.awsregion) {
     // skip
     return false;
   }

@@ -81,6 +81,7 @@ const toPutRequest = (rule) => faulty(
             sk: 'EVENT',
             discriminator: 'EVENT',
             timestamp: uow.event.timestamp,
+            awsregion: process.env.AWS_REGION,
             sequenceNumber: uow.record.kinesis?.sequenceNumber || /* istanbul ignore next */ uow.record.attributes?.SequenceNumber,
             ttl: ttlRule(rule, uow),
             expire: rule.expire,
