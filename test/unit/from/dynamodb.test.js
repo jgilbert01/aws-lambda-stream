@@ -19,7 +19,7 @@ describe('from/dynamodb.js', () => {
           sk: 'thing',
           discriminator: 'thing',
           name: 'n1',
-          // insert in the current region will not have the aws:rep:updateregion field
+          // insert in the current region will not have the awsregion field
         },
       },
       // dynamodb stream emits an extra update event as it adorns the 'aws:rep' global table metadata
@@ -31,18 +31,18 @@ describe('from/dynamodb.js', () => {
           sk: 'thing',
         },
         newImage: {
-          'pk': '1',
-          'sk': 'thing',
-          'discriminator': 'thing',
-          'name': 'n1',
-          'aws:rep:updateregion': 'us-west-2',
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'n1',
+          awsregion: 'us-west-2',
         },
         oldImage: {
           pk: '1',
           sk: 'thing',
           discriminator: 'thing',
           name: 'n1',
-          // as mentioned above there was no aws:rep:updateregion field on the insert event
+          // as mentioned above there was no awsregion field on the insert event
         },
       },
     ]);
@@ -120,20 +120,20 @@ describe('from/dynamodb.js', () => {
           sk: 'thing',
         },
         newImage: {
-          'pk': '1',
-          'sk': 'thing',
-          'discriminator': 'thing',
-          'name': 'n1',
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'n1',
           // the current region
-          'aws:rep:updateregion': 'us-west-2',
+          awsregion: 'us-west-2',
         },
         oldImage: {
-          'pk': '1',
-          'sk': 'thing',
-          'discriminator': 'thing',
-          'name': 'N1',
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'N1',
           // previously updated in another region
-          'aws:rep:updateregion': 'us-east-1',
+          awsregion: 'us-east-1',
         },
       },
       // replicated records emit events as well
@@ -145,20 +145,20 @@ describe('from/dynamodb.js', () => {
           sk: 'thing',
         },
         newImage: {
-          'pk': '1',
-          'sk': 'thing',
-          'discriminator': 'thing',
-          'name': 'n1',
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'n1',
           // not the current region
-          'aws:rep:updateregion': 'us-east-1',
+          awsregion: 'us-east-1',
         },
         oldImage: {
-          'pk': '1',
-          'sk': 'thing',
-          'discriminator': 'thing',
-          'name': 'N1',
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'N1',
           // previously updated in current region
-          'aws:rep:updateregion': 'us-west-2',
+          awsregion: 'us-west-2',
         },
       },
     ]);
@@ -186,36 +186,36 @@ describe('from/dynamodb.js', () => {
                 },
               },
               NewImage: {
-                'pk': {
+                pk: {
                   S: '1',
                 },
-                'sk': {
+                sk: {
                   S: 'thing',
                 },
-                'discriminator': {
+                discriminator: {
                   S: 'thing',
                 },
-                'name': {
+                name: {
                   S: 'n1',
                 },
-                'aws:rep:updateregion': {
+                awsregion: {
                   S: 'us-west-2',
                 },
               },
               OldImage: {
-                'pk': {
+                pk: {
                   S: '1',
                 },
-                'sk': {
+                sk: {
                   S: 'thing',
                 },
-                'discriminator': {
+                discriminator: {
                   S: 'thing',
                 },
-                'name': {
+                name: {
                   S: 'N1',
                 },
-                'aws:rep:updateregion': {
+                awsregion: {
                   S: 'us-east-1',
                 },
               },
@@ -233,18 +233,18 @@ describe('from/dynamodb.js', () => {
             },
             raw: {
               new: {
-                'pk': '1',
-                'sk': 'thing',
-                'discriminator': 'thing',
-                'name': 'n1',
-                'aws:rep:updateregion': 'us-west-2',
+                pk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'n1',
+                awsregion: 'us-west-2',
               },
               old: {
-                'pk': '1',
-                'sk': 'thing',
-                'discriminator': 'thing',
-                'name': 'N1',
-                'aws:rep:updateregion': 'us-east-1',
+                pk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'N1',
+                awsregion: 'us-east-1',
               },
             },
           },
@@ -262,11 +262,11 @@ describe('from/dynamodb.js', () => {
           sk: 'thing',
         },
         oldImage: {
-          'pk': '1',
-          'sk': 'thing',
-          'name': 'N1',
+          pk: '1',
+          sk: 'thing',
+          name: 'N1',
           // deleted in current region
-          'aws:rep:updateregion': 'us-west-2',
+          awsregion: 'us-west-2',
         },
       },
       // replicated records emit events as well
@@ -278,12 +278,12 @@ describe('from/dynamodb.js', () => {
           sk: 'thing',
         },
         oldImage: {
-          'pk': '1',
-          'sk': 'thing',
-          'discriminator': 'thing',
-          'name': 'N1',
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'N1',
           // deleted in another region
-          'aws:rep:updateregion': 'us-east-1',
+          awsregion: 'us-east-1',
         },
       },
     ]);
@@ -312,16 +312,16 @@ describe('from/dynamodb.js', () => {
               },
               NewImage: undefined,
               OldImage: {
-                'pk': {
+                pk: {
                   S: '1',
                 },
-                'sk': {
+                sk: {
                   S: 'thing',
                 },
-                'name': {
+                name: {
                   S: 'N1',
                 },
-                'aws:rep:updateregion': {
+                awsregion: {
                   S: 'us-west-2',
                 },
               },
@@ -340,10 +340,10 @@ describe('from/dynamodb.js', () => {
             raw: {
               new: undefined,
               old: {
-                'pk': '1',
-                'sk': 'thing',
-                'name': 'N1',
-                'aws:rep:updateregion': 'us-west-2',
+                pk: '1',
+                sk: 'thing',
+                name: 'N1',
+                awsregion: 'us-west-2',
               },
             },
           },

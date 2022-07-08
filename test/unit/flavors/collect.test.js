@@ -86,6 +86,7 @@ describe('flavors/collect.js', () => {
             expire: undefined,
             timestamp: 1548967022000,
             sequenceNumber: '0',
+            awsregion: 'us-west-2',
             event: {
               id: '1',
               type: 'c1',

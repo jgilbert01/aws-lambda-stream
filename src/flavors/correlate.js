@@ -88,6 +88,7 @@ const toPutRequest = (rule) => faulty(
         sk: uow.event.id,
         discriminator: 'CORREL', // ATION
         timestamp: uow.event.timestamp,
+        awsregion: process.env.AWS_REGION,
         sequenceNumber: uow.meta.sequenceNumber,
         ttl: rule.ttl ? ttlRule(rule, uow) : uow.meta.ttl,
         expire: rule.expire,
