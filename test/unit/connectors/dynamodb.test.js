@@ -248,6 +248,52 @@ describe('connectors/dynamodb.js', () => {
     ]);
   });
 
+  it('should scan', async () => {
+    const correlationKey = '11';
+
+    const spy = sinon.spy((params, cb) => cb(null, {
+      Items: [{
+        pk: '1',
+        sk: 'EVENT',
+        data: correlationKey,
+        event: {},
+      }],
+    }));
+
+    AWS.mock('DynamoDB.DocumentClient', 'scan', spy);
+
+    const SCAN_REQUEST = {
+      ExpressionAttributeNames: {
+        '#data': 'data',
+      },
+      ExpressionAttributeValues: {
+        ':data': correlationKey,
+      },
+    };
+
+    const data = await new Connector({
+      debug: debug('dynamodb'),
+      tableName: 'my-service-entities',
+    })
+      .scan(SCAN_REQUEST);
+
+    expect(spy).to.have.been.calledWith({
+      TableName: 'my-service-entities',
+      ExpressionAttributeNames: { '#data': 'data' },
+      ExpressionAttributeValues: { ':data': '11' },
+    });
+    expect(data).to.deep.equal({
+      Items: [
+        {
+          pk: '1',
+          sk: 'EVENT',
+          data: correlationKey,
+          event: {},
+        },
+      ],
+    });
+  });
+
   it('should query with limiting Limit param', async () => {
     const correlationKey = '11';
 

@@ -1,3 +1,5 @@
+export * from './cron';
+export * from './cognito';
 export * from './dynamodb';
 export * from './eventbridge';
 export * from './kinesis';

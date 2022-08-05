@@ -211,3 +211,63 @@ export const toGetRequest = (uow, rule) => {
     },
   };
 };
+
+export const scanDynamoDB = ({
+  debug = d('dynamodb'),
+  tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME || process.env.TABLE_NAME,
+  scanRequestField = 'scanRequest',
+  scanResponseField = 'scanResponse',
+  parallel = Number(process.env.SCAN_PARALLEL) || Number(process.env.PARALLEL) || 4,
+  timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+
+} = {}) => {
+  const connector = new Connector({ debug, tableName, timeout });
+
+  const scan = (uow) => {
+    let cursor;
+
+    return _((push, next) => {
+      const params = {
+        ...uow[scanRequestField],
+        ExclusiveStartKey: cursor,
+      };
+
+      connector.scan(params)
+        .then((data) => {
+          const { LastEvaluatedKey, Items, ...rest } = data;
+
+          if (LastEvaluatedKey) {
+            cursor = LastEvaluatedKey;
+          } else {
+            cursor = undefined;
+          }
+
+          Items.forEach((Item) => {
+            push(null, {
+              ...uow,
+              [scanRequestField]: params,
+              [scanResponseField]: {
+                ...rest,
+                Item,
+              },
+            });
+          });
+        })
+        .catch(/* istanbul ignore next */(err) => {
+          err.uow = uow;
+          push(err, null);
+        })
+        .finally(() => {
+          if (cursor) {
+            next();
+          } else {
+            push(null, _.nil);
+          }
+        });
+    });
+  };
+
+  return (s) => s
+    .map(scan)
+    .parallel(parallel);
+};

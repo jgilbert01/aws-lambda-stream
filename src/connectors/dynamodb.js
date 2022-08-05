@@ -102,6 +102,17 @@ class Connector {
       .collect()
       .toPromise(Promise);
   }
+
+  scan(inputParams) {
+    const params = {
+      TableName: this.tableName,
+      ...inputParams,
+    };
+
+    return this.db.scan(params).promise()
+      .tap(this.debug)
+      .tapCatch(this.debug);
+  }
 }
 
 export default Connector;

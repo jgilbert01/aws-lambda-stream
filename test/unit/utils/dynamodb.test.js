@@ -7,7 +7,8 @@ import { ttl } from '../../../src/utils';
 
 import {
   updateExpression, timestampCondition,
-  updateDynamoDB, putDynamoDB, queryDynamoDB, batchGetDynamoDB,
+  updateDynamoDB, putDynamoDB,
+  queryDynamoDB, batchGetDynamoDB, scanDynamoDB,
   toGetRequest, toIndexQueryRequest, toPkQueryRequest,
 } from '../../../src/utils/dynamodb';
 
@@ -278,6 +279,82 @@ describe('utils/dynamodb.js', () => {
           data: '11',
           event: {},
         }]);
+      })
+      .done(done);
+  });
+
+  it('should call scan', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'scan')
+      .onCall(0)
+      .resolves({
+        LastEvaluatedKey: '1',
+        Items: [{
+          pk: '1',
+          sk: 'EVENT',
+          data: '11',
+        }],
+      })
+      .onCall(1)
+      .resolves({
+        Items: [{
+          pk: '2',
+          sk: 'EVENT',
+          data: '22',
+        }],
+      });
+
+    const uows = [
+      {
+        scanRequest: {
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+        },
+      },
+    ];
+
+    _(uows)
+      .through(scanDynamoDB())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(2);
+        expect(stub).to.have.been.calledWith({
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          ExclusiveStartKey: undefined,
+        });
+        expect(collected[0].scanResponse).to.deep.equal({
+          Item: {
+            pk: '1',
+            sk: 'EVENT',
+            data: '11',
+          },
+        });
+        expect(stub).to.have.been.calledWith({
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          ExclusiveStartKey: '1',
+        });
+        expect(collected[1].scanResponse).to.deep.equal({
+          Item: {
+            pk: '2',
+            sk: 'EVENT',
+            data: '22',
+          },
+        });
       })
       .done(done);
   });
