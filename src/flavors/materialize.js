@@ -1,3 +1,6 @@
+import isFunction from 'lodash/isFunction';
+import get from 'lodash/get';
+
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
@@ -19,6 +22,8 @@ export const materialize = (rule) => (s) => s // eslint-disable-line import/pref
 
   .filter(onContent(rule))
 
+  .through(split(rule))
+
   .map(toUpdateRequest(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
@@ -33,3 +38,27 @@ const toUpdateRequest = (rule) => faultyAsyncStream(async (uow) => ({
   ...uow,
   updateRequest: await faultify(rule.toUpdateRequest)(uow, rule),
 }));
+
+const split = ({
+  splitOn,
+  splitTargetField = 'split',
+  ...rule
+}) => {
+  if (splitOn) {
+    if (isFunction(splitOn)) {
+      return (s) => s
+        .flatMap(faulty((uow) => splitOn(uow, rule)));
+    } else {
+      return (s) => s
+        .flatMap(faulty((uow) => {
+          const values = get(uow.event, splitOn);
+          return values.map((v) => ({
+            ...uow,
+            [splitTargetField]: v,
+          }));
+        }));
+    }
+  } else {
+    return (s) => s;
+  }
+};

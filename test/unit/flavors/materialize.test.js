@@ -32,6 +32,21 @@ describe('flavors/materialize.js', () => {
           description: 'This is thing one',
         },
       },
+      {
+        type: 'split',
+        timestamp: 1548967022000,
+        root: {
+          things: [{
+            id: '2',
+            name: 'Thing One',
+            description: 'This is thing one',
+          }, {
+            id: '3',
+            name: 'Thing One',
+            description: 'This is thing one',
+          }],
+        },
+      },
     ]);
 
     initialize({
@@ -41,7 +56,7 @@ describe('flavors/materialize.js', () => {
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
-        expect(collected.length).to.equal(1);
+        expect(collected.length).to.equal(5);
         expect(collected[0].pipeline).to.equal('mv1');
         expect(collected[0].event.type).to.equal('m1');
         expect(collected[0].updateRequest).to.deep.equal({
@@ -70,6 +85,10 @@ describe('flavors/materialize.js', () => {
           ReturnValues: 'ALL_NEW',
           ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
         });
+        expect(collected[1].updateRequest.Key.pk).to.equal('2');
+        expect(collected[2].updateRequest.Key.pk).to.equal('2');
+        expect(collected[3].updateRequest.Key.pk).to.equal('3');
+        expect(collected[4].updateRequest.Key.pk).to.equal('3');
       })
       .done(done);
   });
@@ -77,11 +96,11 @@ describe('flavors/materialize.js', () => {
 
 const toUpdateRequest = (uow) => ({
   Key: {
-    pk: uow.event.thing.id,
+    pk: uow.split?.id || uow.event.thing.id,
     sk: 'thing',
   },
   ...updateExpression({
-    ...uow.event.thing,
+    ...(uow.split || uow.event.thing),
     discriminator: 'thing',
     ttl: ttl(uow.event.timestamp, 1),
     timestamp: uow.event.timestamp,
@@ -101,5 +120,22 @@ const rules = [
     id: 'other1',
     flavor: materialize,
     eventType: 'x9',
+  },
+  {
+    id: 'split',
+    flavor: materialize,
+    eventType: 'split',
+    splitOn: 'root.things',
+    toUpdateRequest,
+  },
+  {
+    id: 'split-custom',
+    flavor: materialize,
+    eventType: 'split',
+    splitOn: (uow) => uow.event.root.things.map((t) => ({
+      ...uow,
+      split: t,
+    })),
+    toUpdateRequest,
   },
 ];
