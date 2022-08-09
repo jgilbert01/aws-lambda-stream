@@ -68,7 +68,7 @@
     "mocha": "^5.2.0",
     "nyc": "^11.8.0",
     "pre-commit": "^1.2.2",
-    "serverless": "^1.26.0",
+    "serverless": "^3.21.0",
     "serverless-dynamodb-autoscaling-plugin": "1.0.0",
     "serverless-dynamodb-global-table-plugin": "1.0.1",
     "serverless-offline": "^4.5.0",
