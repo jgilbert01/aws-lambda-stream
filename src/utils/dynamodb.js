@@ -46,6 +46,10 @@ export const timestampCondition = (fieldName = 'timestamp') => ({
   ConditionExpression: `attribute_not_exists(#${fieldName}) OR #${fieldName} < :${fieldName}`,
 });
 
+export const pkCondition = (fieldName = 'pk') => ({
+  ConditionExpression: `attribute_not_exists(${fieldName})`,
+});
+
 export const updateDynamoDB = ({
   debug = d('dynamodb'),
   tableName = process.env.ENTITY_TABLE_NAME || process.env.EVENT_TABLE_NAME,
@@ -58,7 +62,7 @@ export const updateDynamoDB = ({
   const invoke = (uow) => {
     if (!uow[updateRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.update(uow[updateRequestField])
+    const p = connector.update(uow[updateRequestField]) // array or not - batch support
       .then((updateResponse) => ({ ...uow, updateResponse }))
       .catch(rejectWithFault(uow));
 
@@ -84,7 +88,7 @@ export const putDynamoDB = ({
   const invoke = (uow) => {
     if (!uow[putRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.put(uow[putRequestField])
+    const p = connector.put(uow[putRequestField]) // array or not
       .then((putResponse) => ({ ...uow, putResponse }))
       .catch(rejectWithFault(uow));
 
