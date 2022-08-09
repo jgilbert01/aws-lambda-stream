@@ -1,6 +1,7 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
+  updateDynamoDB,
   scanDynamoDB, queryDynamoDB, batchGetDynamoDB,
   encryptEvent,
 } from '../utils';
@@ -21,6 +22,10 @@ export const job = (rule) => (s) => s // eslint-disable-line import/prefer-defau
 
   .map(toGetRequest(rule))
   .through(batchGetDynamoDB(rule))
+
+
+  .map(toUpdateRequest(rule))
+  .through(updateDynamoDB(rule))
 
   .map(toEvent(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
@@ -63,6 +68,14 @@ const toGetRequest = (rule) => (uow) => ({
   batchGetRequest:
     rule.toGetRequest
       ? /* istanbul ignore next */ rule.toGetRequest(uow, rule)
+      : undefined,
+});
+
+const toUpdateRequest = (rule) => (uow) => ({
+  ...uow,
+  updateRequest:
+    rule.toUpdateRequest
+      ? /* istanbul ignore next */ rule.toUpdateRequest(uow, rule)
       : undefined,
 });
 

@@ -22,6 +22,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
     ...batchUow,
     inputParams: {
       Entries: batchUow.batch
+        .filter((uow) => uow[eventField])
         .map((uow) => ({
           EventBusName: busName,
           Source: source,
@@ -32,6 +33,10 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   });
 
   const putEvents = (batchUow) => {
+    if (!batchUow.inputParams.Entries.length) {
+      return _(Promise.resolve(batchUow));
+    }
+
     const p = connector.putEvents(batchUow.inputParams)
       .catch(rejectWithFault(batchUow, !handleErrors))
       .then(handleFailedEntries(batchUow))

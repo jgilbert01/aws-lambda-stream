@@ -46,6 +46,10 @@ export const timestampCondition = (fieldName = 'timestamp') => ({
   ConditionExpression: `attribute_not_exists(#${fieldName}) OR #${fieldName} < :${fieldName}`,
 });
 
+export const pkCondition = (fieldName = 'pk') => ({
+  ConditionExpression: `attribute_not_exists(${fieldName})`,
+});
+
 export const updateDynamoDB = ({
   debug = d('dynamodb'),
   tableName = process.env.ENTITY_TABLE_NAME || process.env.EVENT_TABLE_NAME,

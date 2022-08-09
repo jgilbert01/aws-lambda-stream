@@ -6,7 +6,7 @@ import _ from 'highland';
 import { ttl } from '../../../src/utils';
 
 import {
-  updateExpression, timestampCondition,
+  updateExpression, timestampCondition, pkCondition,
   updateDynamoDB, putDynamoDB,
   queryDynamoDB, batchGetDynamoDB, scanDynamoDB,
   toGetRequest, toIndexQueryRequest, toPkQueryRequest,
@@ -63,6 +63,12 @@ describe('utils/dynamodb.js', () => {
   it('should calculate timestampCondition', () => {
     expect(timestampCondition()).to.deep.equal({
       ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
+    });
+  });
+
+  it('should calculate pkCondition', () => {
+    expect(pkCondition()).to.deep.equal({
+      ConditionExpression: 'attribute_not_exists(pk)',
     });
   });
 
