@@ -21,11 +21,16 @@ export const publishToKinesis = ({
     ...batchUow,
     inputParams: {
       Records: batchUow.batch
+        .filter((uow) => uow[eventField])
         .map((uow) => toRecord(uow[eventField])),
     },
   });
 
   const putRecords = (batchUow) => {
+    if (!batchUow.inputParams.Records.length) {
+      return _(Promise.resolve(batchUow));
+    }
+
     const p = connector.putRecords(batchUow.inputParams)
       .then((publishResponse) => ({ ...batchUow, publishResponse }))
       .catch(rejectWithFault(batchUow, !handleErrors));

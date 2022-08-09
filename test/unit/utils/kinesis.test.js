@@ -68,6 +68,22 @@ describe('utils/kinesis.js', () => {
       .done(done);
   });
 
+  it('should not publish', (done) => {
+    const uows = [{
+    }];
+
+    _(uows)
+      .through(publish())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0].publishResponse).to.be.undefined;
+      })
+      .done(done);
+  });
+
   it('should reject with a fault', (done) => {
     sinon.stub(Connector.prototype, 'putRecords').rejects('test error');
 

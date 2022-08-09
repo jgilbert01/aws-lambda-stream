@@ -57,7 +57,7 @@ export const encryptEvent = ({
   parallel = Number(process.env.ENCRYPTION_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
   const encrypt = (uow) => {
-    if (!eem) {
+    if (!eem || !uow[sourceField]) {
       return _(Promise.resolve(uow));
     }
 

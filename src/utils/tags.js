@@ -1,6 +1,6 @@
 import { skipTag } from '../filters';
 
-export const adornStandardTags = (eventField) => (uow) => ({
+export const adornStandardTags = (eventField) => (uow) => (!uow[eventField] ? uow : ({
   ...uow,
   [eventField]: {
     ...uow[eventField],
@@ -10,7 +10,7 @@ export const adornStandardTags = (eventField) => (uow) => ({
       ...uow[eventField].tags,
     },
   },
-});
+}));
 
 export const envTags = (pipeline) => ({
   account: process.env.ACCOUNT_NAME || 'undefined',
