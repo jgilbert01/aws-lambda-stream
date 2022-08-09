@@ -7,7 +7,7 @@
     "rm:lcl": "sls remove -r us-east-1"
   },
   "devDependencies": {
-    "serverless": "^1.83.3"
+    "serverless": "^3.21.0"
   },
   "dependencies": {
     "uuid": "^7.0.2"
