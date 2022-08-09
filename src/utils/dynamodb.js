@@ -62,7 +62,7 @@ export const updateDynamoDB = ({
   const invoke = (uow) => {
     if (!uow[updateRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.update(uow[updateRequestField]) // array or not - batch support
+    const p = connector.update(uow[updateRequestField])
       .then((updateResponse) => ({ ...uow, updateResponse }))
       .catch(rejectWithFault(uow));
 
@@ -88,7 +88,7 @@ export const putDynamoDB = ({
   const invoke = (uow) => {
     if (!uow[putRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.put(uow[putRequestField]) // array or not
+    const p = connector.put(uow[putRequestField])
       .then((putResponse) => ({ ...uow, putResponse }))
       .catch(rejectWithFault(uow));
 
