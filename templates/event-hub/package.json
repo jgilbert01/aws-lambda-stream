@@ -12,6 +12,6 @@
   },
   "devDependencies": {
     "aws-assume-role-cicd": "^1.0.4",
-    "serverless": "^1.83.3"
+    "serverless": "^3.21.0"
   }
 }
