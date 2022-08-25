@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import _ from 'highland';
 
 import {
-  putObjectToS3, getObjectFromS3, listObjectsFromS3, pageObjectsFromS3, split, toGetObjectRequest, toGetObjectRequest2,
+  putObjectToS3, getObjectFromS3, listObjectsFromS3, pageObjectsFromS3, splitS3Object, toGetObjectRequest, toGetObjectRequest2,
 } from '../../../src/utils/s3';
 
 import Connector from '../../../src/connectors/s3';
@@ -80,7 +80,7 @@ describe('utils/s3.js', () => {
   });
 
   it('should get and split object', (done) => {
-    const stub = sinon.stub(Connector.prototype, 'getObject').resolves(GET_RESPONSE);
+    sinon.stub(Connector.prototype, 'getObject').resolves(GET_RESPONSE);
 
     const uows = [{
       record: {
@@ -98,7 +98,7 @@ describe('utils/s3.js', () => {
     _(uows)
       .map(toGetObjectRequest)
       .through(getObjectFromS3())
-      .flatMap(split())
+      .flatMap(splitS3Object())
       .map((uow) => {
         const { detail, ...eb } = JSON.parse(uow.getResponse.line);
         return ({

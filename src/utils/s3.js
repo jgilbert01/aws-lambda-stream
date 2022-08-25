@@ -63,7 +63,7 @@ export const getObjectFromS3 = ({
     .parallel(parallel);
 };
 
-export const split = ({
+export const splitS3Object = ({
   delimiter = '\n',
   getResponseField = 'getResponse',
 } = {}) => (uow) => {
@@ -81,6 +81,8 @@ export const split = ({
       })),
   );
 };
+
+export const split = splitS3Object; // deprecated export
 
 export const listObjectsFromS3 = ({
   debug = d('s3'),

@@ -1,8 +1,6 @@
-import _ from 'highland';
-
 import {
   printStartPipeline, printEndPipeline,
-  faulty, faultyAsyncStream,
+  faulty, faultyAsyncStream, splitObject,
   queryDynamoDB, updateDynamoDB, batchGetDynamoDB,
 } from '../utils';
 
@@ -22,6 +20,11 @@ export const upd = (rule) => (s) => s // eslint-disable-line import/prefer-defau
 
   .map(toQuery(rule))
   .through(queryDynamoDB(rule))
+
+  .through(splitObject({
+    splitTargetField: rule.queryResponseField || 'queryResponse',
+    ...rule,
+  }))
 
   .map(toGetRequest(rule))
   .through(batchGetDynamoDB(rule))

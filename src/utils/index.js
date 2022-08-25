@@ -14,6 +14,7 @@ export * from './print';
 export * from './secretsmgr';
 export * from './s3';
 export * from './sns';
+export * from './split';
 export * from './sqs';
 export * from './tags';
 export * from './time';
