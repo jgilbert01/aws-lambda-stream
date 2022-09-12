@@ -39,21 +39,21 @@ export const upd = (rule) => (s) => s // eslint-disable-line import/prefer-defau
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 
-const toQuery = (rule) => (uow) => ({
+const toQuery = (rule) => faulty((uow) => ({
   ...uow,
   queryRequest:
     rule.toQueryRequest
       ? rule.toQueryRequest(uow, rule)
       : undefined,
-});
+}));
 
-const toGetRequest = (rule) => (uow) => ({
+const toGetRequest = (rule) => faulty((uow) => ({
   ...uow,
   batchGetRequest:
     rule.toGetRequest
       ? rule.toGetRequest(uow, rule)
       : undefined,
-});
+}));
 
 const toUpdateRequest = (rule) => faultyAsyncStream((uow) => Promise.resolve(rule.toUpdateRequest(uow, rule))
   .then((updateRequest) => ({

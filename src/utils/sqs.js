@@ -8,22 +8,28 @@ import { debug as d } from './print';
 
 export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   debug = d('sqs'),
-  queueName = process.env.QUEUE_NAME,
+  queueUrl = process.env.QUEUE_URL,
   messageField = 'message',
-  batchSize = Number(process.env.SQS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
+  batchSize = Number(process.env.SQS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
-  const connector = new Connector({ debug, queueName });
+  const connector = new Connector({ debug, queueUrl });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,
     inputParams: {
       Entries: batchUow.batch
+        .filter((uow) => uow[messageField])
         .map((uow) => uow[messageField]),
     },
   });
 
   const sendMessageBatch = (batchUow) => {
+    /* istanbul ignore next */
+    if (!batchUow.inputParams.Entries.length) {
+      return _(Promise.resolve(batchUow));
+    }
+
     const p = connector.sendMessageBatch(batchUow.inputParams)
       .then((sendMessageBatchResponse) => ({ ...batchUow, sendMessageBatchResponse }))
       .catch(rejectWithFault(batchUow));

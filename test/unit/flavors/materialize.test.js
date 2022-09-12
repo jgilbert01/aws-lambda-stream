@@ -125,7 +125,7 @@ const rules = [
     id: 'split',
     flavor: materialize,
     eventType: 'split',
-    splitOn: 'root.things',
+    splitOn: 'event.root.things',
     toUpdateRequest,
   },
   {

@@ -23,7 +23,6 @@ export const job = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .map(toGetRequest(rule))
   .through(batchGetDynamoDB(rule))
 
-
   .map(toUpdateRequest(rule))
   .through(updateDynamoDB(rule))
 
@@ -45,39 +44,39 @@ export const job = (rule) => (s) => s // eslint-disable-line import/prefer-defau
 
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 
-const toScanRequest = (rule) => (uow) => ({
+const toScanRequest = (rule) => faulty((uow) => ({
   ...uow,
   scanRequest:
     rule.toScanRequest
       ? rule.toScanRequest(uow, rule)
       : /* istanbul ignore next */ undefined,
-});
+}));
 
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 
-const toQueryRequest = (rule) => (uow) => ({
+const toQueryRequest = (rule) => faulty((uow) => ({
   ...uow,
   queryRequest:
     rule.toQueryRequest
       ? /* istanbul ignore next */ rule.toQueryRequest(uow, rule)
       : undefined,
-});
+}));
 
-const toGetRequest = (rule) => (uow) => ({
+const toGetRequest = (rule) => faulty((uow) => ({
   ...uow,
   batchGetRequest:
     rule.toGetRequest
       ? /* istanbul ignore next */ rule.toGetRequest(uow, rule)
       : undefined,
-});
+}));
 
-const toUpdateRequest = (rule) => (uow) => ({
+const toUpdateRequest = (rule) => faulty((uow) => ({
   ...uow,
   updateRequest:
     rule.toUpdateRequest
       ? /* istanbul ignore next */ rule.toUpdateRequest(uow, rule)
       : undefined,
-});
+}));
 
 const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent
   ? /* istanbul ignore next */ uow

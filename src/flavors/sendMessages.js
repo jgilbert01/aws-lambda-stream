@@ -1,13 +1,13 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  queryDynamoDB, batchGetDynamoDB, toPkQueryRequest,
-  encryptEvent,
+  queryDynamoDB, batchGetDynamoDB,
+  sendToSqs,
 } from '../utils';
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
 
-export const cdc = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
+export const sendMessages = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   .filter(outLatched)
 
   .filter(onEventType(rule))
@@ -21,11 +21,10 @@ export const cdc = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .map(toGetRequest(rule))
   .through(batchGetDynamoDB(rule))
 
-  .map(toEvent(rule))
+  .map(toMessage(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
-  .through(encryptEvent(rule))
-  .through(rule.publish(rule))
+  .through(sendToSqs(rule))
 
   .tap(printEndPipeline);
 
@@ -35,11 +34,9 @@ const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 const toQueryRequest = (rule) => faulty((uow) => ({
   ...uow,
   queryRequest:
-    rule.toQueryRequest // eslint-disable-line no-nested-ternary
+    rule.toQueryRequest
       ? /* istanbul ignore next */ rule.toQueryRequest(uow, rule)
-      : !rule.queryRelated
-        ? undefined
-        : toPkQueryRequest(uow, rule),
+      : undefined,
 }));
 
 const toGetRequest = (rule) => faulty((uow) => ({
@@ -50,12 +47,7 @@ const toGetRequest = (rule) => faulty((uow) => ({
       : undefined,
 }));
 
-const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent
-  ? uow
-  : ({
-    ...uow,
-    event: {
-      ...uow.event,
-      ...await faultify(rule.toEvent)(uow, rule),
-    },
-  })));
+const toMessage = (rule) => faultyAsyncStream(async (uow) => ({
+  ...uow,
+  message: await faultify(rule.toMessage)(uow, rule),
+}));
