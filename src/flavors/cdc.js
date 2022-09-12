@@ -32,7 +32,7 @@ export const cdc = (rule) => (s) => s // eslint-disable-line import/prefer-defau
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 
-const toQueryRequest = (rule) => (uow) => ({
+const toQueryRequest = (rule) => faulty((uow) => ({
   ...uow,
   queryRequest:
     rule.toQueryRequest // eslint-disable-line no-nested-ternary
@@ -40,15 +40,15 @@ const toQueryRequest = (rule) => (uow) => ({
       : !rule.queryRelated
         ? undefined
         : toPkQueryRequest(uow, rule),
-});
+}));
 
-const toGetRequest = (rule) => (uow) => ({
+const toGetRequest = (rule) => faulty((uow) => ({
   ...uow,
   batchGetRequest:
     rule.toGetRequest
       ? /* istanbul ignore next */ rule.toGetRequest(uow, rule)
       : undefined,
-});
+}));
 
 const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent
   ? uow

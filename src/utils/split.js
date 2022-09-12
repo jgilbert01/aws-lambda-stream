@@ -15,7 +15,7 @@ export const splitObject = ({ // eslint-disable-line import/prefer-default-expor
     } else {
       return (s) => s
         .flatMap(faulty((uow) => {
-          const values = get(uow.event, splitOn);
+          const values = get(uow, splitOn);
           return values.map((v) => ({
             ...uow,
             [splitTargetField]: v,
