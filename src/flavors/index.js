@@ -5,4 +5,5 @@ export * from './evaluate';
 export * from './expired';
 export * from './job';
 export * from './materialize';
+export * from './sendMessages';
 export * from './update';
