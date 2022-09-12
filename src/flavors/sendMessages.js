@@ -49,11 +49,5 @@ const toGetRequest = (rule) => faulty((uow) => ({
 
 const toMessage = (rule) => faultyAsyncStream(async (uow) => ({
   ...uow,
-  message: await faultify(print(rule).toMessage)(uow, rule),
+  message: await faultify(rule.toMessage)(uow, rule),
 }));
-
-
-const print = (x) => {
-  console.log(JSON.stringify(x, null, 2));
-  return x;
-};
