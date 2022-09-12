@@ -67,7 +67,7 @@
     "husky": "^4.2.5",
     "mocha": "^8.0.1",
     "nyc": "^14.1.1",
-    "serverless": "^1.26.0",
+    "serverless": "^3.22.0",
     "serverless-dynamodb-autoscaling-plugin": "1.0.0",
     "serverless-dynamodb-global-table-plugin": "1.0.1",
     "serverless-multi-regional-plugin": "^1.0.5",
