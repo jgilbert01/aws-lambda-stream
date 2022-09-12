@@ -67,7 +67,7 @@
     "mocha": "^5.2.0",
     "nyc": "^11.8.0",
     "pre-commit": "^1.2.2",
-    "serverless": "^1.26.0",
+    "serverless": "^3.22.0",
     "serverless-offline": "^4.5.0",
     "serverless-webpack": "^5.0.0",
     "sinon": "^7.2.4",
