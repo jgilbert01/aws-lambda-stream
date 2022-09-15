@@ -1,7 +1,7 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  updateDynamoDB,
+  updateDynamoDB,  splitObject,
   scanDynamoDB, queryDynamoDB, batchGetDynamoDB,
   encryptEvent,
 } from '../utils';
@@ -19,6 +19,11 @@ export const job = (rule) => (s) => s // eslint-disable-line import/prefer-defau
 
   .map(toQueryRequest(rule))
   .through(queryDynamoDB(rule))
+
+  .through(splitObject({
+    splitTargetField: rule.queryResponseField || 'queryResponse',
+    ...rule,
+  }))
 
   .map(toGetRequest(rule))
   .through(batchGetDynamoDB(rule))
