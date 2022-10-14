@@ -50,7 +50,7 @@
     "@babel/preset-env": "^7.10.0",
     "@babel/register": "^7.10.0",
     "aws-assume-role-cicd": "^1.0.4",
-    "aws-sdk": "^2.94.0",
+    "aws-sdk": "^2.814.0",
     "aws-sdk-mock": "^4.2.0",
     "babel-eslint": "^10.0.0",
     "babel-loader": "^8.1.0",
