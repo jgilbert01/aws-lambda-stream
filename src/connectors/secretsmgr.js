@@ -15,7 +15,7 @@ class Connector {
     secretId,
     timeout = Number(process.env.SECRETSMGR_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
-    this.debug = (msg) => debug('%o', msg);
+    this.debug = /* istanbul ignore next */ (msg) => debug('%o', msg);
     this.secretId = secretId;
     this.sm = new SecretsManager({
       httpOptions: {
