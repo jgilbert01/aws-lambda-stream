@@ -83,7 +83,7 @@
     "bluebird": "^3.4.7",
     "debug": "^3.1.0",
     "highland": "^2.13.0",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "regenerator-runtime": "^0.12.1",
     "uuid": "^3.2.1"
