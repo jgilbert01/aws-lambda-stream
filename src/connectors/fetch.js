@@ -14,6 +14,7 @@ class Connector {
     },
   ) {
     this.debug = debug;
+    this.log = (msg) => this.debug('%o', msg);
     this.httpsAgent = httpsAgent;
     this.timeout = timeout;
   }
@@ -32,11 +33,11 @@ class Connector {
       timeout: this.timeout,
       ...request,
     })
-      .tap(this.debug)
+      .tap(this.log)
       .then((res) => (res.ok ? res : Promise.reject(new FetchError(`HTTP Error Response: ${res.status} ${res.statusText}`, 'status-code'))))
       .then((res) => res[responseType]())
-      .tap(this.debug)
-      .tapCatch(this.debug);
+      .tap(this.log)
+      .tapCatch(this.log);
   }
 }
 
