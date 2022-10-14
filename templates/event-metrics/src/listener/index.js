@@ -33,7 +33,6 @@ export const handle = async (event, context) => {
 
   return new Handler()
     .handle(event)
-    .tap(debug)
     .through(toPromise);
 };
 

@@ -40,6 +40,5 @@ export const handle = async (event, context, int = {}) => {
 
   return new Handler({ ...OPTIONS, ...int })
     .handle(event)
-    .tap(debug)
     .through(toPromise);
 };

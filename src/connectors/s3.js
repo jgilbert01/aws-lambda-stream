@@ -10,14 +10,13 @@ class Connector {
     bucketName = process.env.BUCKET_NAME,
     timeout = Number(process.env.S3_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
-    this.debug = debug;
+    this.debug = (msg) => debug('%o', msg);
     this.bucketName = bucketName || 'undefined';
     this.bucket = new S3({
       httpOptions: {
         timeout,
-        // agent: sslAgent,
       },
-      logger: { log: /* istanbul ignore next */ (msg) => this.debug(msg) },
+      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg) },
     });
   }
 

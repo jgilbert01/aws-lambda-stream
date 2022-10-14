@@ -10,14 +10,13 @@ class Connector {
     streamName = process.env.STREAM_NAME,
     timeout = Number(process.env.KINESIS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
-    this.debug = debug;
+    this.debug = (msg) => debug('%o', msg);
     this.streamName = streamName || 'undefined';
     this.stream = new Kinesis({
       httpOptions: {
         timeout,
-        // agent: sslAgent,
       },
-      logger: { log: /* istanbul ignore next */ (msg) => this.debug(msg) },
+      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg) },
     });
   }
 

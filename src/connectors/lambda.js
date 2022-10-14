@@ -9,13 +9,12 @@ class Connector {
     debug,
     timeout = Number(process.env.LAMBDA_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
-    this.debug = debug;
+    this.debug = (msg) => debug('%o', msg);
     this.lambda = new Lambda({
       httpOptions: {
         timeout,
-        // agent: sslAgent,
       },
-      logger: { log: /* istanbul ignore next */ (msg) => this.debug(msg) },
+      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg) },
     });
   }
 
