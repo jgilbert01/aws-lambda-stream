@@ -21,7 +21,7 @@ class Connector {
       httpOptions: {
         timeout,
       },
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg) },
+      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
     });
   }
 
