@@ -14,7 +14,7 @@ class Connector {
     },
   ) {
     this.debug = debug;
-    this.log = (msg) => this.debug('%o', msg);
+    this.log = (msg) => this.debug('%j', msg);
     this.httpsAgent = httpsAgent;
     this.timeout = timeout;
   }
