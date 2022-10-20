@@ -9,12 +9,12 @@ class Connector {
     debug,
     timeout = Number(process.env.CW_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
-    this.debug = (msg) => debug('%o', msg);
+    this.debug = (msg) => debug('%j', msg);
     this.cw = new CloudWatch({
       httpOptions: {
         timeout,
       },
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg) },
+      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
     });
   }
 

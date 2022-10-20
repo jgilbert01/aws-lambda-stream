@@ -10,13 +10,13 @@ class Connector {
     deliveryStreamName = process.env.DELIVERY_STREAM_NAME,
     timeout = Number(process.env.FIREHOSE_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
-    this.debug = (msg) => debug('%o', msg);
+    this.debug = (msg) => debug('%j', msg);
     this.deliveryStreamName = deliveryStreamName || 'undefined';
     this.stream = new Firehose({
       httpOptions: {
         timeout,
       },
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg) },
+      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
     });
   }
 

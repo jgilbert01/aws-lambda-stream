@@ -10,13 +10,13 @@ class Connector {
     queueUrl = process.env.QUEUE_URL,
     timeout = Number(process.env.SQS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
-    this.debug = (msg) => debug('%o', msg);
+    this.debug = (msg) => debug('%j', msg);
     this.queueUrl = queueUrl || 'undefined';
     this.queue = new SQS({
       httpOptions: {
         timeout,
       },
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg) },
+      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
     });
   }
 
