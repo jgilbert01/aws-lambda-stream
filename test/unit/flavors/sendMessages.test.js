@@ -7,13 +7,14 @@ import { initialize, initializeFrom } from '../../../src';
 import { toDynamodbRecords, fromDynamodb } from '../../../src/from/dynamodb';
 
 import { defaultOptions } from '../../../src/utils/opt';
-import { DynamoDBConnector, SqsConnector } from '../../../src/connectors';
+import { DynamoDBConnector, SqsConnector, SnsConnector } from '../../../src/connectors';
 
 import { sendMessages } from '../../../src/flavors/sendMessages';
 
 describe('flavors/sendMessages.js', () => {
   beforeEach(() => {
     sinon.stub(SqsConnector.prototype, 'sendMessageBatch').resolves({ Failed: [] });
+    sinon.stub(SnsConnector.prototype, 'publish').resolves({});
   });
 
   afterEach(sinon.restore);
@@ -63,24 +64,48 @@ describe('flavors/sendMessages.js', () => {
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
-        expect(collected.length).to.equal(1);
+        expect(collected.length).to.equal(2);
         expect(collected[0].pipeline).to.equal('send1');
         expect(collected[0].event.type).to.equal('thing-created');
         expect(collected[0].message).to.deep.equal({
-          id: '1',
-          name: 'Thing One',
-          description: 'This is thing one',
+          MessageBody: JSON.stringify({
+            id: '1',
+            name: 'Thing One',
+            description: 'This is thing one',
+          }),
         });
         expect(collected[0].queryRequest).to.be.undefined;
+        expect(collected[0].sendMessageBatchResponse).to.deep.equal({ Failed: [] });
+
+        expect(collected[1].pipeline).to.equal('send2');
+        expect(collected[1].event.type).to.equal('thing-created');
+        expect(collected[1].message).to.deep.equal({
+          Message: JSON.stringify({
+            id: '1',
+            name: 'Thing One',
+            description: 'This is thing one',
+          }),
+        });
+        expect(collected[1].publishResponse).to.deep.equal({});
       })
       .done(done);
   });
 });
 
-const toMessage = (uow) => ({
-  id: uow.event.raw.new.pk,
-  name: uow.event.raw.new.name,
-  description: uow.event.raw.new.description,
+const toSqsMessage = (uow) => ({
+  MessageBody: JSON.stringify({
+    id: uow.event.raw.new.pk,
+    name: uow.event.raw.new.name,
+    description: uow.event.raw.new.description,
+  }),
+});
+
+const toSnsMessage = (uow) => ({
+  Message: JSON.stringify({
+    id: uow.event.raw.new.pk,
+    name: uow.event.raw.new.name,
+    description: uow.event.raw.new.description,
+  }),
 });
 
 const rules = [
@@ -89,7 +114,14 @@ const rules = [
     flavor: sendMessages,
     eventType: /thing-*/,
     filters: [() => true],
-    toMessage,
+    toMessage: toSqsMessage,
+  },
+  {
+    id: 'send2',
+    flavor: sendMessages,
+    eventType: /thing-*/,
+    topicArn: 't1',
+    toMessage: toSnsMessage,
   },
   {
     id: 'send-other1',
