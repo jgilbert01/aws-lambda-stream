@@ -11,14 +11,13 @@ class Connector {
     tableName,
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
-    this.debug = (msg) => debug('%o', msg);
+    this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
     this.db = new DynamoDB.DocumentClient({
       httpOptions: {
         timeout,
       },
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg) },
-      convertEmptyValues: true,
+      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
     });
   }
 
