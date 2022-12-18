@@ -1,9 +1,12 @@
 import 'mocha';
 import { expect } from 'chai';
+import sinon from 'sinon';
 
 import {
-  fromS3, fromSqsSnsS3, toS3Records, toSqsSnsS3Records,
+  fromS3, fromSqsSnsS3, fromS3Event, toS3Records, toSqsSnsS3Records,
 } from '../../../src/from/s3';
+
+import Connector from '../../../src/connectors/s3';
 
 describe('from/s3s.js', () => {
   it('should parse records', (done) => {
@@ -114,6 +117,45 @@ describe('from/s3s.js', () => {
               // eTag: 'fb01bb53ca3ff1d1700b799dd0f86d93',
               // sequencer: '00602BBB9B8070806C',
             },
+          },
+        });
+      })
+      .done(done);
+  });
+
+  it('should parse event records', (done) => {
+    sinon.stub(Connector.prototype, 'getObject').resolves({
+      Key: '1/thing',
+      Body: Buffer.from(JSON.stringify({
+        id: '00000000-0000-0000-0000-000000000000',
+        type: 'thing-created',
+        timestamp: '1595616620000',
+        thing: {
+          name: 'thing1',
+        },
+      })),
+    });
+
+    const event = toSqsSnsS3Records([{
+      bucket: {
+        name: 'my-bucket',
+      },
+      object: {
+        key: '1/thing',
+      },
+    }]);
+
+    fromS3Event(event)
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(1);
+        expect(collected[0].event).to.deep.equal({
+          id: '00000000-0000-0000-0000-000000000000',
+          type: 'thing-created',
+          timestamp: '1595616620000',
+          thing: {
+            name: 'thing1',
           },
         });
       })

@@ -1,5 +1,7 @@
 import _ from 'highland';
 
+import { getObjectFromS3 } from '../utils/s3';
+
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events
 
@@ -44,6 +46,21 @@ export const fromSqsSnsS3 = (event) =>
           s3: uow2.record,
         },
       })));
+
+export const fromS3Event = (event, options = {}) =>
+  fromSqsSnsS3(event)
+    .map((uow) => ({
+      ...uow,
+      getRequest: {
+        Bucket: uow.record.s3.s3.bucket.name,
+        Key: uow.record.s3.s3.object.key,
+      },
+    }))
+    .through(getObjectFromS3(options))
+    .map((uow) => ({
+      ...uow,
+      event: JSON.parse(Buffer.from(uow.getResponse.Body)),
+    }));
 
 // test helper
 // https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html
