@@ -65,7 +65,7 @@
     "eslint-formatter-pretty": "^3.0.0",
     "eslint-plugin-import": "^2.9.0",
     "husky": "^4.2.5",
-    "mocha": "^8.0.1",
+    "mocha": "^10.2.0",
     "nyc": "^14.1.1",
     "serverless": "^3.22.0",
     "serverless-dynamodb-autoscaling-plugin": "1.0.0",
