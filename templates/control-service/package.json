@@ -54,7 +54,7 @@
     "aws-sdk": "^2.94.0",
     "aws-sdk-mock": "^4.2.0",
     "babel-eslint": "^10.0.0",
-    "babel-loader": "^8.1.0",
+    "babel-loader": "^8.3.0",
     "babel-plugin-istanbul": "^5.2.0",
     "baton-vcr-replay-for-aws-sdk": "^1.0.1",
     "baton-vcr-serverless-plugin": "^1.0.0",
@@ -63,7 +63,7 @@
     "eslint": "^4.18.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-formatter-pretty": "^1.3.0",
-    "eslint-plugin-import": "^2.9.0",
+    "eslint-plugin-import": "^2.25.2",
     "lint-staged": "^7.0.0",
     "mocha": "^10.2.0",
     "nyc": "^11.8.0",
@@ -76,7 +76,7 @@
     "sinon": "^7.2.4",
     "sinon-chai": "^3.1.0",
     "supertest": "^3.1.0",
-    "webpack": "^4.1.1",
+    "webpack": "^5.75.0",
     "webpack-node-externals": "^1.6.0"
   },
   "dependencies": {
