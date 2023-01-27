@@ -1,73 +1,18 @@
-service: event-lake-s3
+service: ${self:custom.subsys}-event-lake-s3
 
 provider:
   name: aws
-  # cfnRole: arn:aws:iam::${self:custom.accounts.${opt:acct}.accountNumber}:role/cfnRole
-  # deploymentBucket: myprefix-${opt:acct}-${opt:region}-serverlessdeploymentbucket
+  deploymentBucket: ${file(serverless/cfn.yml):deploymentBucket}
+  iam:
+    deploymentRole: ${file(serverless/cfn.yml):deploymentRole}
+  stackTags: ${file(serverless/tags.yml)}
 
 custom:
-  accounts:
-    dev:
-      # accountNumber: 2109876543210
-    prod:
-      # accountNumber: 0123456789012
+  partition: aws # aws-us-gov
+  org: my
+  subsys: subsys1
+  # replication: ${file(serverless/s3.yml):replication}
 
 resources:
-  Resources:
-    Bucket:
-      Type: AWS::S3::Bucket
-      DeletionPolicy: Retain
-      Properties:
-        BucketEncryption:
-          ServerSideEncryptionConfiguration:
-            - ServerSideEncryptionByDefault:
-                SSEAlgorithm: AES256
-        VersioningConfiguration:
-          Status: Enabled
-
-    DeliveryStream:
-      Type: AWS::KinesisFirehose::DeliveryStream
-      Properties:
-        DeliveryStreamType: DirectPut
-        ExtendedS3DestinationConfiguration:
-          BucketARN:
-            Fn::GetAtt: [ Bucket, Arn ]
-          Prefix: ${opt:region}/
-          BufferingHints:
-            IntervalInSeconds: 60
-            SizeInMBs: 50
-          CompressionFormat: UNCOMPRESSED
-          RoleARN:
-            Fn::GetAtt: [ DeliveryRole, Arn ]
-          CloudWatchLoggingOptions: ${file(includes.yml):CloudWatchLoggingOptions}
-
-    LogGroup: ${file(includes.yml):LogGroup}
-    LogStream: ${file(includes.yml):LogStream}
-
-    DeliveryRole: ${file(includes.yml):DeliveryRole}
-    EventBridgeRole: ${file(includes.yml):EventBridgeRole}
-
-    EventRule: 
-      Type: AWS::Events::Rule
-      Properties: 
-        EventBusName: ${cf:event-hub-${opt:stage}.busName}
-        EventPattern: 
-          source: 
-            - custom
-        State: ENABLED
-        Targets: 
-          - Id: EventLake
-            Arn: 
-              Fn::GetAtt: [ DeliveryStream, Arn ]
-            RoleArn:
-              Fn::GetAtt: [ EventBridgeRole, Arn ]
-            InputTransformer:
-              InputTemplate: "<aws.events.event>\n" # the EOL delimiter supports parsing in cli
-
-  Outputs:
-    BucketName:
-      Value:
-        Ref: Bucket
-    BucketArn:
-      Value:
-        Fn::GetAtt: [ Bucket, Arn ]
+  - ${file(serverless/s3.yml):resources}
+  - ${file(serverless/firehose.yml):resources}
