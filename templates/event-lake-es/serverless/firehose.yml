@@ -1,0 +1,149 @@
+resources:
+  Resources:
+    LogGroup: 
+      Type: AWS::Logs::LogGroup
+
+    LogStream: 
+      Type: AWS::Logs::LogStream
+      Properties: 
+        LogGroupName:
+          Ref: LogGroup
+        LogStreamName: ${self:service}
+
+    # ----------
+    # CHANNELS
+    # ----------
+
+    DeliveryStream:
+      Type: AWS::KinesisFirehose::DeliveryStream
+      Properties:
+        DeliveryStreamType: DirectPut
+        ElasticsearchDestinationConfiguration: 
+          DomainARN: 
+            Fn::GetAtt: [ Domain, DomainArn ]
+          IndexName: events
+          IndexRotationPeriod: OneDay
+          # TypeName: event
+          BufferingHints:
+            IntervalInSeconds: 60
+            SizeInMBs: 50
+          RetryOptions: 
+            DurationInSeconds: 60
+          RoleARN:
+            Fn::GetAtt: [ DeliveryRole, Arn ]
+          CloudWatchLoggingOptions: 
+            Enabled: true
+            LogGroupName:
+              Ref: LogGroup
+            LogStreamName:
+              Ref: LogStream
+          S3BackupMode: FailedDocumentsOnly
+          S3Configuration:
+            BucketARN:
+              Fn::GetAtt: [ Bucket, Arn ]
+            Prefix: ${opt:stage}
+            BufferingHints:
+              IntervalInSeconds: 120
+              SizeInMBs: 128
+            CompressionFormat: GZIP
+            RoleARN:
+              Fn::GetAtt: [ DeliveryRole, Arn ]
+            CloudWatchLoggingOptions: 
+              Enabled: true
+              LogGroupName:
+                Ref: LogGroup
+              LogStreamName:
+                Ref: LogStream
+
+    # ----------
+    # ROLES
+    # ----------
+    
+    EventBridgeRole:
+      Type: AWS::IAM::Role
+      Properties:
+        PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${aws:accountId}:policy/${self:custom.subsys}-ServerlessRuntimeBoundary-${opt:stage}'
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: events.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:               
+          - PolicyName: put
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - firehose:PutRecord
+                    - firehose:PutRecordBatch
+                  Resource:
+                    - Fn::GetAtt: [ DeliveryStream, Arn ]
+
+    DeliveryRole:
+      Type: AWS::IAM::Role
+      Properties:
+        PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${aws:accountId}:policy/${self:custom.subsys}-ServerlessRuntimeBoundary-${opt:stage}'
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: firehose.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:               
+          - PolicyName: delivery
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - es:DescribeElasticsearchDomain
+                    - es:DescribeElasticsearchDomains
+                    - es:DescribeElasticsearchDomainConfig
+                    - es:ESHttpPost
+                    - es:ESHttpPut
+                    - es:ESHttpGet
+                  Resource:
+                    - Fn::GetAtt: [ Domain, DomainArn ]
+                    - Fn::Join:
+                        - /
+                        - - Fn::GetAtt: [ Domain, DomainArn ]
+                          - '*'
+                - Effect: Allow
+                  Action:
+                    - s3:AbortMultipartUpload
+                    - s3:GetBucketLocation
+                    - s3:GetObject
+                    - s3:ListBucket
+                    - s3:ListBucketMultipartUploads
+                    - s3:PutObject
+                  Resource:
+                    - Fn::GetAtt: [ Bucket, Arn ]
+                    - Fn::Join:
+                        - /
+                        - - Fn::GetAtt: [ Bucket, Arn ]
+                          - '*'
+                - Effect: Allow
+                  Action:
+                    - logs:PutLogEvents
+                  Resource:
+                    - Fn::GetAtt: [ LogGroup, Arn ]
+
+    # ----------
+    # RULES
+    # ----------
+
+    EventRule: 
+      Type: AWS::Events::Rule
+      Properties: 
+        EventBusName: ${cf:${self:custom.subsys}-event-hub-${opt:stage}.busName}
+        EventPattern: 
+          detail:
+            type:
+              - anything-but: nothing
+        State: ENABLED
+        Targets: 
+          - Id: EventLake
+            Arn: 
+              Fn::GetAtt: [ DeliveryStream, Arn ]
+            RoleArn:
+              Fn::GetAtt: [ EventBridgeRole, Arn ]

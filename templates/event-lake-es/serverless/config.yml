@@ -1,0 +1,8 @@
+params:
+  stg:
+    InstanceType: t3.small.search
+    VolumeSize: 10
+
+  prd:
+    InstanceType: t3.small.search
+    VolumeSize: 10

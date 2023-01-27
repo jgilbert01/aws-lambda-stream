@@ -1,0 +1,41 @@
+resources:
+  Resources:
+    Domain:
+      Type: AWS::Elasticsearch::Domain
+      Properties:
+        ElasticsearchVersion: 7.9
+        ElasticsearchClusterConfig: 
+          DedicatedMasterEnabled: false
+          InstanceCount: 1
+          ZoneAwarenessEnabled: false
+          InstanceType: t2.small.elasticsearch
+        EBSOptions: 
+          EBSEnabled: true
+          Iops: 0
+          VolumeSize: 10
+          VolumeType: gp2
+        SnapshotOptions: 
+          AutomatedSnapshotStartHour: 0
+        AccessPolicies: 
+          Statement: 
+            - Effect: Allow
+              Principal: 
+                AWS: '*' # arn:aws:iam::${self:custom.accounts.${opt:acct}.accountNumber}:user/*
+              Action: 'es:*'
+              Resource: 'arn:aws:es:${opt:region}:${self:custom.accounts.${opt:acct}.accountNumber}:domain/event-lake*/*'
+        AdvancedOptions: 
+          rest.action.multi.allow_explicit_index: true
+
+  Outputs:
+    DomainArn:
+      Value:
+        Fn::GetAtt: [ Domain, DomainArn ]
+    DomainEndpoint:
+      Value:
+        Fn::GetAtt: [ Domain, DomainEndpoint ]
+    KibanaEndpoint:
+      Value:
+        Fn::Join:
+          - ''
+          - - Fn::GetAtt: [ Domain, DomainEndpoint ]
+            - '/_plugin/kibana'

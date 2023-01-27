@@ -1,0 +1,14 @@
+resources:
+  Resources:
+    Bucket:
+      Type: AWS::S3::Bucket
+      # DeletionPolicy: Retain
+      Properties:
+        BucketName: ${self:custom.org}-${self:service}-${opt:stage}-${opt:region}
+        AccessControl: Private
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        VersioningConfiguration:
+          Status: Enabled

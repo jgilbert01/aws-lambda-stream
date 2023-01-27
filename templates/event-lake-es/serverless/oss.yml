@@ -1,0 +1,47 @@
+resources:
+  Resources:
+    Domain:
+      Type: AWS::OpenSearchService::Domain
+      Properties:
+        EngineVersion: Elasticsearch_7.10
+        ClusterConfig: 
+          DedicatedMasterEnabled: false
+          ZoneAwarenessEnabled: false
+          InstanceCount: 1
+          InstanceType: ${param:InstanceType}
+        EBSOptions: 
+          EBSEnabled: true
+          Iops: 0
+          VolumeSize: ${param:VolumeSize}
+          VolumeType: gp2
+        EncryptionAtRestOptions: 
+          Enabled: true
+        DomainEndpointOptions:
+          EnforceHTTPS: true
+        AccessPolicies: 
+          Statement: 
+            - Effect: Allow
+              Principal: 
+                AWS: '*' # !Sub 'arn:${AWS::Partition}:iam::${aws:accountId}:user/*''
+              Action: 'es:*'
+              Resource: !Sub 'arn:${AWS::Partition}:es:${opt:region}:${aws:accountId}:domain/*/*'
+              Condition:
+                IpAddress:
+                  aws:SourceIp:
+                    - '96.255.48.5' # vpn
+        AdvancedOptions: 
+          rest.action.multi.allow_explicit_index: true
+
+  Outputs:
+    DomainArn:
+      Value:
+        Fn::GetAtt: [ Domain, DomainArn ]
+    DomainEndpoint:
+      Value:
+        Fn::GetAtt: [ Domain, DomainEndpoint ]
+    KibanaEndpoint:
+      Value:
+        Fn::Join:
+          - ''
+          - - Fn::GetAtt: [ Domain, DomainEndpoint ]
+            - '/_plugin/kibana'
