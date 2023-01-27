@@ -16,6 +16,8 @@ describe('trigger/alert.js', () => {
 
     const uows = [{
       event: EVENT,
+    }, {
+      event: EVENT,
     }];
 
     _(uows)

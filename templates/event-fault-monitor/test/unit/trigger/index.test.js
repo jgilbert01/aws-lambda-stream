@@ -18,10 +18,10 @@ describe('trigger/index.js', () => {
                 // {
                 //   s3: {
                 //     bucket: {
-                //       name: 'b1',
+                //       name: 'eagle-ng-event-fault-monitor-stg-bucket-irt6nbuebsp2',
                 //     },
                 //     object: {
-                //       key: 'k1',
+                //       key: 'us-gov-west-1/2021/03/29/16/eagle-ng-event-fault-monitor-stg-DeliveryStream-1D9aFKD14ZHZ-1-2021-03-29-16-18-54-314e0436-fd67-422a-ac66-cd2705d0ac11',
                 //     },
                 //   },
                 // }

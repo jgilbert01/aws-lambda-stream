@@ -1,0 +1,39 @@
+resources:
+  Resources:
+    TriggerQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${opt:stage}-trigger
+        # KmsMasterKeyId: alias/aws/sqs
+        # https://stackoverflow.com/questions/63808647/aws-forward-event-bridge-event-to-encrypted-sqs-amazon-managed-key
+    TriggerQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - Ref: TriggerQueue
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: sns.amazonaws.com
+              Action: sqs:SendMessage
+              Resource:
+                Fn::GetAtt: [ TriggerQueue, Arn ]
+              Condition:
+                ArnEquals:
+                  aws:SourceArn:
+                    Ref: Topic
+
+    TriggerSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: sqs
+        Endpoint:
+          Fn::GetAtt: [ TriggerQueue, Arn ]
+        TopicArn:
+          Ref: Topic
+
+  Outputs:
+    TriggerQueue:
+      Value:
+        Ref: TriggerQueue

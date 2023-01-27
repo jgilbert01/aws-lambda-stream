@@ -41,7 +41,6 @@ describe('trigger/get-faults.js', () => {
   });
 });
 
-
 const GET_RESPONSE = {
   AcceptRanges: 'bytes',
   LastModified: '2020-04-22T19:17:15.000Z',

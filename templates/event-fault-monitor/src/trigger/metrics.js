@@ -1,11 +1,12 @@
 import { putMetrics } from 'aws-lambda-stream';
 
-const pipeline = options => s => s
-  .tap(uow => console.log(uow.event))
+const pipeline = (options) => (s) => s
+// .tap(uow => console.log(uow.event))
 
   // TODO switch to embedded metrics
   // https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html
   .map(toPutRequest)
+  // .tap(uow => console.log('uow2: ', uow))
   .through(putMetrics(options));
 
 const toPutRequest = (uow) => {

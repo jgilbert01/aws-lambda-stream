@@ -1,0 +1,6 @@
+role:
+  permissionsBoundary: arn:${self:custom.partition}:iam::${aws:accountId}:policy/${self:custom.subsys}-ServerlessRuntimeBoundary-${opt:stage}
+  statements:
+    - ${file(serverless/bus.yml):iamRoleStatements}
+    - ${file(serverless/sns.yml):iamRoleStatements}
+    - ${file(serverless/cw.yml):iamRoleStatements}

@@ -1,0 +1,56 @@
+iamRoleStatements:
+  Effect: Allow
+  Action:
+    - s3:PutObject
+    - s3:PutObjectAcl
+    - s3:GetObject
+    # - s3:ListBucket
+    # - s3:GetObjectTagging
+    # - s3:PutObjectTagging
+  Resource:
+    - Fn::Join:
+      - ''
+      - - Fn::GetAtt: [ Bucket, Arn ]
+        - '*'
+
+resources:
+  Resources:
+    Bucket:
+      Type: AWS::S3::Bucket
+      DependsOn: [ Topic, TopicPolicy ]
+      DeletionPolicy: Retain
+      Properties:
+        BucketName: ${self:custom.org}-${self:service}-${opt:stage}-${opt:region}
+        AccessControl: Private
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        VersioningConfiguration:
+          Status: Enabled
+
+        LifecycleConfiguration:
+          Rules:
+            - Prefix: ''
+              Status: Enabled
+              ExpirationInDays: 99
+
+        NotificationConfiguration:
+          TopicConfigurations:
+            - Event: s3:ObjectCreated:Put
+              Filter:
+                S3Key:
+                  Rules:
+                    - Name: suffix
+                      Value: mfe.json
+              Topic:
+                Ref: Topic
+
+
+  Outputs:
+    BucketName:
+      Value:
+        Ref: Bucket
+    BucketArn:
+      Value:
+        Fn::GetAtt: [ Bucket, Arn ]

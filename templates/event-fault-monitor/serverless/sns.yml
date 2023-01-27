@@ -1,0 +1,35 @@
+iamRoleStatements:
+  Effect: Allow
+  Action: sns:Publish
+  Resource: ${param:alarmTopicArn}
+
+resources:
+  Resources:
+    Topic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-${opt:stage}
+        # KmsMasterKeyId: alias/aws/sns
+
+    TopicPolicy:
+      Type: AWS::SNS::TopicPolicy
+      Properties:
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: s3.amazonaws.com
+              Action:
+                - SNS:Publish
+              Resource:
+                Ref: Topic
+              Condition:
+                ArnLike:
+                  aws:SourceArn: !Sub arn:${AWS::Partition}:s3:::${self:custom.org}-${self:service}-${opt:stage}-${opt:region}
+        Topics:
+          - Ref: Topic
+
+  Outputs:
+    Topic:
+      Value:
+        Ref: Topic

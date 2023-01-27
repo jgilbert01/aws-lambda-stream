@@ -1,0 +1,20 @@
+params:
+  stg:
+    debug: '*'
+    account: dev # nonprod
+    alarmTopicArn: tbd
+  prd:
+    debug: ''
+    account: prod
+
+environment:
+  ACCOUNT_NAME: ${param:account}
+  PROJECT: ${self:service}
+  STAGE: ${opt:stage}
+  DEBUG: ${param:debug}
+  AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+  BUS_NAME: ${cf:${self:custom.subsys}-event-hub-${opt:stage}.busName}
+  BUS_ARN: ${cf:${self:custom.subsys}-event-hub-${opt:stage}.busArn}
+  NAMESPACE: ${self:custom.subsys}
+  TOPIC_ARN: ${param:alarmTopicArn}
+

@@ -1,0 +1,4 @@
+service: ${self:service}
+env: ${opt:stage}
+# GitCommit: ${env:GIT_COMMIT, 'tbd'}
+# GitCommit: ${env:CI_COMMIT_SHA, 'tbd'}

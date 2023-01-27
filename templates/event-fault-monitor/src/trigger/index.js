@@ -1,11 +1,12 @@
 import {
   initialize,
   defaultOptions,
-  fromS3,
+  fromSqsSnsS3,
   toPromise,
 } from 'aws-lambda-stream';
 
-import alert from './alert';
+// import alert from './alert';
+import alert from './dd-alert';
 import getFaults from './get-faults';
 import metrics from './metrics';
 
@@ -19,9 +20,9 @@ const PIPELINES = {
 const { debug } = OPTIONS;
 
 export class Handler {
-  handle(event, includeErrors = true) {
+  handle(event, includeErrors = false) {
     return initialize(PIPELINES, OPTIONS)
-      .assemble(fromS3(event)
+      .assemble(fromSqsSnsS3(event)
         .through(getFaults(OPTIONS)), includeErrors);
   }
 }
@@ -32,5 +33,6 @@ export const handle = async (event, context) => {
 
   return new Handler()
     .handle(event)
+    .tap(debug)
     .through(toPromise);
 };
