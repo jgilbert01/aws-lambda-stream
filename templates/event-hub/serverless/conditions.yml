@@ -1,0 +1,5 @@
+Conditions:
+  IsDev:
+    Fn::Equals:
+      - ${opt:stage}
+      - stg

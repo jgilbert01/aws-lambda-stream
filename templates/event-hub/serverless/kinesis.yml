@@ -1,0 +1,85 @@
+resources:
+  Resources:
+    Stream1:
+      Type: AWS::Kinesis::Stream
+      Properties:
+        Name: ${self:service}-${opt:stage}-s1
+        RetentionPeriodHours: 24
+        ShardCount: ${param:shardCount}
+        StreamEncryption:
+          EncryptionType: KMS
+          KeyId: alias/aws/kinesis
+
+    # Stream1Consumer1:
+    #   Type: AWS::Kinesis::StreamConsumer
+    #   Properties:
+    #     ConsumerName: ${opt:stage}-${self:service}-s1-c1
+    #     StreamARN:
+    #       Fn::GetAtt: [ Stream1, Arn ]
+
+    # ----------
+    # POLICIES
+    # ----------
+
+    BusRole:
+      Type: AWS::IAM::Role
+      Properties:
+        PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${aws:accountId}:policy/${self:custom.subsys}-ServerlessRuntimeBoundary-${opt:stage}'
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: events.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: ${self:service}-${opt:stage}-internal
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - kinesis:PutRecord
+                    - kinesis:PutRecords
+                  Resource:
+                    - Fn::GetAtt: [ Stream1, Arn ]
+                    # - Fn::GetAtt: [ Stream2, Arn ]
+
+    # ----------
+    # RULES
+    # ----------
+
+    Stream1EventRule:
+      Type: AWS::Events::Rule
+      Properties:
+        EventBusName:
+          Ref: Bus
+        EventPattern:
+          source:
+            - anything-but: external
+          detail:
+            type:
+              - anything-but: fault
+        State: ENABLED
+        Targets:
+          - Id: Stream1
+            Arn:
+              Fn::GetAtt: [ Stream1, Arn ]
+            RoleArn:
+              Fn::GetAtt: [ BusRole, Arn ]
+            KinesisParameters:
+              PartitionKeyPath: $.detail.partitionKey
+            InputPath: $.detail
+
+  Outputs:
+    stream1Name:
+      Value:
+        Ref: Stream1
+    stream1Arn:
+      Value:
+        Fn::GetAtt: [ Stream1, Arn ]
+
+    # stream1Consumer1Name:
+    #   Value:
+    #     Fn::GetAtt: [ Stream1Consumer1, ConsumerName ]
+    # stream1Consumer1Arn:
+    #   Value:
+    #     Ref: Stream1Consumer1

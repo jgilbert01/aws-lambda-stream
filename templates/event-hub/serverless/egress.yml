@@ -1,0 +1,64 @@
+resources:
+  Resources:
+
+    # ----------
+    # POLICIES
+    # ----------
+
+    BusEgressRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: events.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: egress
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - events:PutEvents
+                  Resource:
+                    # add an arn for each downstream subsystem
+                    - ${self:custom.accounts.${opt:acct}.egressBuses.y}
+
+    # add a policy for each upstream subsystem
+    EventBusPolicyForSubsystemX:
+      Type: AWS::Events::EventBusPolicy
+      Properties:
+        EventBusName:
+          Ref: Bus
+        Action: events:PutEvents
+        Principal: 123456789012
+        StatementId: SubsystemX
+
+    # ----------
+    # RULES
+    # ----------
+
+    EgressEventRule:
+      Type: AWS::Events::Rule
+      Properties:
+        EventBusName:
+          Ref: Bus
+        EventPattern:
+          source:
+            - external
+        State: ENABLED
+        Targets:
+          # add a target for each downstream subsystem
+          - Id: EgressY
+            Arn: ${self:custom.accounts.${opt:acct}.egressBuses.y}
+            RoleArn:
+              Fn::GetAtt: [ BusEgressRole, Arn ]
+
+  Outputs:
+    egressStreamName:
+      Value:
+        Ref: EgressStream
+    egressStreamArn:
+      Value:
+        Fn::GetAtt: [ EgressStream, Arn ]

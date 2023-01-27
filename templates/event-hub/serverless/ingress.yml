@@ -1,0 +1,70 @@
+resources:
+  Resources:
+    IngressStream:
+      Type: AWS::Kinesis::Stream
+      Properties:
+        Name: ${self:service}-${opt:stage}-ingress
+        RetentionPeriodHours: 24
+        ShardCount: ${param:ingressShardCount}
+        StreamEncryption:
+          EncryptionType: KMS
+          KeyId: alias/aws/kinesis
+
+    # ----------
+    # POLICIES
+    # ----------
+
+    BusIngressRole:
+      Type: AWS::IAM::Role
+      Properties:
+        PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${aws:accountId}:policy/${self:custom.subsys}-ServerlessRuntimeBoundary-${opt:stage}'
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: events.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: ${self:service}-${opt:stage}-internal
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - kinesis:PutRecord
+                    - kinesis:PutRecords
+                  Resource:
+                    - Fn::GetAtt: [ IngressStream, Arn ]
+
+    # ----------
+    # RULES
+    # ----------
+
+    IngressStreamEventRule:
+      Type: AWS::Events::Rule
+      Properties:
+        EventBusName:
+          Ref: Bus
+        EventPattern:
+          source:
+            - external
+          detail:
+            type:
+              - anything-but: fault
+        State: ENABLED
+        Targets:
+          - Id: IngressStream
+            Arn:
+              Fn::GetAtt: [ IngressStream, Arn ]
+            RoleArn:
+              Fn::GetAtt: [ BusIngressRole, Arn ]
+            KinesisParameters:
+              PartitionKeyPath: $.detail.partitionKey
+            InputPath: $.detail
+
+  Outputs:
+    ingressStreamName:
+      Value:
+        Ref: IngressStream
+    ingressStreamArn:
+      Value:
+        Fn::GetAtt: [ IngressStream, Arn ]

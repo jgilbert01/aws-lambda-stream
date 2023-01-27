@@ -1,0 +1,12 @@
+params:
+  stg:
+    shardCount: 1
+    # ingressShardCount: 1
+    # egressBuses:
+      # add an arn for each downstream subsystem
+      # y: arn:aws:events:us-east-1:123456789012:event-bus/${opt:stage}-${self:service}-bus
+  prd:
+    shardCount: 1
+    # ingressShardCount: 1
+    # egressBuses:
+      # y: arn:aws:events:us-east-1:123456789012:event-bus/${opt:stage}-${self:service}-bus

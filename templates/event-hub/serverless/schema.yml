@@ -1,0 +1,8 @@
+resources:
+  Resources:
+    Discoverer:
+      Type: AWS::EventSchemas::Discoverer
+      # Condition: IsDev
+      Properties:
+        SourceArn:
+          Fn::GetAtt: [ Bus, Arn ]

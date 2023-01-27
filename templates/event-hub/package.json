@@ -1,17 +1,19 @@
 {
-  "name": "event-hub",
+  "name": "subsys1-event-hub",
   "private": true,
   "scripts": {
-    "test": "sls package -r us-east-1 -s test --acct dev",
-    "dp:lcl": "sls deploy -v -r us-east-1 --acct dev",
-    "rm:lcl": "sls remove -r us-east-1 --acct dev",
-    "dp:stg:e": "eval \"$(assume-role) sls deploy -v -r us-east-1 -s stg --acct dev --force\"",
-    "dp:stg:w": "eval \"$(assume-role) sls deploy -v -r us-west-2 -s stg --acct dev --force\"",
-    "dp:prd:e": "eval \"$(assume-role) sls deploy -v -r us-east-1 -s prd --acct prod --force\"",
-    "dp:prd:w": "eval \"$(assume-role) sls deploy -v -r us-west-2 -s prd --acct prod --force\""
+    "test": "sls package -r us-west-2 -s stg",
+    "dp:stg:w": "sls deploy --verbose -r us-west-2 -s stg --force",
+    "dp:stg:e": "sls deploy --verbose -r us-east-1 -s stg --force",
+    "dp:prd:w": "sls deploy --verbose -r us-west-2 -s prd --force",
+    "dp:prd:e": "sls deploy --verbose -r us-east-1 -s prd --force",
+    "dp:stg:w:ci": "eval \"$(assume-role) npm run dp:stg:w\"",
+    "dp:stg:e:ci": "eval \"$(assume-role) npm run dp:stg:e\"",
+    "dp:prd:w:ci": "eval \"$(assume-role) npm run dp:prd:w\"",
+    "dp:prd:e:ci": "eval \"$(assume-role) npm run dp:prd:e\""
   },
   "devDependencies": {
     "aws-assume-role-cicd": "^1.0.4",
-    "serverless": "^3.21.0"
+    "serverless": "^3.0.0"
   }
 }

@@ -1,0 +1,29 @@
+global:
+  secondary:
+    us-east-1: us-west-2
+    us-west-2: us-east-1
+  healthCheckId: ${cf:${self:custom.subsys}-regional-health-check-${opt:stage}.HealthCheckId}
+
+resources:
+  Resources:
+    Endpoint:
+      Type: AWS::Events::Endpoint
+      Properties:
+        Name: ${self:service}-${opt:stage}-${opt:region}-bus-endpoint
+        RoutingConfig:
+          FailoverConfig:
+            Primary:
+              HealthCheck: !Sub 'arn:${AWS::Partition}:route53:::healthcheck/${self:custom.healthCheckId}'
+            Secondary:
+              Route: ${self:custom.secondary.${opt:region}}
+        ReplicationConfig:
+          State: DISABLED
+        # RoleArn: !Sub 'arn:${AWS::Partition}:iam::${aws:accountId}:role/${self:custom.subsys}-EndpointReplicationRole-${opt:stage}'
+        EventBuses:
+          - EventBusArn: !Sub 'arn:${AWS::Partition}:events:${opt:region}:${aws:accountId}:event-bus/${self:service}-${opt:stage}-bus'
+          - EventBusArn: !Sub 'arn:${AWS::Partition}:events:${self:custom.global.secondary.${opt:region}}:${aws:accountId}:event-bus/${self:service}-${opt:stage}-bus'
+
+  Outputs:
+    busEndpointId:
+      Value:
+        Ref: Endpoint
