@@ -1,0 +1,7 @@
+resources:
+  Resources:
+    Dashboard:
+      Type: AWS::CloudWatch::Dashboard
+      Properties: 
+        DashboardName: ${self:service}-${opt:stage}-${opt:region}-events
+        DashboardBody: ${file(serverless/dashboards.js):events}

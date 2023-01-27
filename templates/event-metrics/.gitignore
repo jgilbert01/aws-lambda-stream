@@ -1,0 +1,8 @@
+node_modules
+.serverless
+.webpack
+.DS_Store
+coverage
+.nyc_output
+*.log
+bak

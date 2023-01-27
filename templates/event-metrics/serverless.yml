@@ -1,37 +1,25 @@
-service: my-event-metrics
+service: ${self:custom.subsys}-event-metrics
 
 provider:
   name: aws
-  # cfnRole: arn:aws:iam::${self:custom.accounts.${opt:acct}.accountNumber}:role/cfnRole
-  # deploymentBucket: myprefix-${opt:acct}-${opt:region}-serverlessdeploymentbucket
-  runtime: nodejs14.x
-  environment:
-    ACCOUNT_NAME: ${opt:acct}
-    PROJECT: ${self:service}
-    STAGE: ${opt:stage}
-    DEBUG: ${self:custom.accounts.${opt:acct}.debug}
-    STREAM_ARN: ${cf:event-hub-${opt:stage}.stream1Arn}
-    NAMESPACE: my-ns
-  iamRoleStatements:
-    - Effect: Allow
-      Action: cloudwatch:PutMetricData
-      Resource: '*'
+  deploymentBucket: ${self:custom.org}-${self:custom.subsys}-sls-deploy-${opt:stage}-${opt:region}
+  iam:
+    deploymentRole: arn:${self:custom.partition}:iam::${aws:accountId}:role/cfnRole-${opt:stage}
+    role: ${file(serverless/iam.yml):role}
+  stackTags: ${file(serverless/tags.yml)}
+  runtime: nodejs16.x
+  logRetentionInDays: 30
+  environment: ${file(serverless/config.yml):environment}
 
+params: ${file(serverless/config.yml):params}
 package:
   individually: true
-
 custom:
+  partition: aws # aws-us-gov
+  org: my
+  subsys: subsys1
   webpack:
     includeModules: true
-  accounts:
-    dev:
-      # accountNumber: 123456789012
-      debug: '*'
-      # warningAlarmTopicArn: #{cf:my-monitoring-${opt:stage}.warningAlarmTopicArn}
-      # criticalAlarmTopicArn: #{cf:my-monitoring-${opt:stage}.criticalAlarmTopicArn}
-    prod:
-      # accountNumber: 123456789012
-      debug: ''
 
 plugins:
   - serverless-webpack
@@ -42,53 +30,11 @@ functions:
   listener:
     handler: src/listener/index.handle
     events:
-      - stream:
-          type: kinesis
-          arn: ${self:provider.environment.STREAM_ARN}
-          batchSize: 100
-          startingPosition: TRIM_HORIZON
+      - sqs:
+          arn:
+            Fn::GetAtt: [ ListenerQueue, Arn ]
 
 resources:
-  Resources:
-    IteratorAgeAlarm:
-      Type: AWS::CloudWatch::Alarm
-      Properties:
-        AlarmDescription: 'IteratorAge avg in the last 5 minutes has been over .5 hours'
-        Namespace: AWS/Lambda
-        MetricName: IteratorAge
-        Statistic: Average
-        Period: 300
-        EvaluationPeriods: 1
-        ComparisonOperator: GreaterThanOrEqualToThreshold
-        # Threshold: 7200 # 20 hours
-        Threshold: 1800 # .5 hours
-        # AlarmActions:
-        #   - ${self:custom.accounts.${opt:acct}.warningAlarmTopicArn}
-
-    DomainEventRateAnomalyDetector:
-      Type: AWS::CloudWatch::AnomalyDetector
-      Properties:
-        Namespace: ${self:provider.environment.NAMESPACE}
-        MetricName: domain.event
-        Stat: Sum
-
-    DomainEventRateAlarm:
-      Type: AWS::CloudWatch::Alarm
-      Properties:
-        AlarmDescription: Domain Event rate anomoly detection
-        ComparisonOperator: LessThanLowerOrGreaterThanUpperThreshold
-        EvaluationPeriods: 1
-        Metrics:
-        - Id: ad1
-          Expression: ANOMALY_DETECTION_BAND(m1, 2)
-        - Id: m1
-          MetricStat:
-            Metric:
-              Namespace: ${self:provider.environment.NAMESPACE}
-              MetricName: domain.event
-            Period: 900 # 15 minutes
-            Stat: Sum
-        ThresholdMetricId: ad1
-        TreatMissingData: breaching
-        # AlarmActions:
-        #   - ${self:custom.accounts.${opt:acct}.criticalAlarmTopicArn}
+  - ${file(serverless/sqs-listener.yml):resources}
+  - ${file(serverless/cw.yml):resources}
+  - ${file(serverless/conditions.yml)}

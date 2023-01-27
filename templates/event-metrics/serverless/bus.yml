@@ -1,0 +1,5 @@
+iamRoleStatements:
+  Effect: Allow
+  Action:
+    - events:PutEvents
+  Resource: ${self:provider.environment.BUS_ARN}

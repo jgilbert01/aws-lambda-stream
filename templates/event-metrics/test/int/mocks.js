@@ -1,2 +1,5 @@
 // eslint-disable-next-line no-unused-vars
-import sinon from 'sinon';
+import * as sinon from 'sinon';
+// import * as utils from '../../src/utils';
+
+// sinon.stub(utils, 'now').returns(1653877763001); // TODO update when re-recording

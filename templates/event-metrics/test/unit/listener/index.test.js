@@ -3,9 +3,8 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
-import { toKinesisRecords } from 'aws-lambda-stream';
+import { toKinesisRecords, CloudWatchConnector as Connector } from 'aws-lambda-stream';
 
-import Connector from '../../../src/connectors/cloudwatch';
 import { handle, Handler } from '../../../src/listener';
 
 describe('listener/index.js', () => {
@@ -17,53 +16,52 @@ describe('listener/index.js', () => {
 
     new Handler().handle(EVENTS)
       .collect()
-      // .tap(collected => console.log(JSON.stringify(collected, null, 2)))
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
         expect(collected.length).to.equal(4);
-        // TODO Namespace
-        expect(collected[0].MetricData[0]).to.deep.equal({
-          MetricName: 'domain.event',
-          Timestamp: 1441121400,
-          Unit: 'Count',
-          Value: 1,
-          Dimensions: [
-            {
-              Name: 'account',
-              Value: 'not-specified',
-            },
-            {
-              Name: 'region',
-              Value: 'us-west-2',
-            },
-            {
-              Name: 'stream',
-              Value: 'not-specified',
-            },
-            {
-              Name: 'shard',
-              Value: '000000000000',
-            },
-            {
-              Name: 'stage',
-              Value: 'not-specified',
-            },
-            {
-              Name: 'source',
-              Value: 'not-specified',
-            },
-            {
-              Name: 'functionname',
-              Value: 'not-specified',
-            },
-            {
-              Name: 'pipeline',
-              Value: 'not-specified',
-            },
-            {
-              Name: 'type',
-              Value: 'blue',
-            },
-          ],
+        expect(collected[0].embeddedMetrics).to.deep.equal({
+          '_aws': {
+            Timestamp: 1441121400000,
+            CloudWatchMetrics: [
+              {
+                Namespace: undefined,
+                Dimensions: [
+                  [
+                    'account',
+                    'region',
+                    'stream',
+                    'shard',
+                    'stage',
+                    'source',
+                    'functionname',
+                    'pipeline',
+                    'type',
+                  ],
+                ],
+                Metrics: [
+                  {
+                    Name: 'domain.event',
+                    Unit: 'Count',
+                  },
+                  {
+                    Name: 'domain.event.size',
+                    Unit: 'Bytes',
+                  },
+                ],
+              },
+            ],
+          },
+          'account': 'not-specified',
+          'region': 'us-west-2',
+          'stream': 'not-specified',
+          'shard': '000000000000',
+          'stage': 'not-specified',
+          'source': 'not-specified',
+          'functionname': 'not-specified',
+          'pipeline': 'not-specified',
+          'type': 'blue',
+          'domain.event': 1,
+          'domain.event.size': 56,
         });
       })
       .done(done);

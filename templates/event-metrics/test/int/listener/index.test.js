@@ -1,7 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
 
-import { toKinesisRecords } from 'aws-lambda-stream';
+import { toKinesisRecords, toSqsEventRecords } from 'aws-lambda-stream';
 
 import { handle } from '../../../src/listener';
 
@@ -11,34 +11,28 @@ describe('listener/index.js', () => {
   });
 
   it('should test listener integration', async () => {
-    console.log(JSON.stringify(EVENT, null, 2));
-    const res = await handle(EVENT, {});
+    const res = await handle(EVENT, {}, { AES: false });
     expect(res).to.equal('Success');
   });
 });
 
-const EVENT = toKinesisRecords([
-  {
-    type: 'thing-created',
-    timestamp: 1610992656000,
-    tags: {
-      account: 'dev',
-      region: 'us-east-1',
-      stg: 'stg',
-      source: 's1',
-      functionname: 'f1',
-    },
+const EVENT = toSqsEventRecords([{
+  id: 'a24f9cdaec8ead2781353ef13e942f42',
+  type: 'thing-created',
+  partitionKey: '00000000-0000-0000-0000-000000000000',
+  timestamp: 1600485986000,
+  tags: {
+    account: 'dev',
+    region: 'us-west-2',
+    stage: 'stg',
+    source: 'your-apps-event-metrics',
+    functionname: 'undefined',
+    pipeline: 't1',
+    skip: false,
   },
-  {
-    type: 'thing-updated',
-    timestamp: 1610992657000,
-    tags: {
-      account: 'dev',
-      region: 'us-east-1',
-      stg: 'stg',
-      source: 's1',
-      functionname: 'f2',
-    },
+  thing: {
+    lastModifiedBy: 'offlineContext_authorizer_principalId',
+    timestamp: 1600349040394,
+    id: '00000000-0000-0000-0000-000000000000',
   },
-]);
-
+}]);
