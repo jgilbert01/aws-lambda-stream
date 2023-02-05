@@ -51,12 +51,12 @@ class Connector {
 
 export default Connector;
 
-export const unprocessed = (params, resp) => ({
+const unprocessed = (params, resp) => ({
   ...params,
   Entries: params.Entries.filter((e, i) => resp.Entries[i].ErrorCode),
 });
 
-export const accumlate = (attempts, resp) => attempts.reduceRight((a, c) => ({
+const accumlate = (attempts, resp) => attempts.reduceRight((a, c) => ({
   ...a,
   Entries: [
     ...c.Entries.filter((e) => !e.ErrorCode),

@@ -58,12 +58,12 @@ class Connector {
 
 export default Connector;
 
-export const unprocessed = (params, resp) => ({
+const unprocessed = (params, resp) => ({
   ...params,
   Records: params.Records.filter((e, i) => resp.Records[i].ErrorCode),
 });
 
-export const accumlate = (attempts, resp) => attempts.reduceRight((a, c) => ({
+const accumlate = (attempts, resp) => attempts.reduceRight((a, c) => ({
   ...a,
   Records: [
     ...c.Records.filter((r) => !r.ErrorCode),

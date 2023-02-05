@@ -58,12 +58,12 @@ class Connector {
 
 export default Connector;
 
-export const unprocessed = (params, resp) => ({
+const unprocessed = (params, resp) => ({
   ...params,
   Entries: resp.Failed.map((m) => params.Entries.find((e) => m.Id === e.Id)),
 });
 
-export const accumlate = (attempts, resp) => attempts.reduceRight((a, c) => ({
+const accumlate = (attempts, resp) => attempts.reduceRight((a, c) => ({
   ...a,
   Successful: [
     ...c.Successful,
