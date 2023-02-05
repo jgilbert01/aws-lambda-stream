@@ -7,7 +7,7 @@ import Connector from '../../../src/connectors/sns';
 
 import { debug } from '../../../src/utils';
 
-describe.only('connectors/sns.js', () => {
+describe('connectors/sns.js', () => {
   afterEach(() => {
     AWS.restore('SNS');
   });
