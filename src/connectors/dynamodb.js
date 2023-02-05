@@ -74,7 +74,7 @@ class Connector {
         .tap(this.debug)
         .tapCatch(this.debug)
         .then((resp) => {
-          if (resp.UnprocessedKeys) {
+          if (Object.keys(resp.UnprocessedKeys || /* istanbul ignore next */ {}).length > 0) {
             return this._batchGet(unprocessed(params, resp), [...attempts, resp]);
           } else {
             return accumlate(attempts, resp);

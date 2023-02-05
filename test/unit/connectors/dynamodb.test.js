@@ -138,6 +138,7 @@ describe('connectors/dynamodb.js', () => {
           },
         ],
       },
+      UnprocessedKeys: {},
     }));
     AWS.mock('DynamoDB.DocumentClient', 'batchGet', spy);
 
@@ -185,6 +186,7 @@ describe('connectors/dynamodb.js', () => {
           },
         ],
       },
+      UnprocessedKeys: {},
     });
   });
 
@@ -246,6 +248,7 @@ describe('connectors/dynamodb.js', () => {
             },
           ],
         },
+        UnprocessedKeys: {},
       },
     ];
 
@@ -319,6 +322,7 @@ describe('connectors/dynamodb.js', () => {
           },
         ],
       },
+      UnprocessedKeys: {},
       attempts: [
         {
           Responses: {
@@ -376,6 +380,7 @@ describe('connectors/dynamodb.js', () => {
               },
             ],
           },
+          UnprocessedKeys: {},
         },
       ],
     });
