@@ -104,7 +104,6 @@ describe('connectors/eventbridge.js', () => {
     const responses = [
       { Entries: [{ EventId: '1' }, { ErrorCode: 'X' }, { ErrorCode: 'X' }], FailedEntryCount: 2 },
       { Entries: [{ EventId: '2' }, { ErrorCode: 'X' }], FailedEntryCount: 1 },
-      { Entries: [{ EventId: '3' }], FailedEntryCount: 0 },
     ];
 
     const spy = sinon.spy((params, cb) => cb(null, responses.shift()));

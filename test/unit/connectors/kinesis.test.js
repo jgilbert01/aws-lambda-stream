@@ -106,7 +106,6 @@ describe('connectors/kinesis.js', () => {
     const responses = [
       { Records: [{ SequenceNumber: '1' }, { ErrorCode: 'X' }, { ErrorCode: 'X' }], FailedRecordCount: 2 },
       { Records: [{ SequenceNumber: '2' }, { ErrorCode: 'X' }], FailedRecordCount: 1 },
-      { Records: [{ SequenceNumber: '3' }], FailedRecordCount: 0 },
     ];
 
     const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
