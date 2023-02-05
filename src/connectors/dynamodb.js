@@ -2,6 +2,9 @@
 import { config, DynamoDB } from 'aws-sdk';
 import Promise from 'bluebird';
 import _ from 'highland';
+import {
+  defaultRetryConfig, wait, getDelay, assertMaxRetries,
+} from '../utils/retry';
 
 config.setPromisesDependency(Promise);
 
@@ -10,15 +13,20 @@ class Connector {
     debug,
     tableName,
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+    retryConfig = defaultRetryConfig,
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
     this.db = new DynamoDB.DocumentClient({
       httpOptions: {
         timeout,
+        connectTimeout: timeout,
       },
+      maxRetries: 10, // Default: 3
+      retryDelayOptions: { base: 200 }, // Default: 100 ms
       logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
     });
+    this.retryConfig = retryConfig;
   }
 
   update(inputParams) {
@@ -54,9 +62,24 @@ class Connector {
       ...inputParams,
     };
 
-    return this.db.batchGet(params).promise()
-      .tap(this.debug)
-      .tapCatch(this.debug);
+    return this._batchGet(params, []);
+  }
+
+  _batchGet(params, attempts) {
+    assertMaxRetries(attempts, this.retryConfig.maxRetries);
+
+    return wait(getDelay(this.retryConfig.retryWait, attempts.length))
+      .then(() => this.db.batchGet(params)
+        .promise()
+        .tap(this.debug)
+        .tapCatch(this.debug)
+        .then((resp) => {
+          if (resp.UnprocessedKeys) {
+            return this._batchGet(unprocessed(params, resp), [...attempts, resp]);
+          } else {
+            return accumlate(attempts, resp);
+          }
+        }));
   }
 
   query(inputParams) {
@@ -114,3 +137,17 @@ class Connector {
 }
 
 export default Connector;
+
+const unprocessed = (params, resp) => ({
+  ...params,
+  RequestItems: resp.UnprocessedKeys,
+});
+
+const accumlate = (attempts, resp) => attempts.reduceRight((a, c) => ({
+  ...a,
+  Responses: Object.keys(a.Responses).reduce((a2, c2) => ({
+    ...a2,
+    [c2]: [...a2[c2], ...a.Responses[c2]],
+  }), { ...c.Responses }),
+  attempts: [...attempts, resp],
+}), resp);
