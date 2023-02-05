@@ -71,8 +71,15 @@ describe('connectors/eventbridge.js', () => {
     }).putEvents(inputParams);
 
     expect(spy).to.have.been.calledWith({
-      Entries: inputParams.Entries,
+      Entries: [inputParams.Entries[0], inputParams.Entries[1], inputParams.Entries[2]],
     });
+    expect(spy).to.have.been.calledWith({
+      Entries: [inputParams.Entries[1], inputParams.Entries[2]],
+    });
+    expect(spy).to.have.been.calledWith({
+      Entries: [inputParams.Entries[2]],
+    });
+
     expect(data).to.deep.equal({
       Entries: [{ EventId: '1' }, { EventId: '2' }, { EventId: '3' }],
       FailedEntryCount: 0,
