@@ -1,3 +1,5 @@
+import Promise from 'bluebird';
+
 export const defaultRetryConfig = {
   maxRetries: Number(process.env.BATCH_MAX_RETRIES) || 8,
   retryWait: Number(process.env.BATCH_RETRY_WAIT) || 100,
