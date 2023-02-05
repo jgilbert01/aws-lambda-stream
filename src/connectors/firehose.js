@@ -15,6 +15,7 @@ class Connector {
     this.stream = new Firehose({
       httpOptions: {
         timeout,
+        connectTimeout: timeout,
       },
       logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
     });
