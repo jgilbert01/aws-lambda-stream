@@ -140,6 +140,16 @@ describe('connectors/eventbridge.js', () => {
       .then(() => {
         expect.fail('should have thrown');
       }).catch((err) => {
+        expect(spy).to.have.been.calledWith({
+          Entries: [inputParams.Entries[0], inputParams.Entries[1], inputParams.Entries[2]],
+        });
+        expect(spy).to.have.been.calledWith({
+          Entries: [inputParams.Entries[1], inputParams.Entries[2]],
+        });
+        expect(spy).to.not.have.been.calledWith({
+          Entries: [inputParams.Entries[2]],
+        });
+
         expect(err.message).to.contain('Failed batch requests');
       });
   });

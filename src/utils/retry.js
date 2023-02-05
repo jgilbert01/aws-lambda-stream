@@ -6,7 +6,7 @@ export const defaultRetryConfig = {
 };
 
 export const assertMaxRetries = (attempts, maxRetries) => {
-  if (attempts.length === maxRetries) {
+  if (attempts.length > maxRetries) {
     throw new Error(`Failed batch requests: ${JSON.stringify(attempts[attempts.length - 1])}`);
   }
 };

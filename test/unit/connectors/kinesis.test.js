@@ -140,6 +140,19 @@ describe('connectors/kinesis.js', () => {
       .then(() => {
         expect.fail('should have thrown');
       }).catch((err) => {
+        expect(spy).to.have.been.calledWith({
+          Records: [inputParams.Records[0], inputParams.Records[1], inputParams.Records[2]],
+          StreamName: 's1',
+        });
+        expect(spy).to.have.been.calledWith({
+          Records: [inputParams.Records[1], inputParams.Records[2]],
+          StreamName: 's1',
+        });
+        expect(spy).to.not.have.been.calledWith({
+          Records: [inputParams.Records[2]],
+          StreamName: 's1',
+        });
+
         expect(err.message).to.contain('Failed batch requests');
       });
   });
