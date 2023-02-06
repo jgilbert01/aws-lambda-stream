@@ -6,4 +6,9 @@ export const defaultOptions = { // eslint-disable-line import/prefer-default-exp
   debug: debug('handler'),
   busName: process.env.BUS_NAME,
   publish: publishToEventBridge,
+
+  // encryption
+  masterKeyAlias: process.env.MASTER_KEY_ALIAS,
+  regions: (process.env.KMS_REGIONS && process.env.KMS_REGIONS.split(',')),
+  AES: true,
 };

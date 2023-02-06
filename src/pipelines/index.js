@@ -3,13 +3,13 @@ import memoryCache from 'memory-cache';
 
 import { faults, flushFaults } from '../faults';
 
-import { debug as d } from '../utils';
+import { debug as d, encryptData, decryptData } from '../utils';
 
 const debug = d('pl:init');
 
 let thePipelines = {};
 
-export const initialize = (pipelines, opt) => {
+export const initialize = (pipelines, opt = {}) => {
   const keys = Object.keys(pipelines);
 
   debug('initialize: %j', keys);
@@ -21,6 +21,7 @@ export const initialize = (pipelines, opt) => {
         id,
         ...opt,
         ...addDebug(id),
+        ...addEncryptors(opt),
       }),
     }),
     {},
@@ -38,6 +39,7 @@ export const initializeFrom = (rules) => rules.reduce(
       ...rule, // included 1st so rules are printed 1st in debug output
       ...opt,
       ...rule, // include again for override precedence
+      ...addEncryptors({ ...opt, ...rule }),
     }),
   }),
   {},
@@ -103,3 +105,8 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
 };
 
 const addDebug = (id) => ({ debug: d(`pl:${id}`) });
+
+const addEncryptors = (opt) => ({
+  encrypt: encryptData(opt),
+  decrypt: decryptData(opt),
+});
