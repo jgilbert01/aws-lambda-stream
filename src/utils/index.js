@@ -11,6 +11,7 @@ export * from './kinesis';
 export * from './lambda';
 export * from './opt';
 export * from './print';
+export * from './retry';
 export * from './secretsmgr';
 export * from './s3';
 export * from './sns';

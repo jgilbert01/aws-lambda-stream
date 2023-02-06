@@ -13,6 +13,7 @@ class Connector {
     this.lambda = new Lambda({
       httpOptions: {
         timeout,
+        connectTimeout: timeout,
       },
       logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
     });

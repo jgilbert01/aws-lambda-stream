@@ -190,6 +190,312 @@ describe('connectors/dynamodb.js', () => {
     });
   });
 
+  it('should retry', async () => {
+    const responses = [
+      {
+        Responses: {
+          t1: [
+            {
+              pk: '1',
+              sk: 'thing',
+              name: 'Thing One',
+            },
+          ],
+        },
+        UnprocessedKeys: {
+          t1: {
+            Keys: [
+              {
+                pk: '2',
+                sk: 'thing',
+              },
+              {
+                pk: '3',
+                sk: 'thing',
+              },
+            ],
+          },
+        },
+      },
+      {
+        Responses: {
+          t1: [
+            {
+              pk: '2',
+              sk: 'thing',
+              name: 'Thing Two',
+            },
+          ],
+        },
+        UnprocessedKeys: {
+          t1: {
+            Keys: [
+              {
+                pk: '3',
+                sk: 'thing',
+              },
+            ],
+          },
+        },
+      },
+      {
+        Responses: {
+          t1: [
+            {
+              pk: '3',
+              sk: 'thing',
+              name: 'Thing Three',
+            },
+          ],
+        },
+        UnprocessedKeys: {},
+      },
+    ];
+
+    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
+    AWS.mock('DynamoDB.DocumentClient', 'batchGet', spy);
+
+    const inputParams = {
+      RequestItems: {
+        t1: {
+          Keys: [
+            {
+              pk: '1',
+              sk: 'thing',
+            },
+            {
+              pk: '2',
+              sk: 'thing',
+            },
+            {
+              pk: '3',
+              sk: 'thing',
+            },
+          ],
+        },
+      },
+    };
+
+    const data = await new Connector({
+      debug: debug('dynamodb'),
+    }).batchGet(inputParams);
+
+    expect(spy).to.have.been.calledWith({
+      RequestItems: {
+        t1: {
+          Keys: [inputParams.RequestItems.t1.Keys[0], inputParams.RequestItems.t1.Keys[1], inputParams.RequestItems.t1.Keys[2]],
+        },
+      },
+    });
+    expect(spy).to.have.been.calledWith({
+      RequestItems: {
+        t1: {
+          Keys: [inputParams.RequestItems.t1.Keys[1], inputParams.RequestItems.t1.Keys[2]],
+        },
+      },
+    });
+    expect(spy).to.have.been.calledWith({
+      RequestItems: {
+        t1: {
+          Keys: [inputParams.RequestItems.t1.Keys[2]],
+        },
+      },
+    });
+
+    expect(data).to.deep.equal({
+      Responses: {
+        t1: [
+          {
+            pk: '1',
+            sk: 'thing',
+            name: 'Thing One',
+          },
+          {
+            pk: '2',
+            sk: 'thing',
+            name: 'Thing Two',
+          },
+          {
+            pk: '3',
+            sk: 'thing',
+            name: 'Thing Three',
+          },
+        ],
+      },
+      UnprocessedKeys: {},
+      attempts: [
+        {
+          Responses: {
+            t1: [
+              {
+                pk: '1',
+                sk: 'thing',
+                name: 'Thing One',
+              },
+            ],
+          },
+          UnprocessedKeys: {
+            t1: {
+              Keys: [
+                {
+                  pk: '2',
+                  sk: 'thing',
+                },
+                {
+                  pk: '3',
+                  sk: 'thing',
+                },
+              ],
+            },
+          },
+        },
+        {
+          Responses: {
+            t1: [
+              {
+                pk: '2',
+                sk: 'thing',
+                name: 'Thing Two',
+              },
+            ],
+          },
+          UnprocessedKeys: {
+            t1: {
+              Keys: [
+                {
+                  pk: '3',
+                  sk: 'thing',
+                },
+              ],
+            },
+          },
+        },
+        {
+          Responses: {
+            t1: [
+              {
+                pk: '3',
+                sk: 'thing',
+                name: 'Thing Three',
+              },
+            ],
+          },
+          UnprocessedKeys: {},
+        },
+      ],
+    });
+  });
+
+  it('should throw on max retry', async () => {
+    const responses = [
+      {
+        Responses: {
+          t1: [
+            {
+              pk: '1',
+              sk: 'thing',
+              name: 'Thing One',
+            },
+          ],
+        },
+        UnprocessedKeys: {
+          t1: {
+            Keys: [
+              {
+                pk: '2',
+                sk: 'thing',
+              },
+              {
+                pk: '3',
+                sk: 'thing',
+              },
+            ],
+          },
+        },
+      },
+      {
+        Responses: {
+          t1: [
+            {
+              pk: '2',
+              sk: 'thing',
+              name: 'Thing Two',
+            },
+          ],
+        },
+        UnprocessedKeys: {
+          t1: {
+            Keys: [
+              {
+                pk: '3',
+                sk: 'thing',
+              },
+            ],
+          },
+        },
+      },
+    ];
+
+    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
+    AWS.mock('DynamoDB.DocumentClient', 'batchGet', spy);
+
+    const inputParams = {
+      RequestItems: {
+        t1: {
+          Keys: [
+            {
+              pk: '1',
+              sk: 'thing',
+            },
+            {
+              pk: '2',
+              sk: 'thing',
+            },
+            {
+              pk: '3',
+              sk: 'thing',
+            },
+          ],
+        },
+      },
+    };
+
+    const data = await new Connector({
+      debug: debug('dynamodb'),
+      retryConfig: {
+        maxRetries: 1,
+        retryWait: 100,
+      },
+    }).batchGet(inputParams)
+      .then(() => {
+        expect.fail('should have thrown');
+      }).catch((err) => {
+        expect(spy).to.have.been.calledWith({
+          RequestItems: {
+            t1: {
+              Keys: [inputParams.RequestItems.t1.Keys[0], inputParams.RequestItems.t1.Keys[1], inputParams.RequestItems.t1.Keys[2]],
+            },
+          },
+        });
+        expect(spy).to.have.been.calledWith({
+          RequestItems: {
+            t1: {
+              Keys: [inputParams.RequestItems.t1.Keys[1], inputParams.RequestItems.t1.Keys[2]],
+            },
+          },
+        });
+        expect(spy).to.not.have.been.calledWith({
+          RequestItems: {
+            t1: {
+              Keys: [inputParams.RequestItems.t1.Keys[2]],
+            },
+          },
+        });
+
+        expect(err.message).to.contain('Failed batch requests');
+      });
+  });
+
   it('should query', async () => {
     const correlationKey = '11';
 

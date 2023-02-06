@@ -20,6 +20,7 @@ class Connector {
     this.sm = new SecretsManager({
       httpOptions: {
         timeout,
+        connectTimeout: timeout,
       },
       logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
     });

@@ -15,6 +15,7 @@ class Connector {
     this.bucket = new S3({
       httpOptions: {
         timeout,
+        connectTimeout: timeout,
       },
       logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
     });
