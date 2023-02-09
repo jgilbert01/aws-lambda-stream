@@ -35,20 +35,20 @@ export const batchWithSize = (opt) => {
       next();
     } else if (x === _.nil) {
       if (batched.length > 0) {
-        logMetrics(sizes, opt);
+        logMetrics(batched, sizes, opt);
         push(null, batched);
       }
 
       push(null, _.nil);
     } else {
-      const size = JSON.stringify(x[opt.requestEntryField]).length;
+      const size = Buffer.byteLength(JSON.stringify(x[opt.requestEntryField]));
       const totalSize = sizes.reduce((a, c) => a + c, size);
 
       if (totalSize <= opt.maxRequestSize && batched.length + 1 <= opt.batchSize) {
         batched.push(x);
         sizes.push(size);
       } else {
-        logMetrics(sizes, opt);
+        logMetrics(batched, sizes, opt);
         push(null, batched);
         batched = [x];
         sizes = [size];
@@ -59,23 +59,30 @@ export const batchWithSize = (opt) => {
   };
 };
 
-const logMetrics = (sizes, opt) => {
+const logMetrics = (batch, sizes, opt) => {
   if (opt.metricsEnabled) {
     opt.debug('%j', {
       metrics: {
-        count: sizes.length,
-        ...sizes.reduce((a, size, i) => ({
-          ...a,
-          average: (a.sum + size) / (i + 1),
-          min: a.min < size ? a.min : size,
-          max: a.max > size ? a.max : size,
-          sum: a.sum + size,
-        }), {
-          average: 0,
-          min: undefined,
-          max: undefined,
-          sum: 0,
-        }),
+        [opt.requestField]: {
+          count: sizes.length,
+          ...sizes.reduce((a, size, i) => ({
+            ...a,
+            average: (a.sum + size) / (i + 1),
+            min: a.min < size ? a.min : size,
+            max: a.max > size ? a.max : size,
+            sum: a.sum + size,
+            types: {
+              ...a.types,
+              [batch[i][opt.requestEntryField].DetailType]: [...(a.types[batch[i][opt.requestEntryField].DetailType] || []), size],
+            },
+          }), {
+            average: 0,
+            min: undefined,
+            max: undefined,
+            sum: 0,
+            types: {},
+          }),
+        },
       },
     });
   }

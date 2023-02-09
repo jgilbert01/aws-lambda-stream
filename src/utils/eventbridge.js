@@ -58,6 +58,8 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
       batchSize,
       maxRequestSize: maxPublishRequestSize,
       requestEntryField: publishRequestEntryField,
+      requestField: publishRequestField,
+      debug,
     }))
     .map(toBatchUow)
     .map(toPublishRequest)
