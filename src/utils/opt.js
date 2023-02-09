@@ -7,6 +7,8 @@ export const defaultOptions = { // eslint-disable-line import/prefer-default-exp
   busName: process.env.BUS_NAME,
   publish: publishToEventBridge,
 
+  metricsEnabled: process.env.ENABLE_METRICS === 'true',
+
   // encryption
   eemField: 'eem',
   masterKeyAlias: process.env.MASTER_KEY_ALIAS,

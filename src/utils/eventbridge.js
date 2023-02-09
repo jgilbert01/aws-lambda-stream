@@ -2,81 +2,70 @@ import _ from 'highland';
 
 import Connector from '../connectors/eventbridge';
 
-import { toBatchUow, unBatchUow } from './batch';
-import { rejectWithFault, throwFault } from './faults';
+import { toBatchUow, unBatchUow, batchWithSize } from './batch';
+import { rejectWithFault } from './faults';
 import { debug as d } from './print';
 import { adornStandardTags } from './tags';
 
 export const publishToEventBridge = ({ // eslint-disable-line import/prefer-default-export
   debug = d('eventbridge'),
   busName = process.env.BUS_NAME || 'undefined',
-  source = 'custom',
-  eventField = 'event',
+  source = 'custom', // could change this to internal vs external/ingress/egress
+  eventField = 'event', // is often named emit
+  publishRequestEntryField = 'publishRequestEntry',
+  publishRequestField = 'publishRequest', // was inputParams
+  maxPublishRequestSize = Number(process.env.PUBLISH_MAX_REQ_SIZE) || Number(process.env.MAX_REQ_SIZE) || 256000,
   batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
+  retryConfig,
 } = {}) => {
-  const connector = new Connector({ debug });
+  const connector = new Connector({ debug, retryConfig });
 
-  const toInputParams = (batchUow) => ({
+  const toPublishRequestEntry = (uow) => ({
+    ...uow,
+    [publishRequestEntryField]: {
+      EventBusName: busName,
+      Source: source,
+      DetailType: uow[eventField].type,
+      Detail: JSON.stringify(uow[eventField]),
+    },
+  });
+
+  const toPublishRequest = (batchUow) => ({
     ...batchUow,
-    inputParams: {
+    [publishRequestField]: {
       Entries: batchUow.batch
-        .filter((uow) => uow[eventField])
-        .map((uow) => ({
-          EventBusName: busName,
-          Source: source,
-          DetailType: uow[eventField].type,
-          Detail: JSON.stringify(uow[eventField]),
-        })),
+        .map((uow) => uow[publishRequestEntryField]),
     },
   });
 
   const putEvents = (batchUow) => {
-    if (!batchUow.inputParams.Entries.length) {
-      return _(Promise.resolve(batchUow));
-    }
-
-    const p = connector.putEvents(batchUow.inputParams)
+    const p = connector.putEvents(batchUow[publishRequestField])
       .catch(rejectWithFault(batchUow, !handleErrors))
-      .then(handleFailedEntries(batchUow))
       .then((publishResponse) => ({ ...batchUow, publishResponse }));
 
     return _(p); // wrap promise in a stream
   };
 
   return (s) => s
+    .filter((uow) => uow[eventField])
+
     .map(adornStandardTags(eventField))
 
-    .batch(batchSize)
+    .map(toPublishRequestEntry)
+    .consume(batchWithSize({
+      batchSize,
+      maxRequestSize: maxPublishRequestSize,
+      requestEntryField: publishRequestEntryField,
+      requestField: publishRequestField,
+      debug,
+    }))
     .map(toBatchUow)
+    .map(toPublishRequest)
 
-    .map(toInputParams)
     .map(putEvents)
     .parallel(parallel)
 
     .flatMap(unBatchUow); // for cleaner logging and testing
-};
-
-const handleFailedEntries = (batchUow) => (publishResponse) => {
-  if (publishResponse.FailedEntryCount === 0) {
-    return publishResponse;
-  } else {
-    const failed = publishResponse.Entries.reduce((a, c, i) => {
-      if (c.ErrorCode) {
-        return [...a, {
-          ...batchUow.batch[i],
-          inputParam: batchUow.inputParams.Entries[i],
-          err: {
-            code: c.ErrorCode,
-            msg: c.ErrorMessage,
-          },
-        }];
-      } else {
-        return a;
-      }
-    }, []);
-
-    return throwFault({ batch: failed })(new Error(`Event Bridge Failed Entry Count: ${publishResponse.FailedEntryCount}`));
-  }
 };
