@@ -23,7 +23,7 @@ describe('utils/eventbridge.js', () => {
     }];
 
     _(uows)
-      .through(publish({ busName: 'b1', debug: debug('eventbridge') }))
+      .through(publish({ busName: 'b1', debug: (msg, v) => console.log(msg, v), metricsEnabled: true }))
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
