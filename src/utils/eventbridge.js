@@ -19,6 +19,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
   retryConfig,
+  ...opt
 } = {}) => {
   const connector = new Connector({ debug, retryConfig });
 
@@ -55,6 +56,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
 
     .map(toPublishRequestEntry)
     .consume(batchWithSize({
+      ...opt,
       batchSize,
       maxRequestSize: maxPublishRequestSize,
       requestEntryField: publishRequestEntryField,
