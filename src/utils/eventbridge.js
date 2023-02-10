@@ -6,6 +6,7 @@ import { toBatchUow, unBatchUow, batchWithSize } from './batch';
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
 import { adornStandardTags } from './tags';
+import { compress } from './compression';
 
 export const publishToEventBridge = ({ // eslint-disable-line import/prefer-default-export
   debug = d('eventbridge'),
@@ -29,7 +30,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
       EventBusName: busName,
       Source: source,
       DetailType: uow[eventField].type,
-      Detail: JSON.stringify(uow[eventField]),
+      Detail: JSON.stringify(uow[eventField], compress(opt)),
     },
   });
 

@@ -6,6 +6,7 @@ import { toBatchUow, unBatchUow } from './batch';
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
 import { adornStandardTags } from './tags';
+import { compress } from './compression';
 
 export const publishToKinesis = ({
   debug = d('kinesis'),
@@ -14,6 +15,7 @@ export const publishToKinesis = ({
   batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
+  ...opt
 } = {}) => {
   const connector = new Publisher({ debug, streamName });
 
@@ -22,7 +24,7 @@ export const publishToKinesis = ({
     inputParams: {
       Records: batchUow.batch
         .filter((uow) => uow[eventField])
-        .map((uow) => toRecord(uow[eventField])),
+        .map((uow) => toRecord(uow[eventField], opt)),
     },
   });
 
@@ -51,7 +53,7 @@ export const publishToKinesis = ({
     .flatMap(unBatchUow); // for cleaner logging and testing
 };
 
-export const toRecord = (e) => ({
-  Data: Buffer.from(JSON.stringify(e)),
+export const toRecord = (e, opt) => ({
+  Data: Buffer.from(JSON.stringify(e, compress(opt))),
   PartitionKey: e.partitionKey,
 });

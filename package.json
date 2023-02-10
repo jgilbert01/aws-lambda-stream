@@ -92,5 +92,7 @@
     "node-fetch": "^2.6.1",
     "uuid": "^3.3.3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "object-sizeof": "^2.6.0"
+  }
 }

@@ -1,6 +1,6 @@
 import _ from 'highland';
 
-import { faulty } from '../utils';
+import { faulty, decompress, compress } from '../utils';
 
 export const fromKinesis = (event) =>
 
@@ -18,7 +18,7 @@ export const fromKinesis = (event) =>
       ...uow,
       event: {
         id: uow.record.eventID,
-        ...JSON.parse(uow.event),
+        ...JSON.parse(uow.event, decompress),
       },
     })));
 
@@ -37,7 +37,7 @@ export const toKinesisRecords = (events) => ({
         // kinesisSchemaVersion: '1.0',
         // partitionKey: e.partitionKey,
         sequenceNumber: `${i}`,
-        data: Buffer.from(JSON.stringify(e)).toString('base64'),
+        data: Buffer.from(JSON.stringify(e, compress())).toString('base64'),
         // approximateArrivalTimestamp: 1545084650.987,
       },
     })),

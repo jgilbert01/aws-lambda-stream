@@ -1,6 +1,6 @@
 import _ from 'highland';
 
-import { getObjectFromS3 } from '../utils/s3';
+import { getObjectFromS3, decompress } from '../utils';
 
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events
@@ -59,7 +59,7 @@ export const fromS3Event = (event, options = {}) =>
     .through(getObjectFromS3(options))
     .map((uow) => ({
       ...uow,
-      event: JSON.parse(Buffer.from(uow.getResponse.Body)),
+      event: JSON.parse(Buffer.from(uow.getResponse.Body), decompress),
     }));
 
 // test helper
