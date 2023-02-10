@@ -131,6 +131,44 @@ describe('utils/batch.js', () => {
       .done(done);
   });
 
+  it('should handle oversized requests', (done) => {
+    const spy = sinon.spy();
+    const uows = [
+      {
+        publishRequestEntry: { // size = 19
+          id: 'xxxxxxxxxx',
+        },
+      },
+      {
+        publishRequestEntry: { // size = 29
+          id: 'xxxxxxxxxxxxxxxxxxxx',
+        },
+      },
+      {
+        publishRequestEntry: { // size = 39
+          id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        },
+      },
+    ];
+
+    _(uows)
+      .consume(batchWithSize({
+        batchSize: 2,
+        maxRequestSize: 30,
+        requestEntryField: 'publishRequestEntry',
+        // metricsEnabled: true,
+        // debug: (msg, v) => console.log(msg, v),
+      }))
+      .errors(spy)
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(2);
+        expect(spy).to.have.been.calledWith; // (Error('Request size: 39, exceeded max: 30'));
+      })
+      .done(done);
+  });
+
   it('should batch', (done) => {
     const uows = [
       {

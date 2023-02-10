@@ -42,16 +42,23 @@ export const batchWithSize = (opt) => {
       push(null, _.nil);
     } else {
       const size = Buffer.byteLength(JSON.stringify(x[opt.requestEntryField]));
-      const totalSize = sizes.reduce((a, c) => a + c, size);
-
-      if (totalSize <= opt.maxRequestSize && batched.length + 1 <= opt.batchSize) {
-        batched.push(x);
-        sizes.push(size);
+      if (size > opt.maxRequestSize) {
+        logMetrics([x], [size], opt);
+        const error = new Error(`Request size: ${size}, exceeded max: ${opt.maxRequestSize}`);
+        error.uow = x;
+        push(error);
       } else {
-        logMetrics(batched, sizes, opt);
-        push(null, batched);
-        batched = [x];
-        sizes = [size];
+        const totalSize = sizes.reduce((a, c) => a + c, size);
+
+        if (totalSize <= opt.maxRequestSize && batched.length + 1 <= opt.batchSize) {
+          batched.push(x);
+          sizes.push(size);
+        } else {
+          logMetrics(batched, sizes, opt);
+          push(null, batched);
+          batched = [x];
+          sizes = [size];
+        }
       }
 
       next();
