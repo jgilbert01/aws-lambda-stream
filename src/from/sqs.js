@@ -1,6 +1,6 @@
 import _ from 'highland';
 
-import { faulty } from '../utils';
+import { faulty, decompress, compress } from '../utils';
 
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events
@@ -21,7 +21,7 @@ export const fromSqsEvent = (event) => _(event.Records)
     record,
     event: {
       id: record.messageId,
-      ...JSON.parse(record.body),
+      ...JSON.parse(record.body, decompress),
     },
   })));
 
@@ -54,7 +54,7 @@ export const toSqsRecords = (messages) => ({
 
 export const toSqsEventRecords = (events) =>
   toSqsRecords(events.map((e) => ({
-    body: JSON.stringify(e),
+    body: JSON.stringify(e, compress()),
     timestamp: e.timestamp,
     region: e.tags?.region,
   })));

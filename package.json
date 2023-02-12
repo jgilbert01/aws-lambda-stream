@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-stream",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
@@ -92,5 +92,7 @@
     "node-fetch": "^2.6.1",
     "uuid": "^3.3.3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "object-sizeof": "^2.6.0"
+  }
 }

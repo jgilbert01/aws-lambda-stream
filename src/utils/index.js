@@ -1,5 +1,6 @@
 export * from './batch';
 export * from './cloudwatch';
+export * from './compression';
 export * from './dynamodb';
 export * from './encryption';
 export * from './eventbridge';

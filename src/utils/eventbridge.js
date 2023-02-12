@@ -6,6 +6,7 @@ import { toBatchUow, unBatchUow, batchWithSize } from './batch';
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
 import { adornStandardTags } from './tags';
+import { compress } from './compression';
 
 export const publishToEventBridge = ({ // eslint-disable-line import/prefer-default-export
   debug = d('eventbridge'),
@@ -14,7 +15,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   eventField = 'event', // is often named emit
   publishRequestEntryField = 'publishRequestEntry',
   publishRequestField = 'publishRequest', // was inputParams
-  maxPublishRequestSize = Number(process.env.PUBLISH_MAX_REQ_SIZE) || Number(process.env.MAX_REQ_SIZE) || 256000,
+  maxPublishRequestSize = Number(process.env.PUBLISH_MAX_REQ_SIZE) || Number(process.env.MAX_REQ_SIZE) || 256 * 1024,
   batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
@@ -29,7 +30,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
       EventBusName: busName,
       Source: source,
       DetailType: uow[eventField].type,
-      Detail: JSON.stringify(uow[eventField]),
+      Detail: JSON.stringify(uow[eventField], compress(opt)),
     },
   });
 

@@ -5,6 +5,7 @@ import Connector from '../connectors/firehose';
 import { toBatchUow, unBatchUow } from './batch';
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
+import { compress } from './compression';
 
 export const sendToFirehose = ({
   debug = d('firehose'),
@@ -13,6 +14,7 @@ export const sendToFirehose = ({
   batchSize = Number(process.env.FIREHOSE_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
   parallel = Number(process.env.FIREHOSE_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
+  ...opt
 } = {}) => {
   const connector = new Connector({ debug, deliveryStreamName });
 
@@ -20,7 +22,7 @@ export const sendToFirehose = ({
     ...batchUow,
     inputParams: {
       Records: batchUow.batch
-        .map((uow) => toFirehoseRecord(uow[eventField])),
+        .map((uow) => toFirehoseRecord(uow[eventField], opt)),
     },
   });
 
@@ -56,6 +58,6 @@ export const sendToFirehose = ({
 //   return putResponse;
 // };
 
-export const toFirehoseRecord = (e) => ({
-  Data: Buffer.from(`${JSON.stringify(e)}\n`),
+export const toFirehoseRecord = (e, opt) => ({
+  Data: Buffer.from(`${JSON.stringify(e, compress(opt))}\n`),
 });
