@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import _ from 'highland';
 
 import {
-  putObjectToS3, getObjectFromS3, listObjectsFromS3, pageObjectsFromS3, splitS3Object, toGetObjectRequest, toGetObjectRequest2,
+  putObjectToS3, deleteObjectFromS3, getObjectFromS3, listObjectsFromS3, pageObjectsFromS3, splitS3Object, toGetObjectRequest, toGetObjectRequest2,
 } from '../../../src/utils/s3';
 
 import Connector from '../../../src/connectors/s3';
@@ -40,6 +40,36 @@ describe('utils/s3.js', () => {
             Key: 'k1',
           },
           putResponse: {},
+        });
+      })
+      .done(done);
+  });
+
+  it('should delete object', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'deleteObject').resolves({ DeleteMarker: false });
+
+    const uows = [{
+      deleteRequest: {
+        Key: 'k1',
+      },
+    }];
+
+    _(uows)
+      .through(deleteObjectFromS3())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(stub).to.have.been.calledWith({
+          Key: 'k1',
+        });
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({
+          deleteRequest: {
+            Key: 'k1',
+          },
+          deleteResponse: { DeleteMarker: false },
         });
       })
       .done(done);

@@ -16,6 +16,10 @@ import { materializeS3 } from '../../../src/flavors/materializeS3';
 describe('flavors/materializeS3.js', () => {
   beforeEach(() => {
     sinon.stub(Connector.prototype, 'putObject').resolves({});
+    sinon.stub(Connector.prototype, 'deleteObject').resolves({});
+    sinon.stub(Connector.prototype, 'getObject').resolves({
+      Body: JSON.stringify({ f1: 'v1' }),
+    });
   });
 
   afterEach(sinon.restore);
@@ -46,6 +50,20 @@ describe('flavors/materializeS3.js', () => {
           }],
         },
       },
+      {
+        type: 'd1',
+        timestamp: 1548967022000,
+        thing: {
+          id: '4',
+        },
+      },
+      {
+        type: 'pull1',
+        timestamp: 1548967022000,
+        thing: {
+          id: '5',
+        },
+      },
     ]);
 
     initialize({
@@ -55,7 +73,7 @@ describe('flavors/materializeS3.js', () => {
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
-        expect(collected.length).to.equal(5);
+        expect(collected.length).to.equal(7);
         expect(collected[0].pipeline).to.equal('mv1');
         expect(collected[0].event.type).to.equal('m1');
         expect(collected[0].putRequest).to.deep.equal({
@@ -70,9 +88,12 @@ describe('flavors/materializeS3.js', () => {
           })),
         });
         expect(collected[1].putRequest.Key).to.equal('2/thing');
-        expect(collected[2].putRequest.Key).to.equal('2/thing');
-        expect(collected[3].putRequest.Key).to.equal('3/thing');
+        expect(collected[3].putRequest.Key).to.equal('2/thing');
+        expect(collected[2].putRequest.Key).to.equal('3/thing');
         expect(collected[4].putRequest.Key).to.equal('3/thing');
+        expect(collected[5].getRequest.Key).to.equal('5/thing');
+        expect(collected[5].putRequest.Body).to.equal(JSON.stringify({ f1: 'v1' }));
+        expect(collected[6].deleteRequest.Key).to.equal('4/thing');
       })
       .done(done);
   });
@@ -86,6 +107,19 @@ const toPutRequest = (uow) => ({
     ttl: ttl(uow.event.timestamp, 1),
     timestamp: uow.event.timestamp,
   })),
+});
+
+const toDeleteRequest = (uow) => ({
+  Key: `${uow.event.thing.id}/thing`,
+});
+
+const toGetRequest = (uow) => ({
+  Key: `${uow.event.thing.id}/thing`,
+});
+
+const toPutRequest2 = (uow) => ({
+  Key: `${uow.event.thing.id}/thing`,
+  Body: uow.getResponse.Body,
 });
 
 const rules = [
@@ -117,5 +151,18 @@ const rules = [
       split: t,
     })),
     toPutRequest,
+  },
+  {
+    id: 'd1',
+    flavor: materializeS3,
+    eventType: 'd1',
+    toDeleteRequest,
+  },
+  {
+    id: 'pull1',
+    flavor: materializeS3,
+    eventType: 'pull1',
+    toGetRequest,
+    toPutRequest: toPutRequest2,
   },
 ];

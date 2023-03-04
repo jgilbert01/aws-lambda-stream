@@ -1,18 +1,18 @@
 import {
   printStartPipeline, printEndPipeline,
-  faulty, faultyAsyncStream, faultify,
-  putObjectToS3, splitObject,
+  faulty,
+  putObjectToS3, getObjectFromS3, deleteObjectFromS3,
+  splitObject,
 } from '../utils';
 
 import {
   filterOnEventType, filterOnContent,
-  outSkip, outSourceIsSelf,
+  outSkip,
 } from '../filters';
 
 
 export const materializeS3 = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   .filter(outSkip)
-  // .filter(outSourceIsSelf)
 
   .filter(onEventType(rule))
   .tap(printStartPipeline)
@@ -21,17 +21,40 @@ export const materializeS3 = (rule) => (s) => s // eslint-disable-line import/pr
 
   .through(splitObject(rule))
 
-  .map(toPutRequest(rule))
-  .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
+  .map(toGetRequest(rule))
+  .through(getObjectFromS3(rule))
 
+  .map(toPutRequest(rule))
   .through(putObjectToS3(rule))
+
+  .map(toDeleteRequest(rule))
+  .through(deleteObjectFromS3(rule))
 
   .tap(printEndPipeline);
 
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 
-const toPutRequest = (rule) => faultyAsyncStream(async (uow) => ({
+const toGetRequest = (rule) => faulty((uow) => ({
   ...uow,
-  putRequest: await faultify(rule.toPutRequest)(uow, rule),
+  getRequest:
+    rule.toGetRequest
+      ? /* istanbul ignore next */ rule.toGetRequest(uow, rule)
+      : undefined,
+}));
+
+const toPutRequest = (rule) => faulty((uow) => ({
+  ...uow,
+  putRequest:
+    rule.toPutRequest
+      ? /* istanbul ignore next */ rule.toPutRequest(uow, rule)
+      : undefined,
+}));
+
+const toDeleteRequest = (rule) => faulty((uow) => ({
+  ...uow,
+  deleteRequest:
+    rule.toDeleteRequest
+      ? /* istanbul ignore next */ rule.toDeleteRequest(uow, rule)
+      : undefined,
 }));
