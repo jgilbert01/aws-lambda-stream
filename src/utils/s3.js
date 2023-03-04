@@ -9,13 +9,16 @@ export const putObjectToS3 = ({
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,
   putRequestField = 'putRequest',
+  putResponseField = 'putResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
   const connector = new Connector({ debug, bucketName });
 
   const putObject = (uow) => {
+    if (!uow[putRequestField]) return _(Promise.resolve(uow));
+
     const p = connector.putObject(uow[putRequestField])
-      .then((putResponse) => ({ ...uow, putResponse }))
+      .then((putResponse) => ({ ...uow, [putResponseField]: putResponse }))
       .catch(rejectWithFault(uow));
 
     return _(p); // wrap promise in a stream
@@ -23,6 +26,30 @@ export const putObjectToS3 = ({
 
   return (s) => s
     .map(putObject)
+    .parallel(parallel);
+};
+
+export const deleteObjectFromS3 = ({
+  debug,
+  bucketName = process.env.BUCKET_NAME,
+  deleteRequestField = 'deleteRequest',
+  deleteResponseField = 'deleteResponse',
+  parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+} = {}) => {
+  const connector = new Connector({ debug, bucketName });
+
+  const deleteObject = (uow) => {
+    if (!uow[deleteRequestField]) return _(Promise.resolve(uow));
+
+    const p = connector.deleteObject(uow[deleteRequestField])
+      .then((deleteResponse) => ({ ...uow, [deleteResponseField]: deleteResponse }))
+      .catch(rejectWithFault(uow));
+
+    return _(p); // wrap promise in a stream
+  };
+
+  return (s) => s
+    .map(deleteObject)
     .parallel(parallel);
 };
 
@@ -46,13 +73,16 @@ export const getObjectFromS3 = ({
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,
   getRequestField = 'getRequest',
+  getResponseField = 'getResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
   const connector = new Connector({ debug, bucketName });
 
   const getObject = (uow) => {
+    if (!uow[getRequestField]) return _(Promise.resolve(uow));
+
     const p = connector.getObject(uow[getRequestField])
-      .then((getResponse) => ({ ...uow, getResponse }))
+      .then((getResponse) => ({ ...uow, [getResponseField]: getResponse }))
       .catch(rejectWithFault(uow));
 
     return _(p); // wrap promise in a stream
@@ -88,13 +118,17 @@ export const listObjectsFromS3 = ({
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,
   listRequestField = 'listRequest',
+  listResponseField = 'listResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
   const connector = new Connector({ debug, bucketName });
 
   const listObjects = (uow) => {
+    /* istanbul ignore if */
+    if (!uow[listRequestField]) return _(Promise.resolve(uow));
+
     const p = connector.listObjects(uow[listRequestField])
-      .then((listResponse) => ({ ...uow, listResponse }))
+      .then((listResponse) => ({ ...uow, [listResponseField]: listResponse }))
       .catch(rejectWithFault(uow));
 
     return _(p); // wrap promise in a stream
@@ -145,7 +179,7 @@ export const pageObjectsFromS3 = ({
             });
           });
         })
-        .catch(/* istanbul ignore next */ (err) => {
+        .catch(/* istanbul ignore next */(err) => {
           err.uow = uow;
           push(err, null);
         })

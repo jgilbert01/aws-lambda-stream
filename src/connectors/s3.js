@@ -32,6 +32,17 @@ class Connector {
       .tapCatch(this.debug);
   }
 
+  deleteObject(inputParams) {
+    const params = {
+      Bucket: this.bucketName,
+      ...inputParams,
+    };
+
+    return this.bucket.deleteObject(params).promise()
+      .tap(this.debug)
+      .tapCatch(this.debug);
+  }
+
   getObject(inputParams) {
     const params = {
       Bucket: this.bucketName,

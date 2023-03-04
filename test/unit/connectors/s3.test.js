@@ -54,6 +54,27 @@ describe('connectors/s3.js', () => {
     expect(data).to.deep.equal({ Body: 'b' });
   });
 
+  it('should delete object', async () => {
+    const spy = sinon.spy((params, cb) => cb(null, { DeleteMarker: false }));
+    AWS.mock('S3', 'deleteObject', spy);
+
+    const inputParams = {
+      Key: 'k1',
+    };
+
+    const data = await new Connector({
+      debug: debug('s3'),
+      bucketName: 'b1',
+    })
+      .deleteObject(inputParams);
+
+    expect(spy).to.have.been.calledWith({
+      Bucket: 'b1',
+      Key: 'k1',
+      // VersionId: undefined,
+    });
+    expect(data).to.deep.equal({ DeleteMarker: false });
+  });
 
   it('should list objects', async () => {
     const spy = sinon.spy((params, cb) => cb(null, {
