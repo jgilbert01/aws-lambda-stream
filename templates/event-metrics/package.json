@@ -65,7 +65,7 @@
     "eslint-plugin-import": "^2.9.0",
     "lint-staged": "^7.0.0",
     "mocha": "^10.2.0",
-    "nyc": "^11.8.0",
+    "nyc": "^15.1.0",
     "pre-commit": "^1.2.2",
     "serverless": "^3.22.0",
     "serverless-offline": "^4.5.0",
