@@ -22,7 +22,13 @@ export const prefilterOnEventTypes = (rules) =>
 export const filterOnContent = (rule, uow) => {
   /* istanbul ignore else */
   if (rule.filters) {
-    return rule.filters.reduce((a, c) => a && c(uow, rule), true);
+    const isSuccess = rule.filters.reduce((a, c) => a && c(uow, rule), true);
+    // Invoke custom function incase of filter conditions are not statisfied
+    // For example to create cloudwatch metric in case of failure
+    if (!isSuccess && rule.errorFilter) {
+      rule.errorFilter(uow);
+    }
+    return isSuccess;
   } else {
     return true;
   }
