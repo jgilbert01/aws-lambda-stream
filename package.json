@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-stream",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
@@ -53,7 +53,7 @@
     "@babel/plugin-transform-runtime": "^7.10.0",
     "@babel/preset-env": "^7.10.0",
     "@babel/register": "^7.10.0",
-    "aws-kms-ee": "^0.12.0",
+    "aws-kms-ee": "^0.14.0",
     "aws-sdk": "^2.1309.0",
     "aws-sdk-mock": "^4.5.0",
     "babel-eslint": "^10.0.0",
@@ -81,16 +81,16 @@
     "uuid": "^3.3.3"
   },
   "peerDependencies": {
-    "@babel/runtime": "^7.10.0",
-    "aws-kms-ee": "^0.12.0",
-    "bluebird": "^3.7.1",
-    "debug": "^4.1.1",
-    "highland": "^2.13.5",
-    "isomorphic-fetch": "^3.0.0",
-    "lodash": "^4.17.15",
-    "memory-cache": "^0.2.0",
-    "node-fetch": "^2.6.1",
-    "uuid": "^3.3.3"
+    "@babel/runtime": "7.x",
+    "aws-kms-ee": "0.x",
+    "bluebird": "3.x",
+    "debug": "4.x",
+    "highland": "2.x",
+    "isomorphic-fetch": "3.x",
+    "lodash": "4.x",
+    "memory-cache": "0.x",
+    "node-fetch": "2.x",
+    "uuid": "3.x"
   },
   "dependencies": {
     "object-sizeof": "^2.6.0"
