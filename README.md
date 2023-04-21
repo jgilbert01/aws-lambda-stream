@@ -78,6 +78,7 @@ interface Event {
   <entity>: any;
   raw?: any;
   eem?: any;
+  s3?: { bucket: string, key: string };  
 }
 ```
 
@@ -89,6 +90,7 @@ interface Event {
 * `<entity>` - a canonical entity that is specific to the event type. This is the _contract_ that must be held backwards compatible. The name of this field is usually the lowerCamelCase name of the entity type, such as `thing` for `Thing`.
 * `raw` - this is the raw data and format produced by the source of the event. This is included so that the _event-lake_ can form a complete audit with no lost information. This is not guaranteed to be backwards compatible, so use at your own risk.
 * `eem` - envelope encryption metadata _(see _Encryption_ below)_
+* `s3` - supports the claim-check pattern for large events
 
 ## Filters
 For a variety of reasons, we generally multiplex many event types through the same stream. I discuss this in detail in the following post: [Stream Inversion & Topology](https://medium.com/@jgilbert001/stream-inversion-topology-ad773627a435?source=friends_link&sk=a3639a9f8d459dd60266569380fb5c71). Thus, we use `filter` steps with functions like `onEventType` to focus in on the event types of interest and perform content based routing in general.
