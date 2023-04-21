@@ -91,9 +91,9 @@ describe('flavors/materializeS3.js', () => {
         expect(collected[3].putRequest.Key).to.equal('2/thing');
         expect(collected[2].putRequest.Key).to.equal('3/thing');
         expect(collected[4].putRequest.Key).to.equal('3/thing');
-        expect(collected[5].getRequest.Key).to.equal('5/thing');
-        expect(collected[5].putRequest.Body).to.equal(JSON.stringify({ f1: 'v1' }));
-        expect(collected[6].deleteRequest.Key).to.equal('4/thing');
+        expect(collected[6].getRequest.Key).to.equal('5/thing');
+        expect(collected[6].putRequest.Body).to.equal(JSON.stringify({ f1: 'v1' }));
+        expect(collected[5].deleteRequest.Key).to.equal('4/thing');
       })
       .done(done);
   });

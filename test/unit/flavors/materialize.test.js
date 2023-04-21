@@ -86,8 +86,8 @@ describe('flavors/materialize.js', () => {
           ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
         });
         expect(collected[1].updateRequest.Key.pk).to.equal('2');
-        expect(collected[2].updateRequest.Key.pk).to.equal('2');
-        expect(collected[3].updateRequest.Key.pk).to.equal('3');
+        expect(collected[2].updateRequest.Key.pk).to.equal('3');
+        expect(collected[3].updateRequest.Key.pk).to.equal('2');
         expect(collected[4].updateRequest.Key.pk).to.equal('3');
       })
       .done(done);
