@@ -1,6 +1,8 @@
 import _ from 'highland';
 
-import { faulty, decompress, compress } from '../utils';
+import {
+  faulty, decompress, compress, claimcheck,
+} from '../utils';
 
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events
@@ -23,7 +25,8 @@ export const fromSqsEvent = (event) => _(event.Records)
       id: record.messageId,
       ...JSON.parse(record.body, decompress),
     },
-  })));
+  })))
+  .through(claimcheck());
 
 // test helper
 // https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html

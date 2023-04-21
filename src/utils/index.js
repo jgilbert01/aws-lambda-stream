@@ -1,4 +1,5 @@
 export * from './batch';
+export * from './claimcheck';
 export * from './cloudwatch';
 export * from './compression';
 export * from './dynamodb';
