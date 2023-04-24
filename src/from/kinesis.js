@@ -1,6 +1,8 @@
 import _ from 'highland';
 
-import { faulty, decompress, compress } from '../utils';
+import {
+  faulty, decompress, compress, claimcheck,
+} from '../utils';
 
 export const fromKinesis = (event) =>
 
@@ -20,7 +22,8 @@ export const fromKinesis = (event) =>
         id: uow.record.eventID,
         ...JSON.parse(uow.event, decompress),
       },
-    })));
+    })))
+    .through(claimcheck());
 
 // test helper
 export const toKinesisRecords = (events) => ({
