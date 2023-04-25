@@ -64,7 +64,7 @@
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-formatter-pretty": "^3.0.0",
     "eslint-plugin-import": "^2.9.0",
-    "husky": "^4.2.5",
+    "husky": "^8.0.3",
     "mocha": "^10.2.0",
     "nyc": "^14.1.1",
     "serverless": "^3.22.0",
