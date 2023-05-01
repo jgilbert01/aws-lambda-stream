@@ -7,6 +7,7 @@ import { rejectWithFault } from './faults';
 import { debug as d } from './print';
 import { adornStandardTags } from './tags';
 import { compress } from './compression';
+import { ratelimit } from './ratelimit';
 
 export const publishToEventBridge = ({ // eslint-disable-line import/prefer-default-export
   debug = d('eventbridge'),
@@ -54,6 +55,8 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
     .filter((uow) => uow[eventField])
 
     .map(adornStandardTags(eventField))
+
+    .through(ratelimit(opt))
 
     .map(toPublishRequestEntry)
     .consume(batchWithSize({

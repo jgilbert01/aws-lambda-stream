@@ -4,12 +4,14 @@ import Connector from '../connectors/sns';
 
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
+import { ratelimit } from './ratelimit';
 
 export const publishToSns = ({ // eslint-disable-line import/prefer-default-export
   debug = d('sns'),
   topicArn = process.env.TOPIC_ARN,
   messageField = 'message',
   parallel = Number(process.env.SNS_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  ...opt
 } = {}) => {
   const connector = new Connector({ debug, topicArn });
 
@@ -22,6 +24,7 @@ export const publishToSns = ({ // eslint-disable-line import/prefer-default-expo
   };
 
   return (s) => s
+    .through(ratelimit(opt))
     .map(publish)
     .parallel(parallel);
 };

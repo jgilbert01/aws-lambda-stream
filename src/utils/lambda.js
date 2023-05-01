@@ -4,11 +4,13 @@ import Connector from '../connectors/lambda';
 
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
+import { ratelimit } from './ratelimit';
 
 export const invokeLambda = ({ // eslint-disable-line import/prefer-default-export
   debug = d('lambda'),
   invokeField = 'invokeRequest',
   parallel = Number(process.env.LAMBDA_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  ...opt
 } = {}) => {
   const connector = new Connector({ debug });
 
@@ -21,6 +23,7 @@ export const invokeLambda = ({ // eslint-disable-line import/prefer-default-expo
   };
 
   return (s) => s
+    .through(ratelimit(opt))
     .map(invoke)
     .parallel(parallel);
 };

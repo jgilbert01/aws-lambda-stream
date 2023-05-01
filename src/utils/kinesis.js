@@ -7,6 +7,7 @@ import { rejectWithFault } from './faults';
 import { debug as d } from './print';
 import { adornStandardTags } from './tags';
 import { compress } from './compression';
+import { ratelimit } from './ratelimit';
 
 export const publishToKinesis = ({
   debug = d('kinesis'),
@@ -42,6 +43,8 @@ export const publishToKinesis = ({
 
   return (s) => s
     .map(adornStandardTags(eventField))
+
+    .through(ratelimit(opt))
 
     .batch(batchSize)
     .map(toBatchUow)
