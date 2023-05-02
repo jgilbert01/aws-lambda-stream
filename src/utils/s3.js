@@ -4,6 +4,7 @@ import Connector from '../connectors/s3';
 
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
+import { ratelimit } from './ratelimit';
 
 export const putObjectToS3 = ({
   debug = d('s3'),
@@ -11,6 +12,7 @@ export const putObjectToS3 = ({
   putRequestField = 'putRequest',
   putResponseField = 'putResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  ...opt
 } = {}) => {
   const connector = new Connector({ debug, bucketName });
 
@@ -25,6 +27,7 @@ export const putObjectToS3 = ({
   };
 
   return (s) => s
+    .through(ratelimit(opt))
     .map(putObject)
     .parallel(parallel);
 };

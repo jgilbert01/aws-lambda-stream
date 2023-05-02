@@ -6,6 +6,7 @@ import Connector from '../connectors/dynamodb';
 
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
+import { ratelimit } from './ratelimit';
 
 export const updateExpression = (Item) => {
   const keys = Object.keys(Item);
@@ -56,6 +57,7 @@ export const updateDynamoDB = ({
   updateRequestField = 'updateRequest',
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+  ...opt
 } = {}) => {
   const connector = new Connector({ debug, tableName, timeout });
 
@@ -70,6 +72,7 @@ export const updateDynamoDB = ({
   };
 
   return (s) => s
+    .through(ratelimit(opt))
     .map(invoke)
     .parallel(parallel);
 };

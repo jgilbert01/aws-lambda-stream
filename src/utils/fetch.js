@@ -4,12 +4,14 @@ import Connector from '../connectors/fetch';
 
 import { rejectWithFault } from './faults';
 import { debug as d } from './print';
+import { ratelimit } from './ratelimit';
 
 export const fetch = ({ // eslint-disable-line import/prefer-default-export
   debug = d('fetch'),
   prefix = 'fetch',
   httpsAgent,
   parallel = Number(process.env.FETCH_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  ...opt
 } = {}) => {
   const connector = new Connector({ debug, httpsAgent });
 
@@ -23,6 +25,7 @@ export const fetch = ({ // eslint-disable-line import/prefer-default-export
   };
 
   return (s) => s
+    .through(ratelimit(opt))
     .map(invoke)
     .parallel(parallel);
 };
