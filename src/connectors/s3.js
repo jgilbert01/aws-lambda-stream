@@ -54,6 +54,15 @@ class Connector {
       .tapCatch(this.debug);
   }
 
+  getObjectStream(inputParams) {
+    const params = {
+      Bucket: this.bucketName,
+      ...inputParams,
+    };
+
+    return this.bucket.getObject(params).createReadStream();
+  }
+
   listObjects(inputParams) {
     const params = {
       Bucket: this.bucketName,
