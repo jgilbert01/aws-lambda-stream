@@ -2,9 +2,10 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
+import { Readable } from 'stream';
 
 import {
-  putObjectToS3, deleteObjectFromS3, getObjectFromS3, listObjectsFromS3, pageObjectsFromS3, splitS3Object, toGetObjectRequest, toGetObjectRequest2,
+  putObjectToS3, deleteObjectFromS3, getObjectFromS3, listObjectsFromS3, pageObjectsFromS3, splitS3Object, toGetObjectRequest, toGetObjectRequest2, getObjectFromS3AsStream,
 } from '../../../src/utils/s3';
 
 import Connector from '../../../src/connectors/s3';
@@ -152,6 +153,71 @@ describe('utils/s3.js', () => {
       })
       .done(done);
   });
+
+  it('should get object as stream', (done) => {
+    const objectStream = new Readable();
+    objectStream.push('name,color\nBob,Red\nAlice,Yellow'); // data in the stream
+    objectStream.push(null); // end of file
+
+    const stub = sinon.stub(Connector.prototype, 'getObjectStream').returns(objectStream);
+
+    const uows = [{
+      getRequest: {
+        Key: 'k1',
+      },
+    }];
+
+    _(uows)
+      .through(getObjectFromS3AsStream())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(stub).to.have.been.calledWith({
+          Key: 'k1',
+        });
+
+        expect(collected.length).to.equal(3);
+        expect(collected[0]).to.deep.equal({
+          getRequest: {
+            Key: 'k1',
+          },
+          getResponse: 'name,color',
+        });
+        expect(collected[1]).to.deep.equal({
+          getRequest: {
+            Key: 'k1',
+          },
+          getResponse: 'Bob,Red',
+        });
+        expect(collected[2]).to.deep.equal({
+          getRequest: {
+            Key: 'k1',
+          },
+          getResponse: 'Alice,Yellow',
+        });
+      })
+      .done(done);
+  });
+
+  it('should get object as stream missing getRequestField', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'getObjectStream').returns('');
+    const uows = [{
+      // getRequestField: 'missing',
+    }];
+
+    _(uows)
+      .through(getObjectFromS3AsStream())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(stub).to.have.not.been.called;
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({});
+      })
+      .done(done);
+  });
+
 
   it('should get from s3 sns', (done) => {
     const uows = [{

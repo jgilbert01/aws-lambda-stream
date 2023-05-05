@@ -2,6 +2,7 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import AWS from 'aws-sdk-mock';
+import _ from 'highland';
 
 import Connector from '../../../src/connectors/s3';
 
@@ -52,6 +53,26 @@ describe('connectors/s3.js', () => {
       Key: 'k1',
     });
     expect(data).to.deep.equal({ Body: 'b' });
+  });
+
+  it('should get object as stream', (done) => {
+    AWS.mock('S3', 'getObject', Buffer.from('data'));
+
+    const inputParams = {
+      Key: 'k1',
+    };
+
+    const objectStream = new Connector({
+      debug: debug('s3'),
+      bucketName: 'b1',
+    }).getObjectStream(inputParams);
+
+    _(objectStream)
+      .tap((collected) => {
+        expect(collected).to.be.instanceOf(Buffer);
+        expect(collected.toString()).to.equal('data');
+      })
+      .done(done);
   });
 
   it('should delete object', async () => {
