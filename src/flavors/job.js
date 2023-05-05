@@ -1,7 +1,7 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  updateDynamoDB,  splitObject,
+  updateDynamoDB, splitObject,
   scanDynamoDB, queryDynamoDB, batchGetDynamoDB,
   encryptEvent,
 } from '../utils';

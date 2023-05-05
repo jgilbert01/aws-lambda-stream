@@ -96,6 +96,31 @@ export const getObjectFromS3 = ({
     .parallel(parallel);
 };
 
+export const getObjectFromS3AsStream = ({
+  debug = d('s3'),
+  bucketName = process.env.BUCKET_NAME,
+  getRequestField = 'getRequest',
+  getResponseField = 'getResponse',
+  delimiter = '\n',
+  splitFilter = () => true,
+} = {}) => {
+  const connector = new Connector({ debug, bucketName });
+
+  const getObject = (uow) => {
+    if (!uow[getRequestField]) return _(Promise.resolve(uow));
+
+    const p = connector.getObjectStream(uow[getRequestField]);
+
+    return _(p) // wrap stream in a stream
+      .splitBy(delimiter)
+      .filter(splitFilter)
+      .map((getResponse) => ({ ...uow, [getResponseField]: getResponse }));
+  };
+
+  return (s) => s
+    .flatMap(getObject);
+};
+
 export const splitS3Object = ({
   delimiter = '\n',
   getResponseField = 'getResponse',
