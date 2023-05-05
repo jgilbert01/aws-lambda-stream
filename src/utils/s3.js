@@ -96,7 +96,7 @@ export const getObjectFromS3 = ({
     .parallel(parallel);
 };
 
-export const getObjectFromS3AsSteam = ({
+export const getObjectFromS3AsStream = ({
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,
   getRequestField = 'getRequest',
