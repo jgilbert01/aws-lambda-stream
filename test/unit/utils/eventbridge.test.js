@@ -100,7 +100,8 @@ describe('utils/eventbridge.js', () => {
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
 
-        expect(collected.length).to.equal(0);
+        expect(collected.length).to.equal(1);
+        expect(collected[0].publishRequestEntry).to.be.undefined;
       })
       .done(done);
   });
