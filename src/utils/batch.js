@@ -41,7 +41,9 @@ export const batchWithSize = (opt) => {
 
       push(null, _.nil);
     } else {
-      if (x[opt.requestEntryField]) {
+      if (!x[opt.requestEntryField]) {
+        push(null, [x]);
+      } else {
         const size = Buffer.byteLength(JSON.stringify(x[opt.requestEntryField]));
         if (size > opt.maxRequestSize) {
           logMetrics([x], [size], opt);
@@ -61,8 +63,6 @@ export const batchWithSize = (opt) => {
             sizes = [size];
           }
         }
-      } else {
-        push(null, [x]);
       }
 
       next();
