@@ -27,23 +27,27 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
 
   const toPublishRequestEntry = (uow) => ({
     ...uow,
-    [publishRequestEntryField]: {
+    [publishRequestEntryField]: uow[eventField] ? {
       EventBusName: busName,
       Source: source,
       DetailType: uow[eventField].type,
       Detail: JSON.stringify(uow[eventField], compress(opt)),
-    },
+    } : undefined,
   });
 
   const toPublishRequest = (batchUow) => ({
     ...batchUow,
     [publishRequestField]: {
       Entries: batchUow.batch
+        .filter((uow) => uow[publishRequestEntryField])
         .map((uow) => uow[publishRequestEntryField]),
     },
   });
 
   const putEvents = (batchUow) => {
+    if (!batchUow[publishRequestField].Entries.length) {
+      return _(Promise.resolve(batchUow));
+    }
     const p = connector.putEvents(batchUow[publishRequestField])
       .catch(rejectWithFault(batchUow, !handleErrors))
       .then((publishResponse) => ({ ...batchUow, publishResponse }));
@@ -52,8 +56,6 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   };
 
   return (s) => s
-    .filter((uow) => uow[eventField])
-
     .map(adornStandardTags(eventField))
 
     .through(ratelimit(opt))
