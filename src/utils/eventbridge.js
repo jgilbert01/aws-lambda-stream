@@ -12,7 +12,7 @@ import { ratelimit } from './ratelimit';
 export const publishToEventBridge = ({ // eslint-disable-line import/prefer-default-export
   debug = d('eventbridge'),
   busName = process.env.BUS_NAME || 'undefined',
-  source = 'custom', // could change this to internal vs external/ingress/egress
+  source = process.env.BUS_SRC || 'custom', // could change this to internal vs external/ingress/egress
   eventField = 'event', // is often named emit
   publishRequestEntryField = 'publishRequestEntry',
   publishRequestField = 'publishRequest', // was inputParams
