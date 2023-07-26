@@ -2,7 +2,7 @@ import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
   updateDynamoDB, splitObject,
-  scanDynamoDB, queryDynamoDB, batchGetDynamoDB,
+  scanSplitDynamoDB, querySplitDynamoDB, queryAllDynamoDB, batchGetDynamoDB,
   encryptEvent,
 } from '../utils';
 
@@ -12,25 +12,34 @@ export const job = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .filter(onEventType(rule))
   .tap(printStartPipeline)
 
+  // scan for records of interest
   .map(toScanRequest(rule))
-  .through(scanDynamoDB(rule))
+  .through(scanSplitDynamoDB(rule))
+
+  // or query for records of interest
+  .map(toQuerySplitRequest(rule))
+  .through(querySplitDynamoDB(rule))
 
   .filter(onContent(rule))
 
-  .map(toQueryRequest(rule))
-  .through(queryDynamoDB(rule))
+  // query related data for the current uow
+  .map(toQueryRelatedRequest(rule))
+  .through(queryAllDynamoDB(rule))
 
   .through(splitObject({
     splitTargetField: rule.queryResponseField || 'queryResponse',
     ...rule,
   }))
 
+  // get related data for the current uow
   .map(toGetRequest(rule))
   .through(batchGetDynamoDB(rule))
 
+  // write back to the db
   .map(toUpdateRequest(rule))
   .through(updateDynamoDB(rule))
 
+  // or publish an event
   .map(toEvent(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
@@ -57,13 +66,21 @@ const toScanRequest = (rule) => faulty((uow) => ({
       : /* istanbul ignore next */ undefined,
 }));
 
+const toQuerySplitRequest = (rule) => faulty((uow) => ({
+  ...uow,
+  querySplitRequest:
+    rule.toQuerySplitRequest
+      ? rule.toQuerySplitRequest(uow, rule)
+      : /* istanbul ignore next */ undefined,
+}));
+
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 
-const toQueryRequest = (rule) => faulty((uow) => ({
+const toQueryRelatedRequest = (rule) => faulty((uow) => ({
   ...uow,
   queryRequest:
-    rule.toQueryRequest
-      ? /* istanbul ignore next */ rule.toQueryRequest(uow, rule)
+    (rule.toQueryRelatedRequest || rule.toQueryRequest)
+      ? /* istanbul ignore next */ (rule.toQueryRelatedRequest || rule.toQueryRequest)(uow, rule)
       : undefined,
 }));
 
