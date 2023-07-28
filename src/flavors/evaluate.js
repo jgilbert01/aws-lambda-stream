@@ -50,10 +50,10 @@ export const evaluate = (rule) => (s) => s // eslint-disable-line import/prefer-
 
   .tap(printEndPipeline);
 
-const forEvents = (uow) => (uow.record.eventName === 'INSERT'
-  && (uow.record.dynamodb.Keys.sk.S === 'EVENT' || uow.record.dynamodb.NewImage.discriminator.S === 'CORREL'));
+const forEvents = faulty((uow) => (uow.record.eventName === 'INSERT'
+  && (uow.record.dynamodb.Keys.sk.S === 'EVENT' || uow.record.dynamodb.NewImage.discriminator.S === 'CORREL')));
 
-const normalize = (uow) => ({ // we are interested in the event that was persisted, not that it was persisted
+const normalize = faulty((uow) => ({ // we are interested in the event that was persisted, not that it was persisted
   ...uow,
   meta: {
     id: uow.event.id,
@@ -68,7 +68,7 @@ const normalize = (uow) => ({ // we are interested in the event that was persist
     correlation: uow.event.raw.new.discriminator === 'CORREL',
   },
   event: uow.event.raw.new.event,
-});
+}));
 
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
