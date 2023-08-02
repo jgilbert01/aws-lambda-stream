@@ -1,3 +1,4 @@
+import _ from 'highland';
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
@@ -54,6 +55,8 @@ export const job = (rule) => (s) => s // eslint-disable-line import/prefer-defau
     eventField: 'emit', // so we don't overwrite the incoming event in the uow
   }))
 
+  .through(flushCursor(rule))
+
   .tap(printEndPipeline);
 
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
@@ -108,3 +111,42 @@ const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent
       ...await faultify(rule.toEvent)(uow, rule),
     },
   })));
+
+const toCursorUpdateRequest = (rule) => faulty((uow) => ({
+  ...uow,
+  cursorUpdateRequest:
+    rule.toCursorUpdateRequest
+      ? /* istanbul ignore next */ rule.toCursorUpdateRequest(uow, rule)
+      : undefined,
+}));
+
+const flushCursor = (rule) => (s) => {
+  let lastUow;
+
+  const cursorStream = () => _(lastUow)
+    .map(toCursorUpdateRequest(rule))
+    .through(updateDynamoDB({
+      ...rule,
+      updateRequestField: 'cursorUpdateRequest',
+      updateResponseField: 'cursorUpdateResponse',
+    }));
+
+  if (rule.toCursorUpdateRequest) {
+    return s
+      .consume((err, x, push, next) => {
+        /* istanbul ignore if */
+        if (err) {
+          push(err);
+          next();
+        } else if (x === _.nil) {
+          next(cursorStream());
+        } else {
+          lastUow = x;
+          push(null, x);
+          next();
+        }
+      });
+  } else {
+    return s;
+  }
+};
