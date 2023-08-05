@@ -114,16 +114,13 @@ const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent
 
 const toCursorUpdateRequest = (rule) => faulty((uow) => ({
   ...uow,
-  cursorUpdateRequest:
-    rule.toCursorUpdateRequest
-      ? /* istanbul ignore next */ rule.toCursorUpdateRequest(uow, rule)
-      : undefined,
+  cursorUpdateRequest: rule.toCursorUpdateRequest(uow, rule),
 }));
 
 const flushCursor = (rule) => (s) => {
   let lastUow;
 
-  const cursorStream = () => _(lastUow)
+  const cursorStream = () => _([lastUow])
     .map(toCursorUpdateRequest(rule))
     .through(updateDynamoDB({
       ...rule,

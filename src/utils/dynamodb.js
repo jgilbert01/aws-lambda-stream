@@ -55,6 +55,7 @@ export const updateDynamoDB = ({
   debug = d('dynamodb'),
   tableName = process.env.ENTITY_TABLE_NAME || process.env.EVENT_TABLE_NAME,
   updateRequestField = 'updateRequest',
+  updateResponseField = 'updateResponse',
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   ...opt
@@ -65,7 +66,7 @@ export const updateDynamoDB = ({
     if (!uow[updateRequestField]) return _(Promise.resolve(uow));
 
     const p = connector.update(uow[updateRequestField])
-      .then((updateResponse) => ({ ...uow, updateResponse }))
+      .then((updateResponse) => ({ ...uow, [updateResponseField]: updateResponse }))
       .catch(rejectWithFault(uow));
 
     return _(p); // wrap promise in a stream
@@ -300,7 +301,7 @@ export const querySplitDynamoDB = ({
   const invoke = (uow) => {
     if (!uow[querySplitRequestField]) return _(Promise.resolve(uow));
 
-    let cursor;
+    let cursor = uow[querySplitRequestField].ExclusiveStartKey;
 
     return _((push, next) => {
       const params = {
