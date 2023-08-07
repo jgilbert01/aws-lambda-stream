@@ -120,7 +120,7 @@ const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent
     },
   })));
 
-const toCursorUpdateRequest = (rule) => faulty((uow) => ({
+export const toCursorUpdateRequest = (rule) => faulty((uow) => ({
   ...uow,
   cursorUpdateRequest:
     rule.toCursorUpdateRequest
@@ -128,7 +128,7 @@ const toCursorUpdateRequest = (rule) => faulty((uow) => ({
       : /* istanbul ignore next */ undefined,
 }));
 
-const flushCursor = (rule) => (s) => {
+export const flushCursor = (rule) => (s) => {
   let lastUow;
 
   const cursorStream = () => _([lastUow])
