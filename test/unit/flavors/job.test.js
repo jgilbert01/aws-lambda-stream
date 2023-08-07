@@ -17,34 +17,40 @@ import { job } from '../../../src/flavors/job';
 describe('flavors/job.js', () => {
   beforeEach(() => {
     sinon.stub(EventBridgeConnector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
-    sinon.stub(DynamoDBConnector.prototype, 'query').resolves({ Items: [] });
     sinon.stub(DynamoDBConnector.prototype, 'update').resolves({});
   });
 
   afterEach(sinon.restore);
 
-  it('should execute', (done) => {
-    sinon.stub(DynamoDBConnector.prototype, 'scan').resolves({ Items: [{ pk: '1' }, { pk: '2' }] });
+  it('should start', (done) => {
     sinon.stub(DynamoDBConnector.prototype, 'queryPage')
       .onCall(0)
       .resolves({
         LastEvaluatedKey: {
           pk: '1',
-          sk: 'EVENT',
+          sk: 'thing',
         },
-        Items: [{
-          pk: '1',
-          sk: 'EVENT',
-          data: '11',
-        }],
+        Items: [
+          {
+            pk: '1',
+            sk: 'thing',
+            name: 'thing 1',
+          },
+        ],
       })
       .onCall(1)
       .resolves({
-        Items: [{
+        LastEvaluatedKey: {
           pk: '2',
-          sk: 'EVENT',
-          data: '22',
-        }],
+          sk: 'thing',
+        },
+        Items: [
+          {
+            pk: '2',
+            sk: 'thing',
+            name: 'thing 2',
+          },
+        ],
       });
 
     const events = toDynamodbRecords([
@@ -60,19 +66,215 @@ describe('flavors/job.js', () => {
           discriminator: 'job',
         },
       },
-      {
-        timestamp: 1572832690,
-        keys: {
-          pk: '2',
-          sk: 'cursor',
-        },
-        newImage: {
-          pk: '2',
-          sk: 'cursor',
-          discriminator: 'process-job',
-          cursor: {
+    ]);
+
+    initialize({
+      ...initializeFrom(rules),
+    }, { ...defaultOptions, AES: false })
+      .assemble(fromDynamodb(events), false)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        expect(collected.length).to.equal(3);
+        expect(collected[0].pipeline).to.equal('job1-started');
+        expect(collected[0].querySplitRequest).to.be.deep.equal({
+          ExclusiveStartKey: undefined,
+          ExpressionAttributeNames: {
+            '#discriminator': 'discriminator',
+          },
+          ExpressionAttributeValues: {
+            ':discriminator': 'thing',
+          },
+          Limit: 2,
+        });
+        expect(collected[0].emit).to.deep.equal({
+          type: 'xyz',
+          raw: {
+            pk: '1',
+            sk: 'thing',
+            name: 'thing 1',
+          },
+          tags: {
+            account: 'undefined',
+            region: 'us-west-2',
+            stage: 'undefined',
+            source: 'undefined',
+            functionname: 'undefined',
+            pipeline: 'job1-started',
+            skip: true,
+          },
+        });
+        expect(collected[1].emit).to.deep.equal({
+          type: 'xyz',
+          raw: {
+            pk: '2',
+            sk: 'thing',
+            name: 'thing 2',
+          },
+          tags: {
+            account: 'undefined',
+            region: 'us-west-2',
+            stage: 'undefined',
+            source: 'undefined',
+            functionname: 'undefined',
+            pipeline: 'job1-started',
+            skip: true,
+          },
+        });
+        expect(collected[2].cursorUpdateRequest).to.deep.equal({
+          Key: {
             pk: '1',
             sk: 'job',
+          },
+          ExpressionAttributeNames: {
+            '#cursor': 'cursor',
+            '#timestamp': 'timestamp',
+          },
+          ExpressionAttributeValues: {
+            ':cursor': {
+              pk: '2',
+              sk: 'thing',
+            },
+            ':timestamp': 1572832690000,
+          },
+          UpdateExpression: 'SET #cursor = :cursor, #timestamp = :timestamp',
+          ReturnValues: 'ALL_NEW',
+          ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
+        });
+      })
+      .done(done);
+  });
+
+  it('should continue', (done) => {
+    sinon.stub(DynamoDBConnector.prototype, 'queryPage')
+      .onCall(0)
+      .resolves({
+        Items: [
+          {
+            pk: '3',
+            sk: 'thing',
+            name: 'thing 3',
+          },
+          {
+            pk: '4',
+            sk: 'thing',
+            name: 'thing 4',
+            deleted: true,
+          },
+        ],
+      });
+
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832694,
+        keys: {
+          pk: '1',
+          sk: 'job',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'job',
+          discriminator: 'job',
+          cursor: {
+            pk: '2',
+            sk: 'thing',
+          },
+        },
+        oldImage: {
+          pk: '1',
+          sk: 'job',
+          discriminator: 'job',
+        },
+      },
+    ]);
+
+    initialize({
+      ...initializeFrom(rules),
+    }, { ...defaultOptions, AES: false })
+      .assemble(fromDynamodb(events), false)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        expect(collected.length).to.equal(2);
+        expect(collected[0].pipeline).to.equal('job1-continued');
+        expect(collected[0].querySplitRequest).to.be.deep.equal({
+          ExclusiveStartKey: {
+            pk: '2',
+            sk: 'thing',
+          },
+          ExpressionAttributeNames: {
+            '#discriminator': 'discriminator',
+          },
+          ExpressionAttributeValues: {
+            ':discriminator': 'thing',
+          },
+          Limit: 2,
+        });
+        expect(collected[0].querySplitResponse).to.be.deep.equal({
+          LastEvaluatedKey: undefined,
+          Item: {
+            pk: '3',
+            sk: 'thing',
+            name: 'thing 3',
+          },
+        });
+        expect(collected[0].emit).to.deep.equal({
+          type: 'xyz',
+          raw: {
+            pk: '3',
+            sk: 'thing',
+            name: 'thing 3',
+          },
+          tags: {
+            account: 'undefined',
+            region: 'us-west-2',
+            stage: 'undefined',
+            source: 'undefined',
+            functionname: 'undefined',
+            pipeline: 'job1-continued',
+            skip: true,
+          },
+        });
+        expect(collected[1].cursorUpdateRequest).to.deep.equal({
+          Key: {
+            pk: '1',
+            sk: 'job',
+          },
+          ExpressionAttributeNames: {
+            '#cursor': 'cursor',
+            '#timestamp': 'timestamp',
+          },
+          ExpressionAttributeValues: {
+            ':timestamp': 1572832694000,
+          },
+          UpdateExpression: 'SET #timestamp = :timestamp REMOVE #cursor',
+          ReturnValues: 'ALL_NEW',
+          ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
+        });
+      })
+      .done(done);
+  });
+
+  it('should stop', (done) => {
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832695,
+        keys: {
+          pk: '1',
+          sk: 'job',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'job',
+          discriminator: 'job',
+        },
+        oldImage: {
+          pk: '1',
+          sk: 'job',
+          discriminator: 'job',
+          cursor: {
+            pk: '2',
+            sk: 'thing',
           },
         },
       },
@@ -85,133 +287,60 @@ describe('flavors/job.js', () => {
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
-        expect(collected.length).to.equal(4);
-        expect(collected[1].pipeline).to.equal('job1');
-        expect(collected[1].scanRequest).to.be.deep.equal({
-          ExclusiveStartKey: undefined,
-          ExpressionAttributeNames: {
-            '#data': 'data',
-          },
-          ExpressionAttributeValues: {
-            ':data': '11',
-          },
-        });
-        expect(collected[1].emit).to.deep.equal({
-          type: 'xyz',
-          raw: {
-            pk: '1',
-          },
-          tags: {
-            account: 'undefined',
-            region: 'us-west-2',
-            stage: 'undefined',
-            source: 'undefined',
-            functionname: 'undefined',
-            pipeline: 'job1',
-            skip: true,
-          },
-        });
-        expect(collected[1].queryRequest).to.deep.equal({
-          ExpressionAttributeNames: {
-            '#data': 'data',
-          },
-          ExpressionAttributeValues: {
-            ':data': '11',
-          },
-        });
-        expect(collected[3].pipeline).to.equal('flushCursor');
-        expect(collected[3].querySplitRequest).to.deep.equal({
-          ExclusiveStartKey: {
-            pk: '1',
-            sk: 'job',
-          },
-          ExpressionAttributeNames: {
-            '#data': 'data',
-          },
-          ExpressionAttributeValues: {
-            ':data': '11',
-          },
-          Limit: 1,
-        });
-        expect(collected[3].cursorUpdateRequest).to.deep.equal({
-          Key: {
-            pk: '1',
-            sk: 'cursor',
-          },
-          ExpressionAttributeNames: {
-            '#discriminator': 'discriminator',
-            '#cursor': 'cursor',
-          },
-          ExpressionAttributeValues: {
-            ':discriminator': 'process-job',
-            ':cursor': {
-              pk: '1',
-              sk: 'EVENT',
-            },
-          },
-          UpdateExpression: 'SET #discriminator = :discriminator, #cursor = :cursor',
-          ReturnValues: 'ALL_NEW',
-          ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
-        });
+        expect(collected.length).to.equal(0);
       })
       .done(done);
   });
 });
 
+const toQuerySplitRequest = (uow) => ({
+  ExclusiveStartKey: uow.event?.raw?.new?.cursor,
+  ExpressionAttributeNames: {
+    '#discriminator': 'discriminator',
+  },
+  ExpressionAttributeValues: {
+    ':discriminator': 'thing',
+  },
+  Limit: 2,
+});
+
+const toEvent = (uow) => ({
+  type: 'xyz',
+  raw: uow.querySplitResponse.Item,
+});
+
+const toCursorUpdateRequest = (uow) => ({
+  Key: {
+    pk: uow.event?.raw?.new?.pk,
+    sk: uow.event?.raw?.new?.sk,
+  },
+  ...updateExpression({
+    cursor: uow.querySplitResponse.LastEvaluatedKey || null,
+    timestamp: uow.event.timestamp,
+  }),
+  ...timestampCondition(),
+});
+
+const dataFilters = [(uow) => !uow.querySplitResponse?.Item?.deleted];
+
 const rules = [
   {
-    id: 'job1',
+    id: 'job1-started',
     eventType: 'job-created',
+    filters: dataFilters,
     flavor: job,
-    filters: [() => true],
-    toQueryRequest: (uow) => ({
-      ExpressionAttributeNames: {
-        '#data': 'data',
-      },
-      ExpressionAttributeValues: {
-        ':data': '11',
-      },
-    }),
-    toScanRequest: (uow) => ({
-      ExpressionAttributeNames: {
-        '#data': 'data',
-      },
-      ExpressionAttributeValues: {
-        ':data': '11',
-      },
-    }),
-    toEvent: (uow) => ({
-      type: 'xyz',
-      raw: uow.scanResponse.Item,
-    }),
+    toQuerySplitRequest,
+    toEvent,
+    toCursorUpdateRequest,
   },
   {
-    id: 'flushCursor',
-    eventType: 'process-job-created',
+    id: 'job1-continued',
+    eventType: 'job-updated',
+    jobFilters: [(uow) => uow.event?.raw?.new?.cursor],
+    filters: dataFilters,
     flavor: job,
-    toQuerySplitRequest: (uow) => ({
-      ExclusiveStartKey: uow.event?.raw?.new?.cursor || 'abba',
-      ExpressionAttributeNames: {
-        '#data': 'data',
-      },
-      ExpressionAttributeValues: {
-        ':data': '11',
-      },
-      Limit: 1,
-    }),
-    toCursorUpdateRequest: (uow) => ({
-      Key: {
-        pk: '1',
-        sk: 'cursor',
-      },
-      ...updateExpression({
-        discriminator: 'process-job',
-        cursor: {
-          pk: '1',
-          sk: 'EVENT',
-        },
-      }),
-      ...timestampCondition(),
-    }),
+    toQuerySplitRequest,
+    toEvent,
+    toCursorUpdateRequest,
   },
 ];

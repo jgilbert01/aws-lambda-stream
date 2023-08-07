@@ -339,6 +339,7 @@ describe('utils/dynamodb.js', () => {
           ExclusiveStartKey: undefined,
         });
         expect(collected[0].scanResponse).to.deep.equal({
+          LastEvaluatedKey: '1',
           Item: {
             pk: '1',
             sk: 'EVENT',
@@ -355,6 +356,7 @@ describe('utils/dynamodb.js', () => {
           ExclusiveStartKey: '1',
         });
         expect(collected[1].scanResponse).to.deep.equal({
+          LastEvaluatedKey: undefined,
           Item: {
             pk: '2',
             sk: 'EVENT',
@@ -417,6 +419,7 @@ describe('utils/dynamodb.js', () => {
           Limit: 1,
         });
         expect(collected[0].scanResponse).to.deep.equal({
+          LastEvaluatedKey: '1',
           Item: {
             pk: '1',
             sk: 'EVENT',
@@ -494,6 +497,7 @@ describe('utils/dynamodb.js', () => {
           ExclusiveStartKey: undefined,
         });
         expect(collected[0].querySplitResponse).to.deep.equal({
+          LastEvaluatedKey: '1',
           Item: {
             pk: '1',
             sk: 'EVENT',
@@ -510,6 +514,7 @@ describe('utils/dynamodb.js', () => {
           ExclusiveStartKey: '1',
         });
         expect(collected[1].querySplitResponse).to.deep.equal({
+          LastEvaluatedKey: undefined,
           Item: {
             pk: '2',
             sk: 'EVENT',
@@ -571,6 +576,7 @@ describe('utils/dynamodb.js', () => {
           Limit: 1,
         });
         expect(collected[0].querySplitResponse).to.deep.equal({
+          LastEvaluatedKey: '1',
           Item: {
             pk: '1',
             sk: 'EVENT',

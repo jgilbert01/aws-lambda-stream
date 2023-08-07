@@ -13,6 +13,12 @@ export const job = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .filter(onEventType(rule))
   .tap(printStartPipeline)
 
+  // job level filter
+  .filter(onContent({
+    ...rule,
+    filters: rule.jobFilters,
+  }))
+
   // scan for records of interest
   .map(toScanRequest(rule))
   .through(scanSplitDynamoDB(rule))
@@ -21,6 +27,7 @@ export const job = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .map(toQuerySplitRequest(rule))
   .through(querySplitDynamoDB(rule))
 
+  // current uow level filter
   .filter(onContent(rule))
 
   // query related data for the current uow
@@ -65,8 +72,8 @@ const toScanRequest = (rule) => faulty((uow) => ({
   ...uow,
   scanRequest:
     rule.toScanRequest
-      ? rule.toScanRequest(uow, rule)
-      : /* istanbul ignore next */ undefined,
+      ? /* istanbul ignore next */ rule.toScanRequest(uow, rule)
+      : undefined,
 }));
 
 const toQuerySplitRequest = (rule) => faulty((uow) => ({
@@ -114,7 +121,10 @@ const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent
 
 const toCursorUpdateRequest = (rule) => faulty((uow) => ({
   ...uow,
-  cursorUpdateRequest: rule.toCursorUpdateRequest(uow, rule),
+  cursorUpdateRequest:
+    rule.toCursorUpdateRequest
+      ? rule.toCursorUpdateRequest(uow, rule)
+      : /* istanbul ignore next */ undefined,
 }));
 
 const flushCursor = (rule) => (s) => {
@@ -128,6 +138,7 @@ const flushCursor = (rule) => (s) => {
       updateResponseField: 'cursorUpdateResponse',
     }));
 
+  /* istanbul ignore else */
   if (rule.toCursorUpdateRequest) {
     return s
       .consume((err, x, push, next) => {
@@ -136,7 +147,11 @@ const flushCursor = (rule) => (s) => {
           push(err);
           next();
         } else if (x === _.nil) {
-          next(cursorStream());
+          if (lastUow) {
+            next(cursorStream());
+          } else {
+            push(null, x);
+          }
         } else {
           lastUow = x;
           push(null, x);

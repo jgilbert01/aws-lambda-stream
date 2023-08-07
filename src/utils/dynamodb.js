@@ -236,14 +236,14 @@ export const scanSplitDynamoDB = ({
   const scan = (uow) => {
     if (!uow[scanRequestField]) return _(Promise.resolve(uow));
 
-    let cursor;
+    let cursor = uow[scanRequestField].ExclusiveStartKey;
+    let itemsCount = 0;
 
     return _((push, next) => {
       const params = {
         ...uow[scanRequestField],
         ExclusiveStartKey: cursor,
       };
-      let itemsCount = 0;
 
       connector.scan(params)
         .then((data) => {
@@ -262,6 +262,7 @@ export const scanSplitDynamoDB = ({
               [scanRequestField]: params,
               [scanResponseField]: {
                 ...rest,
+                LastEvaluatedKey,
                 Item,
               },
             });
@@ -302,13 +303,13 @@ export const querySplitDynamoDB = ({
     if (!uow[querySplitRequestField]) return _(Promise.resolve(uow));
 
     let cursor = uow[querySplitRequestField].ExclusiveStartKey;
+    let itemsCount = 0;
 
     return _((push, next) => {
       const params = {
         ...uow[querySplitRequestField],
         ExclusiveStartKey: cursor,
       };
-      let itemsCount = 0;
 
       connector.queryPage(params)
         .then((data) => {
@@ -327,6 +328,7 @@ export const querySplitDynamoDB = ({
               [querySplitRequestField]: params,
               [querySplitResponseField]: {
                 ...rest,
+                LastEvaluatedKey,
                 Item,
               },
             });
