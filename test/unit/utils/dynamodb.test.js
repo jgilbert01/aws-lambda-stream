@@ -587,6 +587,24 @@ describe('utils/dynamodb.js', () => {
       .done(done);
   });
 
+  it('should call querySplitDynamoDB - pass through if no query request', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'queryPage');
+    const uows = [{ querySplitRequest: undefined }];
+
+    _(uows)
+      .through(querySplitDynamoDB())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(1);
+        expect(stub).to.have.not.have.been.called;
+        expect(collected[0]).to.deep.equal({
+          querySplitRequest: undefined,
+        });
+      })
+      .done(done);
+  });
+
   it('should calculate pk query request', () => {
     expect(toPkQueryRequest({
       event: {
