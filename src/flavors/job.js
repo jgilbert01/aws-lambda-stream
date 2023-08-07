@@ -89,8 +89,9 @@ const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 const toQueryRelatedRequest = (rule) => faulty((uow) => ({
   ...uow,
   queryRequest:
+    /* istanbul ignore next */
     (rule.toQueryRelatedRequest || rule.toQueryRequest)
-      ? /* istanbul ignore next */ (rule.toQueryRelatedRequest || rule.toQueryRequest)(uow, rule)
+      ? (rule.toQueryRelatedRequest || rule.toQueryRequest)(uow, rule)
       : undefined,
 }));
 
