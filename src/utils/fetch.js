@@ -10,10 +10,11 @@ export const fetch = ({ // eslint-disable-line import/prefer-default-export
   debug = d('fetch'),
   prefix = 'fetch',
   httpsAgent,
+  defaultResponse = { 204: { json: {}, text: '' } },
   parallel = Number(process.env.FETCH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, httpsAgent });
+  const connector = new Connector({ debug, httpsAgent, defaultResponse });
 
   const invoke = (uow) => {
     const { url, responseType = 'json', ...request } = uow[`${prefix}Request`];
