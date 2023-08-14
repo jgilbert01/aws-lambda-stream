@@ -83,6 +83,10 @@ class Connector {
   }
 
   query(inputParams) {
+    return this.queryAll(inputParams);
+  }
+
+  queryAll(inputParams) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
@@ -122,6 +126,17 @@ class Connector {
     })
       .collect()
       .toPromise(Promise);
+  }
+
+  queryPage(inputParams) {
+    const params = {
+      TableName: this.tableName,
+      ...inputParams,
+    };
+
+    return this.db.query(params).promise()
+      .tap(this.debug)
+      .tapCatch(this.debug);
   }
 
   scan(inputParams) {

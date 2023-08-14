@@ -1,8 +1,9 @@
+import _ from 'highland';
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
   updateDynamoDB, splitObject,
-  scanDynamoDB, queryDynamoDB, batchGetDynamoDB,
+  scanSplitDynamoDB, querySplitDynamoDB, queryAllDynamoDB, batchGetDynamoDB,
   encryptEvent,
 } from '../utils';
 
@@ -12,25 +13,41 @@ export const job = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .filter(onEventType(rule))
   .tap(printStartPipeline)
 
-  .map(toScanRequest(rule))
-  .through(scanDynamoDB(rule))
+  // job level filter
+  .filter(onContent({
+    ...rule,
+    filters: rule.jobFilters,
+  }))
 
+  // scan for records of interest
+  .map(toScanRequest(rule))
+  .through(scanSplitDynamoDB(rule))
+
+  // or query for records of interest
+  .map(toQuerySplitRequest(rule))
+  .through(querySplitDynamoDB(rule))
+
+  // current uow level filter
   .filter(onContent(rule))
 
-  .map(toQueryRequest(rule))
-  .through(queryDynamoDB(rule))
+  // query related data for the current uow
+  .map(toQueryRelatedRequest(rule))
+  .through(queryAllDynamoDB(rule))
 
   .through(splitObject({
     splitTargetField: rule.queryResponseField || 'queryResponse',
     ...rule,
   }))
 
+  // get related data for the current uow
   .map(toGetRequest(rule))
   .through(batchGetDynamoDB(rule))
 
+  // write back to the db
   .map(toUpdateRequest(rule))
   .through(updateDynamoDB(rule))
 
+  // or publish an event
   .map(toEvent(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
@@ -45,6 +62,8 @@ export const job = (rule) => (s) => s // eslint-disable-line import/prefer-defau
     eventField: 'emit', // so we don't overwrite the incoming event in the uow
   }))
 
+  .through(flushCursor(rule))
+
   .tap(printEndPipeline);
 
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
@@ -53,17 +72,26 @@ const toScanRequest = (rule) => faulty((uow) => ({
   ...uow,
   scanRequest:
     rule.toScanRequest
-      ? rule.toScanRequest(uow, rule)
+      ? /* istanbul ignore next */ rule.toScanRequest(uow, rule)
+      : undefined,
+}));
+
+const toQuerySplitRequest = (rule) => faulty((uow) => ({
+  ...uow,
+  querySplitRequest:
+    rule.toQuerySplitRequest
+      ? rule.toQuerySplitRequest(uow, rule)
       : /* istanbul ignore next */ undefined,
 }));
 
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 
-const toQueryRequest = (rule) => faulty((uow) => ({
+const toQueryRelatedRequest = (rule) => faulty((uow) => ({
   ...uow,
   queryRequest:
-    rule.toQueryRequest
-      ? /* istanbul ignore next */ rule.toQueryRequest(uow, rule)
+    /* istanbul ignore next */
+    (rule.toQueryRelatedRequest || rule.toQueryRequest)
+      ? (rule.toQueryRelatedRequest || rule.toQueryRequest)(uow, rule)
       : undefined,
 }));
 
@@ -91,3 +119,47 @@ const toEvent = (rule) => faultyAsyncStream(async (uow) => (!rule.toEvent
       ...await faultify(rule.toEvent)(uow, rule),
     },
   })));
+
+export const toCursorUpdateRequest = (rule) => faulty((uow) => ({
+  ...uow,
+  cursorUpdateRequest:
+    rule.toCursorUpdateRequest
+      ? rule.toCursorUpdateRequest(uow, rule)
+      : /* istanbul ignore next */ undefined,
+}));
+
+export const flushCursor = (rule) => (s) => {
+  let lastUow;
+
+  const cursorStream = () => _([lastUow])
+    .map(toCursorUpdateRequest(rule))
+    .through(updateDynamoDB({
+      ...rule,
+      updateRequestField: 'cursorUpdateRequest',
+      updateResponseField: 'cursorUpdateResponse',
+    }));
+
+  /* istanbul ignore else */
+  if (rule.toCursorUpdateRequest) {
+    return s
+      .consume((err, x, push, next) => {
+        /* istanbul ignore if */
+        if (err) {
+          push(err);
+          next();
+        } else if (x === _.nil) {
+          if (lastUow) {
+            next(cursorStream());
+          } else {
+            push(null, x);
+          }
+        } else {
+          lastUow = x;
+          push(null, x);
+          next();
+        }
+      });
+  } else {
+    return s;
+  }
+};

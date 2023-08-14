@@ -9,7 +9,7 @@ import {
   updateExpression, timestampCondition, pkCondition,
   updateDynamoDB, putDynamoDB,
   queryDynamoDB, batchGetDynamoDB, scanDynamoDB,
-  toGetRequest, toIndexQueryRequest, toPkQueryRequest,
+  toGetRequest, toIndexQueryRequest, toPkQueryRequest, querySplitDynamoDB,
 } from '../../../src/utils/dynamodb';
 
 import Connector from '../../../src/connectors/dynamodb';
@@ -339,6 +339,7 @@ describe('utils/dynamodb.js', () => {
           ExclusiveStartKey: undefined,
         });
         expect(collected[0].scanResponse).to.deep.equal({
+          LastEvaluatedKey: '1',
           Item: {
             pk: '1',
             sk: 'EVENT',
@@ -355,11 +356,250 @@ describe('utils/dynamodb.js', () => {
           ExclusiveStartKey: '1',
         });
         expect(collected[1].scanResponse).to.deep.equal({
+          LastEvaluatedKey: undefined,
           Item: {
             pk: '2',
             sk: 'EVENT',
             data: '22',
           },
+        });
+      })
+      .done(done);
+  });
+
+  it('should call scanSplitDynamoDB - limit 1', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'scan')
+      .onCall(0)
+      .resolves({
+        LastEvaluatedKey: '1',
+        Items: [{
+          pk: '1',
+          sk: 'EVENT',
+          data: '11',
+        }],
+      })
+      .onCall(1)
+      .resolves({
+        Items: [{
+          pk: '2',
+          sk: 'EVENT',
+          data: '22',
+        }],
+      });
+
+    const uows = [
+      {
+        scanRequest: {
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          Limit: 1,
+        },
+      },
+    ];
+
+    _(uows)
+      .through(scanDynamoDB())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(stub).to.have.been.calledWith({
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          ExclusiveStartKey: undefined,
+          Limit: 1,
+        });
+        expect(collected[0].scanResponse).to.deep.equal({
+          LastEvaluatedKey: '1',
+          Item: {
+            pk: '1',
+            sk: 'EVENT',
+            data: '11',
+          },
+        });
+      })
+      .done(done);
+  });
+
+  it('should call scanSplitDynamoDB - pass through if no scan request', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'scan');
+    const uows = [{ scanRequest: undefined }];
+
+    _(uows)
+      .through(scanDynamoDB())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(1);
+        expect(stub).to.have.not.have.been.called;
+        expect(collected[0]).to.deep.equal({
+          scanRequest: undefined,
+        });
+      })
+      .done(done);
+  });
+
+  it('should call querySplitDynamoDB', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'queryPage')
+      .onCall(0)
+      .resolves({
+        LastEvaluatedKey: '1',
+        Items: [{
+          pk: '1',
+          sk: 'EVENT',
+          data: '11',
+        }],
+      })
+      .onCall(1)
+      .resolves({
+        Items: [{
+          pk: '2',
+          sk: 'EVENT',
+          data: '22',
+        }],
+      });
+
+    const uows = [
+      {
+        querySplitRequest: {
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+        },
+      },
+    ];
+
+    _(uows)
+      .through(querySplitDynamoDB())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(2);
+        expect(stub).to.have.been.calledWith({
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          ExclusiveStartKey: undefined,
+        });
+        expect(collected[0].querySplitResponse).to.deep.equal({
+          LastEvaluatedKey: '1',
+          Item: {
+            pk: '1',
+            sk: 'EVENT',
+            data: '11',
+          },
+        });
+        expect(stub).to.have.been.calledWith({
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          ExclusiveStartKey: '1',
+        });
+        expect(collected[1].querySplitResponse).to.deep.equal({
+          LastEvaluatedKey: undefined,
+          Item: {
+            pk: '2',
+            sk: 'EVENT',
+            data: '22',
+          },
+        });
+      })
+      .done(done);
+  });
+
+  it('should call querySplitDynamoDB - limit 1', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'queryPage')
+      .onCall(0)
+      .resolves({
+        LastEvaluatedKey: '1',
+        Items: [{
+          pk: '1',
+          sk: 'EVENT',
+          data: '11',
+        }],
+      })
+      .onCall(1)
+      .resolves({
+        Items: [{
+          pk: '2',
+          sk: 'EVENT',
+          data: '22',
+        }],
+      });
+
+    const uows = [
+      {
+        querySplitRequest: {
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          Limit: 1,
+        },
+      },
+    ];
+
+    _(uows)
+      .through(querySplitDynamoDB())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(1);
+        expect(stub).to.have.been.calledWith({
+          ExpressionAttributeNames: {
+            '#data': 'data',
+          },
+          ExpressionAttributeValues: {
+            ':data': '11',
+          },
+          ExclusiveStartKey: undefined,
+          Limit: 1,
+        });
+        expect(collected[0].querySplitResponse).to.deep.equal({
+          LastEvaluatedKey: '1',
+          Item: {
+            pk: '1',
+            sk: 'EVENT',
+            data: '11',
+          },
+        });
+      })
+      .done(done);
+  });
+
+  it('should call querySplitDynamoDB - pass through if no query request', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'queryPage');
+    const uows = [{ querySplitRequest: undefined }];
+
+    _(uows)
+      .through(querySplitDynamoDB())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(1);
+        expect(stub).to.have.not.have.been.called;
+        expect(collected[0]).to.deep.equal({
+          querySplitRequest: undefined,
         });
       })
       .done(done);

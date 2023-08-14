@@ -55,6 +55,7 @@ export const updateDynamoDB = ({
   debug = d('dynamodb'),
   tableName = process.env.ENTITY_TABLE_NAME || process.env.EVENT_TABLE_NAME,
   updateRequestField = 'updateRequest',
+  updateResponseField = 'updateResponse',
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   ...opt
@@ -65,7 +66,7 @@ export const updateDynamoDB = ({
     if (!uow[updateRequestField]) return _(Promise.resolve(uow));
 
     const p = connector.update(uow[updateRequestField])
-      .then((updateResponse) => ({ ...uow, updateResponse }))
+      .then((updateResponse) => ({ ...uow, [updateResponseField]: updateResponse }))
       .catch(rejectWithFault(uow));
 
     return _(p); // wrap promise in a stream
@@ -132,7 +133,7 @@ export const batchGetDynamoDB = ({
 
 export const batchGet = batchGetDynamoDB; // deprecated export
 
-export const queryDynamoDB = (/* istanbul ignore next */{
+export const queryAllDynamoDB = (/* istanbul ignore next */{
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME,
   queryRequestField = 'queryRequest',
@@ -167,7 +168,9 @@ export const queryDynamoDB = (/* istanbul ignore next */{
     .parallel(parallel);
 };
 
-export const query = queryDynamoDB; // deprecated export
+export const query = queryAllDynamoDB; // deprecated export
+
+export const queryDynamoDB = queryAllDynamoDB; // deprecated export
 
 export const toPkQueryRequest = (uow, rule) => ({
   KeyConditionExpression: '#pk = :pk',
@@ -219,7 +222,7 @@ export const toGetRequest = (uow, rule) => {
   };
 };
 
-export const scanDynamoDB = ({
+export const scanSplitDynamoDB = ({
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME || process.env.TABLE_NAME,
   scanRequestField = 'scanRequest',
@@ -231,7 +234,10 @@ export const scanDynamoDB = ({
   const connector = new Connector({ debug, tableName, timeout });
 
   const scan = (uow) => {
-    let cursor;
+    if (!uow[scanRequestField]) return _(Promise.resolve(uow));
+
+    let cursor = uow[scanRequestField].ExclusiveStartKey;
+    let itemsCount = 0;
 
     return _((push, next) => {
       const params = {
@@ -242,8 +248,9 @@ export const scanDynamoDB = ({
       connector.scan(params)
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;
+          itemsCount += Items.length;
 
-          if (LastEvaluatedKey) {
+          if (LastEvaluatedKey && (!params.Limit || (params.Limit && itemsCount < params.Limit))) {
             cursor = LastEvaluatedKey;
           } else {
             cursor = undefined;
@@ -255,6 +262,7 @@ export const scanDynamoDB = ({
               [scanRequestField]: params,
               [scanResponseField]: {
                 ...rest,
+                LastEvaluatedKey,
                 Item,
               },
             });
@@ -276,5 +284,71 @@ export const scanDynamoDB = ({
 
   return (s) => s
     .map(scan)
+    .parallel(parallel);
+};
+
+export const scanDynamoDB = scanSplitDynamoDB; // deprecated export
+
+export const querySplitDynamoDB = ({
+  debug = d('dynamodb'),
+  tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME || process.env.TABLE_NAME,
+  querySplitRequestField = 'querySplitRequest',
+  querySplitResponseField = 'querySplitResponse',
+  parallel = Number(process.env.SCAN_PARALLEL) || Number(process.env.PARALLEL) || 4,
+  timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+} = {}) => {
+  const connector = new Connector({ debug, tableName, timeout });
+
+  const invoke = (uow) => {
+    if (!uow[querySplitRequestField]) return _(Promise.resolve(uow));
+
+    let cursor = uow[querySplitRequestField].ExclusiveStartKey;
+    let itemsCount = 0;
+
+    return _((push, next) => {
+      const params = {
+        ...uow[querySplitRequestField],
+        ExclusiveStartKey: cursor,
+      };
+
+      connector.queryPage(params)
+        .then((data) => {
+          const { LastEvaluatedKey, Items, ...rest } = data;
+          itemsCount += Items.length;
+
+          if (LastEvaluatedKey && (!params.Limit || (params.Limit && itemsCount < params.Limit))) {
+            cursor = LastEvaluatedKey;
+          } else {
+            cursor = undefined;
+          }
+
+          Items.forEach((Item) => {
+            push(null, {
+              ...uow,
+              [querySplitRequestField]: params,
+              [querySplitResponseField]: {
+                ...rest,
+                LastEvaluatedKey,
+                Item,
+              },
+            });
+          });
+        })
+        .catch(/* istanbul ignore next */(err) => {
+          err.uow = uow;
+          push(err, null);
+        })
+        .finally(() => {
+          if (cursor) {
+            next();
+          } else {
+            push(null, _.nil);
+          }
+        });
+    });
+  };
+
+  return (s) => s
+    .map(invoke)
     .parallel(parallel);
 };
