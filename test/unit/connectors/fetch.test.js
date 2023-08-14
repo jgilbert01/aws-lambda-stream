@@ -26,6 +26,14 @@ describe('connectors/fetch.js', () => {
       ...RESPONSE,
     });
   });
+  it('should default on 204', async () => {
+    fetchMock.get(url, 204);
+
+    const connector = new Connector({ debug: debug('fetch'), timeout: 3000, defaultResponse: { 204: { json: {} } } });
+
+    const data = await connector.fetch(url, { method: 'GET' });
+    expect(data).to.deep.equal({});
+  });
   it('should reject on 500 server error', async () => {
     fetchMock.get(url, 500);
 
