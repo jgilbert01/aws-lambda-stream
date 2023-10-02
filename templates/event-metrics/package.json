@@ -81,7 +81,7 @@
     "aws-kms-ee": "^0.6.0",
     "aws-lambda-stream": "^0.6.0",
     "bluebird": "^3.4.7",
-    "debug": "^3.1.0",
+    "debug": "^3.2.7",
     "highland": "^2.13.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
