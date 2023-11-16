@@ -7,11 +7,13 @@ export const zip = (str) => zlib.gzipSync(Buffer.from(str)).toString('base64');
 export const unzip = (str) => zlib.gunzipSync(Buffer.from(str, 'base64')).toString();
 
 // JSON.stringify replacer
-export const compress = (opt = { compressionThreshold: 1024 * 10 }) =>
+export const compress = (opt = { compressionThreshold: 1024 * 10, compressionIgnore: [] }) =>
   (key, value) =>
-    (key /* no key is the top */ && sizeof(value) > opt.compressionThreshold
+    key /* no key is the top */ &&
+    !opt.compressionIgnore?.includes(key) &&
+    sizeof(value) > opt.compressionThreshold
       ? `${COMPRESSION_PREFIX}${zip(JSON.stringify(value))}`
-      : value);
+      : value;
 
 // JSON.parse reviver
 export const decompress = (key, value) =>
