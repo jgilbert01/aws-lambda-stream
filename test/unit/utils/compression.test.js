@@ -56,6 +56,33 @@ describe('utils/compression.js', () => {
     expect(compressed.length).to.equal(3317);
     expect(decompressed).to.deep.equal(eventObject);
   });
+
+  it('should compress with hints', () => {
+    const sampleEvent = {
+      a: {
+        b: {
+          c: 0,
+        },
+        d: 1,
+      },
+      e: 2,
+    };
+
+    const compressed = JSON.stringify(
+      sampleEvent,
+      compress({
+        compressionThreshold: 1,
+        compressionHints: ['a.b.c', 'a.b', 'e'], // should sort hints and compress a.b before a.b.c can be compressed
+      }),
+    );
+    const decompressed = JSON.parse(compressed, decompress);
+
+    expect(JSON.parse(compressed)).to.deep.equal({
+      a: { b: 'COMPRESSEDH4sIAAAAAAAAA6tWSlayMqgFAI7OwDUHAAAA', d: 1 },
+      e: 'COMPRESSEDH4sIAAAAAAAAAzMCAA2+1RoBAAAA',
+    });
+    expect(decompressed).to.deep.equal(sampleEvent);
+  });
 });
 
 const eventObject = {
