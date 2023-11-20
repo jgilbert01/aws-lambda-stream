@@ -56,6 +56,38 @@ describe('utils/compression.js', () => {
     expect(compressed.length).to.equal(3317);
     expect(decompressed).to.deep.equal(eventObject);
   });
+
+  it('should compress with ignored keys', () => {
+    const sampleEvent = {
+      a: {
+        b: {
+          a: {
+            c: 0,
+          },
+          d: 1,
+        },
+      },
+    };
+
+    const compressed = JSON.stringify(
+      sampleEvent,
+      compress({
+        compressionThreshold: 1,
+        compressionIgnore: ['a', 'b'],
+      }),
+    );
+    const decompressed = JSON.parse(compressed, decompress);
+
+    expect(JSON.parse(compressed)).to.deep.equal({
+      a: {
+        b: {
+          a: { c: 'COMPRESSEDH4sIAAAAAAAAAzMAACHf2/QBAAAA' },
+          d: 'COMPRESSEDH4sIAAAAAAAAAzMEALfv3IMBAAAA',
+        },
+      },
+    });
+    expect(decompressed).to.deep.equal(sampleEvent);
+  });
 });
 
 const eventObject = {
