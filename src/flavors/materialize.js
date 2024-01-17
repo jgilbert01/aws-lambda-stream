@@ -1,7 +1,7 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  updateDynamoDB, splitObject,
+  updateDynamoDB, splitObject, compact,
 } from '../utils';
 
 import {
@@ -18,6 +18,8 @@ export const materialize = (rule) => (s) => s // eslint-disable-line import/pref
   .tap(printStartPipeline)
 
   .filter(onContent(rule))
+
+  .through(compact(rule))
 
   .through(splitObject(rule))
 

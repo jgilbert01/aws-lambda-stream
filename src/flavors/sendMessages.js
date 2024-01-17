@@ -2,7 +2,7 @@ import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
   queryDynamoDB, batchGetDynamoDB,
-  sendToSqs, publishToSns,
+  sendToSqs, publishToSns, compact,
 } from '../utils';
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
@@ -14,6 +14,8 @@ export const sendMessages = (rule) => (s) => s // eslint-disable-line import/pre
   .tap(printStartPipeline)
 
   .filter(onContent(rule))
+
+  .through(compact(rule))
 
   .map(toQueryRequest(rule))
   .through(queryDynamoDB(rule))

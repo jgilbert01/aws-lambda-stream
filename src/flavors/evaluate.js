@@ -7,7 +7,7 @@ import isBoolean from 'lodash/isBoolean';
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  queryDynamoDB,
+  queryDynamoDB, compact,
 } from '../utils';
 
 import {
@@ -40,6 +40,8 @@ export const evaluate = (rule) => (s) => s // eslint-disable-line import/prefer-
   .tap(printStartPipeline)
 
   .filter(onContent(rule))
+
+  .through(compact(rule))
 
   .through(complex(rule))
 
