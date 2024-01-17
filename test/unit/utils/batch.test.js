@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import _ from 'highland';
 
 import {
-  toBatchUow, unBatchUow, group, batchWithSize,
+  toBatchUow, unBatchUow, group, batchWithSize, compact,
 } from '../../../src/utils';
 
 describe('utils/batch.js', () => {
@@ -346,6 +346,91 @@ describe('utils/batch.js', () => {
               {
                 event: {
                   partitionKey: '2',
+                },
+              },
+            ],
+          },
+        ]);
+      })
+      .done(done);
+  });
+
+  it('should compact', (done) => {
+    const uows = [
+      {
+        debug: 'x',
+        pipeline: 'y',
+        event: {
+          partitionKey: '1',
+          timestamp: 2,
+        },
+      },
+      {
+        debug: 'x',
+        pipeline: 'y',
+        event: {
+          partitionKey: '2',
+          timestamp: 3,
+        },
+      },
+      {
+        debug: 'x',
+        pipeline: 'y',
+        event: {
+          partitionKey: '1',
+          timestamp: 1,
+        },
+      },
+    ];
+
+    _(uows)
+      .through(compact({ compact: true }))
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(2);
+        expect(collected).to.deep.equal([
+          {
+            debug: 'x',
+            pipeline: 'y',
+            event: {
+              partitionKey: '1',
+              timestamp: 2,
+            },
+            batch: [
+              {
+                debug: 'x',
+                pipeline: 'y',
+                event: {
+                  partitionKey: '1',
+                  timestamp: 1,
+                },
+              },
+              {
+                debug: 'x',
+                pipeline: 'y',
+                event: {
+                  partitionKey: '1',
+                  timestamp: 2,
+                },
+              },
+            ],
+          },
+          {
+            debug: 'x',
+            pipeline: 'y',
+            event: {
+              partitionKey: '2',
+              timestamp: 3,
+            },
+            batch: [
+              {
+                debug: 'x',
+                pipeline: 'y',
+                event: {
+                  partitionKey: '2',
+                  timestamp: 3,
                 },
               },
             ],

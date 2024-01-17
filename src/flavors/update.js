@@ -2,6 +2,7 @@ import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, splitObject,
   queryDynamoDB, updateDynamoDB, batchGetDynamoDB,
+  compact,
 } from '../utils';
 
 import { filterOnEventType, filterOnContent } from '../filters';
@@ -17,6 +18,8 @@ export const upd = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .tap(printStartPipeline)
 
   .filter(onContent(rule))
+
+  .through(compact(rule))
 
   .map(toQuery(rule))
   .through(queryDynamoDB(rule))

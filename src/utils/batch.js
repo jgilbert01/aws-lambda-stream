@@ -24,6 +24,24 @@ export const group = (rule) => {
 // use with flatMap after highland group step
 export const toGroupUows = (groups) => _(Object.keys(groups).map((key) => ({ batch: groups[key] })));
 
+export const compact = (rule) => {
+  if (!rule.compact) return (s) => s;
+
+  return (s) => s
+    .group((uow) => uow.event.partitionKey)
+    .flatMap((groups) => _(Object.keys(groups)
+      .map((key) => {
+        const batch = groups[key].sort((lh, rh) => lh.event.timestamp - rh.event.timestamp);
+        const last = batch[batch.length - 1];
+        return {
+          pipeline: last.pipeline,
+          debug: last.debug,
+          event: last.event,
+          batch,
+        };
+      })));
+};
+
 export const batchWithSize = (opt) => {
   let batched = [];
   let sizes = [];
