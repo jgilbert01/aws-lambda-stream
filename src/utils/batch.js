@@ -1,4 +1,5 @@
 import _ from 'highland';
+import isFunction from 'lodash/isFunction';
 
 // used after highland batch step
 export const toBatchUow = (batch) => ({ batch });
@@ -23,6 +24,22 @@ export const group = (rule) => {
 
 // use with flatMap after highland group step
 export const toGroupUows = (groups) => _(Object.keys(groups).map((key) => ({ batch: groups[key] })));
+
+export const compact = (rule) => {
+  if (!rule.compact) return (s) => s;
+
+  return (s) => (isFunction(rule.compact) && /* istanbul ignore next */ rule.compact(s)) || s
+    .group(rule.compact.group || ((uow) => uow.event.partitionKey))
+    .flatMap((groups) => _(Object.keys(groups)
+      .map((key) => {
+        const batch = groups[key].sort(rule.compact.sort || ((lh, rh) => lh.event.timestamp - rh.event.timestamp));
+        const last = batch[batch.length - 1];
+        return {
+          ...last,
+          batch,
+        };
+      })));
+};
 
 export const batchWithSize = (opt) => {
   let batched = [];

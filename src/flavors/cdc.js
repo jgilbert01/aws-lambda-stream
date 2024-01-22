@@ -2,7 +2,7 @@ import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
   queryDynamoDB, batchGetDynamoDB, toPkQueryRequest,
-  encryptEvent,
+  encryptEvent, compact,
 } from '../utils';
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
@@ -14,6 +14,8 @@ export const cdc = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .tap(printStartPipeline)
 
   .filter(onContent(rule))
+
+  .through(compact(rule))
 
   .map(toQueryRequest(rule))
   .through(queryDynamoDB(rule))
