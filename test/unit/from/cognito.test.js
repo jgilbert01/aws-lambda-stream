@@ -1,7 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import * as uuid from 'uuid';
+import { uuid } from '../../../src/utils';
 
 import { fromCognito } from '../../../src/from/cognito';
 

@@ -1,12 +1,21 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import { config, DynamoDB } from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import {
+  BatchGetCommand,
+  DynamoDBDocumentClient,
+  PutCommand,
+  QueryCommand,
+  ScanCommand,
+  UpdateCommand,
+} from '@aws-sdk/lib-dynamodb';
 import Promise from 'bluebird';
 import _ from 'highland';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
+import { ConfiguredRetryStrategy } from '@smithy/util-retry';
 import {
-  defaultRetryConfig, wait, getDelay, assertMaxRetries,
+  defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
-
-config.setPromisesDependency(Promise);
+import { defaultDebugLogger } from '../utils/log';
 
 class Connector {
   constructor({
@@ -17,15 +26,15 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
-    this.db = new DynamoDB.DocumentClient({
-      httpOptions: {
-        timeout,
-        connectTimeout: timeout,
-      },
-      maxRetries: 10, // Default: 3
-      retryDelayOptions: { base: 200 }, // Default: 100 ms
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
+    const dynamoClient = new DynamoDBClient({
+      requestHandler: new NodeHttpHandler({
+        requestTimeout: timeout,
+        connectionTimeout: timeout,
+      }),
+      retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
+      logger: defaultDebugLogger(debug),
     });
+    this.db = DynamoDBDocumentClient.from(dynamoClient);
     this.retryConfig = retryConfig;
   }
 
@@ -35,9 +44,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this.db.update(params).promise()
-      .tap(this.debug)
-      .tapCatch(this.debug)
+    return this._executeCommand(new UpdateCommand(params))
       .catch(/* istanbul ignore next */(err) => {
         if (err.code === 'ConditionalCheckFailedException') {
           return {};
@@ -52,9 +59,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this.db.put(params).promise()
-      .tap(this.debug)
-      .tapCatch(this.debug);
+    return this._executeCommand(new PutCommand(params));
   }
 
   batchGet(inputParams) {
@@ -63,23 +68,6 @@ class Connector {
     };
 
     return this._batchGet(params, []);
-  }
-
-  _batchGet(params, attempts) {
-    assertMaxRetries(attempts, this.retryConfig.maxRetries);
-
-    return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this.db.batchGet(params)
-        .promise()
-        .tap(this.debug)
-        .tapCatch(this.debug)
-        .then((resp) => {
-          if (Object.keys(resp.UnprocessedKeys || /* istanbul ignore next */ {}).length > 0) {
-            return this._batchGet(unprocessed(params, resp), [...attempts, resp]);
-          } else {
-            return accumlate(attempts, resp);
-          }
-        }));
   }
 
   query(inputParams) {
@@ -97,9 +85,7 @@ class Connector {
 
     return _((push, next) => {
       params.ExclusiveStartKey = cursor;
-      return this.db.query(params).promise()
-        .tap(this.debug)
-        .tapCatch(this.debug)
+      return this._executeCommand(new QueryCommand(params))
         .then((data) => {
           itemsCount += data.Items.length;
 
@@ -134,9 +120,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this.db.query(params).promise()
-      .tap(this.debug)
-      .tapCatch(this.debug);
+    return this._executeCommand(new QueryCommand(params));
   }
 
   scan(inputParams) {
@@ -145,7 +129,25 @@ class Connector {
       ...inputParams,
     };
 
-    return this.db.scan(params).promise()
+    return this._executeCommand(new ScanCommand(params));
+  }
+
+  _batchGet(params, attempts) {
+    assertMaxRetries(attempts, this.retryConfig.maxRetries);
+
+    return wait(getDelay(this.retryConfig.retryWait, attempts.length))
+      .then(() => this._executeCommand(new BatchGetCommand(params))
+        .then((resp) => {
+          if (Object.keys(resp.UnprocessedKeys || /* istanbul ignore next */ {}).length > 0) {
+            return this._batchGet(unprocessed(params, resp), [...attempts, resp]);
+          } else {
+            return accumlate(attempts, resp);
+          }
+        }));
+  }
+
+  _executeCommand(command) {
+    return Promise.resolve(this.db.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

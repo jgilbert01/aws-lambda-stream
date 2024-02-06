@@ -2,21 +2,25 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import debug from 'debug';
-import AWS from 'aws-sdk-mock';
-import Promise from 'bluebird';
+import { CloudWatchClient, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch';
+import { mockClient } from 'aws-sdk-client-mock';
 
 import Connector from '../../../src/connectors/cloudwatch';
 
-AWS.Promise = Promise;
-
 describe('connectors/cloudwatch.js', () => {
+  let mockCloudWatch;
+
+  beforeEach(() => {
+    mockCloudWatch = mockClient(CloudWatchClient);
+  });
+
   afterEach(() => {
-    AWS.restore('CloudWatch');
+    mockCloudWatch.restore();
   });
 
   it('should put', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, {}));
-    AWS.mock('CloudWatch', 'putMetricData', spy);
+    const spy = sinon.spy((_) => ({}));
+    mockCloudWatch.on(PutMetricDataCommand).callsFake(spy);
 
     const MetricData = [{
       MetricName: 'domain.event',

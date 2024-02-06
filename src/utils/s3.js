@@ -111,7 +111,8 @@ export const getObjectFromS3AsStream = ({
 
     const p = connector.getObjectStream(uow[getRequestField]);
 
-    return _(p) // wrap stream in a stream
+    return _(p) // wrap promise in a stream
+      .flatMap((readable) => _(readable)) // wrap stream in a stream
       .splitBy(delimiter)
       .filter(splitFilter)
       .map((getResponse) => ({ ...uow, [getResponseField]: getResponse }));

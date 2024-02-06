@@ -1,12 +1,14 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import { SNS, config } from 'aws-sdk';
+
 import Promise from 'bluebird';
 
+import { PublishBatchCommand, PublishCommand, SNSClient } from '@aws-sdk/client-sns';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
+import { ConfiguredRetryStrategy } from '@smithy/util-retry';
 import {
-  defaultRetryConfig, wait, getDelay, assertMaxRetries,
+  defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
-
-config.setPromisesDependency(Promise);
+import { defaultDebugLogger } from '../utils/log';
 
 class Connector {
   constructor({
@@ -17,14 +19,13 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.topicArn = topicArn || 'undefined';
-    this.topic = new SNS({
-      httpOptions: {
-        timeout,
-        connectTimeout: timeout,
-      },
-      maxRetries: 10, // Default: 3
-      retryDelayOptions: { base: 200 }, // Default: 100 ms
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
+    this.topic = new SNSClient({
+      requestHandler: new NodeHttpHandler({
+        requestTimeout: timeout,
+        connectionTimeout: timeout,
+      }),
+      retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
+      logger: defaultDebugLogger(debug),
     });
     this.retryConfig = retryConfig;
   }
@@ -35,10 +36,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this.topic.publish(params)
-      .promise()
-      .tap(this.debug)
-      .tapCatch(this.debug);
+    return this._sendCommand(new PublishCommand(params));
   }
 
   publishBatch(inputParams) {
@@ -54,10 +52,7 @@ class Connector {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this.topic.publishBatch(params)
-        .promise()
-        .tap(this.debug)
-        .tapCatch(this.debug)
+      .then(() => this._sendCommand(new PublishBatchCommand(params))
         .then((resp) => {
           if (resp.Failed?.length > 0) {
             return this._publishBatch(unprocessed(params, resp), [...attempts, resp]);
@@ -65,6 +60,12 @@ class Connector {
             return accumlate(attempts, resp);
           }
         }));
+  }
+
+  _sendCommand(command) {
+    return Promise.resolve(this.topic.send(command))
+      .tap(this.debug)
+      .tapCatch(this.debug);
   }
 }
 

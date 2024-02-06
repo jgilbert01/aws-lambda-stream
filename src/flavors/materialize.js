@@ -9,7 +9,6 @@ import {
   outSkip, outSourceIsSelf,
 } from '../filters';
 
-
 export const materialize = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   .filter(outSkip)
   .filter(outSourceIsSelf)

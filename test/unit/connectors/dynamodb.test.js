@@ -1,20 +1,32 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import AWS from 'aws-sdk-mock';
-
+import {
+  BatchGetCommand,
+  DynamoDBDocumentClient,
+  PutCommand,
+  QueryCommand,
+  ScanCommand,
+  UpdateCommand,
+} from '@aws-sdk/lib-dynamodb';
+import { mockClient } from 'aws-sdk-client-mock';
+import { debug } from '../../../src/utils';
 import Connector from '../../../src/connectors/dynamodb';
 
-import { debug } from '../../../src/utils';
-
 describe('connectors/dynamodb.js', () => {
+  let mockDdb;
+
+  beforeEach(() => {
+    mockDdb = mockClient(DynamoDBDocumentClient);
+  });
+
   afterEach(() => {
-    AWS.restore('DynamoDB.DocumentClient');
+    mockDdb.restore();
   });
 
   it('should update', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, {}));
-    AWS.mock('DynamoDB.DocumentClient', 'update', spy);
+    const spy = sinon.spy((_) => ({}));
+    mockDdb.on(UpdateCommand).callsFake(spy);
 
     const UPDATE_REQUEST = {
       // TableName: 'my-service-entities',
@@ -81,8 +93,8 @@ describe('connectors/dynamodb.js', () => {
   });
 
   it('should put', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, {}));
-    AWS.mock('DynamoDB.DocumentClient', 'put', spy);
+    const spy = sinon.spy((_) => ({}));
+    mockDdb.on(PutCommand).callsFake(spy);
 
     const PUT_REQUEST = {
       // TableName: 'my-service-entities',
@@ -121,7 +133,7 @@ describe('connectors/dynamodb.js', () => {
   });
 
   it('should batchGet', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, {
+    const spy = sinon.spy((_) => ({
       Responses: {
         'stg-my-service-events': [
           {
@@ -140,7 +152,7 @@ describe('connectors/dynamodb.js', () => {
       },
       UnprocessedKeys: {},
     }));
-    AWS.mock('DynamoDB.DocumentClient', 'batchGet', spy);
+    mockDdb.on(BatchGetCommand).callsFake(spy);
 
     const GET_REQUEST = {
       RequestItems: {
@@ -252,8 +264,8 @@ describe('connectors/dynamodb.js', () => {
       },
     ];
 
-    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
-    AWS.mock('DynamoDB.DocumentClient', 'batchGet', spy);
+    const spy = sinon.spy((_) => responses.shift());
+    mockDdb.on(BatchGetCommand).callsFake(spy);
 
     const inputParams = {
       RequestItems: {
@@ -436,8 +448,8 @@ describe('connectors/dynamodb.js', () => {
       },
     ];
 
-    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
-    AWS.mock('DynamoDB.DocumentClient', 'batchGet', spy);
+    const spy = sinon.spy((_) => responses.shift());
+    mockDdb.on(BatchGetCommand).callsFake(spy);
 
     const inputParams = {
       RequestItems: {
@@ -460,7 +472,7 @@ describe('connectors/dynamodb.js', () => {
       },
     };
 
-    const data = await new Connector({
+    await new Connector({
       debug: debug('dynamodb'),
       retryConfig: {
         maxRetries: 1,
@@ -499,7 +511,7 @@ describe('connectors/dynamodb.js', () => {
   it('should query', async () => {
     const correlationKey = '11';
 
-    const spy = sinon.spy((params, cb) => cb(null, {
+    const spy = sinon.spy((params) => ({
       Items: [{
         pk: params.ExclusiveStartKey === undefined ? '1' : '2',
         sk: 'EVENT',
@@ -509,7 +521,7 @@ describe('connectors/dynamodb.js', () => {
       LastEvaluatedKey: params.ExclusiveStartKey === undefined ? '1' : undefined,
     }));
 
-    AWS.mock('DynamoDB.DocumentClient', 'query', spy);
+    mockDdb.on(QueryCommand).callsFake(spy);
 
     const QUERY_REQUEST = {
       IndexName: 'DataIndex',
@@ -557,7 +569,7 @@ describe('connectors/dynamodb.js', () => {
   it('should query page', async () => {
     const correlationKey = '11';
 
-    const spy = sinon.spy((params, cb) => cb(null, {
+    const spy = sinon.spy((params) => ({
       Items: [{
         pk: params.ExclusiveStartKey === undefined ? '1' : '2',
         sk: 'EVENT',
@@ -566,8 +578,7 @@ describe('connectors/dynamodb.js', () => {
       }],
       LastEvaluatedKey: params.ExclusiveStartKey === undefined ? '1' : undefined,
     }));
-
-    AWS.mock('DynamoDB.DocumentClient', 'query', spy);
+    mockDdb.on(QueryCommand).callsFake(spy);
 
     const QUERY_REQUEST = {
       IndexName: 'DataIndex',
@@ -611,7 +622,7 @@ describe('connectors/dynamodb.js', () => {
   it('should scan', async () => {
     const correlationKey = '11';
 
-    const spy = sinon.spy((params, cb) => cb(null, {
+    const spy = sinon.spy((_) => ({
       Items: [{
         pk: '1',
         sk: 'EVENT',
@@ -619,8 +630,7 @@ describe('connectors/dynamodb.js', () => {
         event: {},
       }],
     }));
-
-    AWS.mock('DynamoDB.DocumentClient', 'scan', spy);
+    mockDdb.on(ScanCommand).callsFake(spy);
 
     const SCAN_REQUEST = {
       ExpressionAttributeNames: {
@@ -657,7 +667,7 @@ describe('connectors/dynamodb.js', () => {
   it('should query with limiting Limit param', async () => {
     const correlationKey = '11';
 
-    const spy = sinon.spy((params, cb) => cb(null, {
+    const spy = sinon.spy((params) => ({
       Items: [{
         pk: params.ExclusiveStartKey === undefined ? '1' : '2',
         sk: 'EVENT',
@@ -667,7 +677,7 @@ describe('connectors/dynamodb.js', () => {
       LastEvaluatedKey: params.ExclusiveStartKey === undefined ? '1' : undefined,
     }));
 
-    AWS.mock('DynamoDB.DocumentClient', 'query', spy);
+    mockDdb.on(QueryCommand).callsFake(spy);
 
     const QUERY_REQUEST = {
       IndexName: 'DataIndex',
@@ -711,7 +721,7 @@ describe('connectors/dynamodb.js', () => {
   it('should query with non-limiting Limit param', async () => {
     const correlationKey = '11';
 
-    const spy = sinon.spy((params, cb) => cb(null, {
+    const spy = sinon.spy((params) => ({
       Items: [{
         pk: params.ExclusiveStartKey === undefined ? '1' : '2',
         sk: 'EVENT',
@@ -721,7 +731,7 @@ describe('connectors/dynamodb.js', () => {
       LastEvaluatedKey: params.ExclusiveStartKey === undefined ? '1' : undefined,
     }));
 
-    AWS.mock('DynamoDB.DocumentClient', 'query', spy);
+    mockDdb.on(QueryCommand).callsFake(spy);
 
     const QUERY_REQUEST = {
       IndexName: 'DataIndex',

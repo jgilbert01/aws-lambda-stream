@@ -19,3 +19,5 @@ export const getDelay = (baseMillis, attempt) => {
   const finalBackoff = expBackoff + Math.round(Math.random() * baseMillis);
   return baseMillis + finalBackoff;
 };
+
+export const defaultBackoffDelay = (attempt) => getDelay(Number(process.env.BASE_BACKOFF_MILLIS) || 200, attempt);

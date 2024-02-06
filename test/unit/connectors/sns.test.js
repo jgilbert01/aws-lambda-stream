@@ -1,20 +1,27 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import AWS from 'aws-sdk-mock';
+import { mockClient } from 'aws-sdk-client-mock';
+import { PublishBatchCommand, PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 
 import Connector from '../../../src/connectors/sns';
 
 import { debug } from '../../../src/utils';
 
 describe('connectors/sns.js', () => {
+  let mockSns = mockClient(SNSClient);
+
+  beforeEach(() => {
+    mockSns = mockClient(SNSClient);
+  });
+
   afterEach(() => {
-    AWS.restore('SNS');
+    mockSns.restore();
   });
 
   it('should publish msg', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, {}));
-    AWS.mock('SNS', 'publish', spy);
+    const spy = sinon.spy((_) => ({}));
+    mockSns.on(PublishCommand).callsFake(spy);
 
     const inputParams = {
       Message: JSON.stringify({ f1: 'v1' }),
@@ -33,8 +40,8 @@ describe('connectors/sns.js', () => {
   });
 
   it('should publish batch msg', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, { Successful: [{ Id: '1' }] }));
-    AWS.mock('SNS', 'publishBatch', spy);
+    const spy = sinon.spy(() => ({ Successful: [{ Id: '1' }] }));
+    mockSns.on(PublishBatchCommand).callsFake(spy);
 
     const inputParams = {
       PublishBatchRequestEntries: [
@@ -64,8 +71,8 @@ describe('connectors/sns.js', () => {
       { Successful: [{ Id: '3' }] },
     ];
 
-    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
-    AWS.mock('SNS', 'publishBatch', spy);
+    const spy = sinon.spy(() => responses.shift());
+    mockSns.on(PublishBatchCommand).callsFake(spy);
 
     const inputParams = {
       PublishBatchRequestEntries: [
@@ -90,7 +97,8 @@ describe('connectors/sns.js', () => {
     }).publishBatch(inputParams);
 
     expect(spy).to.have.been.calledWith({
-      PublishBatchRequestEntries: [inputParams.PublishBatchRequestEntries[0], inputParams.PublishBatchRequestEntries[1], inputParams.PublishBatchRequestEntries[2]],
+      PublishBatchRequestEntries:
+        [inputParams.PublishBatchRequestEntries[0], inputParams.PublishBatchRequestEntries[1], inputParams.PublishBatchRequestEntries[2]],
       TopicArn: 't1',
     });
     expect(spy).to.have.been.calledWith({
@@ -126,8 +134,8 @@ describe('connectors/sns.js', () => {
       { Successful: [{ Id: '2' }], Failed: [{ Id: '3' }] },
     ];
 
-    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
-    AWS.mock('SNS', 'publishBatch', spy);
+    const spy = sinon.spy(() => responses.shift());
+    mockSns.on(PublishBatchCommand).callsFake(spy);
 
     const inputParams = {
       PublishBatchRequestEntries: [
@@ -146,7 +154,7 @@ describe('connectors/sns.js', () => {
       ],
     };
 
-    const data = await new Connector({
+    await new Connector({
       debug: debug('sqs'),
       topicArn: 't1',
       retryConfig: {
@@ -158,7 +166,12 @@ describe('connectors/sns.js', () => {
         expect.fail('should have thrown');
       }).catch((err) => {
         expect(spy).to.have.been.calledWith({
-          PublishBatchRequestEntries: [inputParams.PublishBatchRequestEntries[0], inputParams.PublishBatchRequestEntries[1], inputParams.PublishBatchRequestEntries[2]],
+          PublishBatchRequestEntries:
+            [
+              inputParams.PublishBatchRequestEntries[0],
+              inputParams.PublishBatchRequestEntries[1],
+              inputParams.PublishBatchRequestEntries[2],
+            ],
           TopicArn: 't1',
         });
         expect(spy).to.have.been.calledWith({

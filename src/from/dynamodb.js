@@ -1,7 +1,7 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import * as aws from 'aws-sdk';
 import _ from 'highland';
 
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import { faulty } from '../utils';
 
 export const fromDynamodb = (event, {
@@ -35,10 +35,10 @@ export const fromDynamodb = (event, {
           },
           raw: {
             new: record.dynamodb.NewImage
-              ? aws.DynamoDB.Converter.unmarshall(record.dynamodb.NewImage)
+              ? unmarshall(record.dynamodb.NewImage)
               : undefined,
             old: record.dynamodb.OldImage
-              ? aws.DynamoDB.Converter.unmarshall(record.dynamodb.OldImage)
+              ? unmarshall(record.dynamodb.OldImage)
               : undefined,
           },
         },
@@ -137,9 +137,9 @@ export const toDynamodbRecords = (events) => ({
       awsRegion: 'us-west-2',
       dynamodb: {
         ApproximateCreationDateTime: e.timestamp,
-        Keys: e.keys ? aws.DynamoDB.Converter.marshall(e.keys) : /* istanbul ignore next */ undefined,
-        NewImage: e.newImage ? aws.DynamoDB.Converter.marshall(e.newImage) : undefined,
-        OldImage: e.oldImage ? aws.DynamoDB.Converter.marshall(e.oldImage) : undefined,
+        Keys: e.keys ? marshall(e.keys, { removeUndefinedValues: true }) : /* istanbul ignore next */ undefined,
+        NewImage: e.newImage ? marshall(e.newImage, { removeUndefinedValues: true }) : undefined,
+        OldImage: e.oldImage ? marshall(e.oldImage, { removeUndefinedValues: true }) : undefined,
 
         SequenceNumber: `${i}`,
         // SizeBytes: 59,

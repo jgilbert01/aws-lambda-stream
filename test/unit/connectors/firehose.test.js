@@ -1,20 +1,27 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import AWS from 'aws-sdk-mock';
+import { mockClient } from 'aws-sdk-client-mock';
+import { FirehoseClient, PutRecordBatchCommand } from '@aws-sdk/client-firehose';
 
 import Connector from '../../../src/connectors/firehose';
 
 import { debug } from '../../../src/utils';
 
 describe('connectors/firehose.js', () => {
+  let mockFirehose;
+
+  beforeEach(() => {
+    mockFirehose = mockClient(FirehoseClient);
+  });
+
   afterEach(() => {
-    AWS.restore('Firehose');
+    mockFirehose.restore();
   });
 
   it('should put', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, {}));
-    AWS.mock('Firehose', 'putRecordBatch', spy);
+    const spy = sinon.spy((_) => ({}));
+    mockFirehose.on(PutRecordBatchCommand).callsFake(spy);
 
     const inputParams = {
       Records: [

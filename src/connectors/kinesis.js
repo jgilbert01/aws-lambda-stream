@@ -1,12 +1,13 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import { Kinesis, config } from 'aws-sdk';
+import { KinesisClient, PutRecordsCommand } from '@aws-sdk/client-kinesis';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
+import { ConfiguredRetryStrategy } from '@smithy/util-retry';
 import Promise from 'bluebird';
 
 import {
-  defaultRetryConfig, wait, getDelay, assertMaxRetries,
+  defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
-
-config.setPromisesDependency(Promise);
+import { defaultDebugLogger } from '../utils/log';
 
 class Connector {
   constructor({
@@ -17,14 +18,13 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.streamName = streamName || 'undefined';
-    this.stream = new Kinesis({
-      httpOptions: {
-        timeout,
-        connectTimeout: timeout,
-      },
-      maxRetries: 10, // Default: 3
-      retryDelayOptions: { base: 200 }, // Default: 100 ms
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
+    this.stream = new KinesisClient({
+      requestHandler: new NodeHttpHandler({
+        requestTimeout: timeout,
+        connectionTimeout: timeout,
+      }),
+      retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
+      logger: defaultDebugLogger(debug),
     });
     this.retryConfig = retryConfig;
   }
@@ -42,8 +42,7 @@ class Connector {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this.stream.putRecords(params)
-        .promise()
+      .then(() => Promise.resolve(this.stream.send(new PutRecordsCommand(params)))
         .tap(this.debug)
         .tapCatch(this.debug)
         .then((resp) => {

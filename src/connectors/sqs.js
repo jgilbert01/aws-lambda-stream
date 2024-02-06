@@ -1,12 +1,13 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import { SQS, config } from 'aws-sdk';
 import Promise from 'bluebird';
+import { SQSClient, SendMessageBatchCommand } from '@aws-sdk/client-sqs';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
+import { ConfiguredRetryStrategy } from '@smithy/util-retry';
 
 import {
-  defaultRetryConfig, wait, getDelay, assertMaxRetries,
+  defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
-
-config.setPromisesDependency(Promise);
+import { defaultDebugLogger } from '../utils/log';
 
 class Connector {
   constructor({
@@ -17,14 +18,13 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.queueUrl = queueUrl || 'undefined';
-    this.queue = new SQS({
-      httpOptions: {
-        timeout,
-        connectTimeout: timeout,
-      },
-      maxRetries: 10, // Default: 3
-      retryDelayOptions: { base: 200 }, // Default: 100 ms
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
+    this.queue = new SQSClient({
+      requestHandler: new NodeHttpHandler({
+        requestTimeout: timeout,
+        connectionTimeout: timeout,
+      }),
+      retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
+      logger: defaultDebugLogger(debug),
     });
     this.retryConfig = retryConfig;
   }
@@ -42,8 +42,7 @@ class Connector {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this.queue.sendMessageBatch(params)
-        .promise()
+      .then(() => Promise.resolve(this.queue.send(new SendMessageBatchCommand(params)))
         .tap(this.debug)
         .tapCatch(this.debug)
         .then((resp) => {

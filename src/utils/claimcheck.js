@@ -1,5 +1,3 @@
-import _ from 'highland';
-
 import { decompress } from './compression';
 import { faulty } from './faults';
 import { getObjectFromS3 } from './s3';

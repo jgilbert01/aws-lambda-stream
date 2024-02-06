@@ -5,7 +5,15 @@ import _ from 'highland';
 import { Readable } from 'stream';
 
 import {
-  putObjectToS3, deleteObjectFromS3, getObjectFromS3, listObjectsFromS3, pageObjectsFromS3, splitS3Object, toGetObjectRequest, toGetObjectRequest2, getObjectFromS3AsStream,
+  putObjectToS3,
+  deleteObjectFromS3,
+  getObjectFromS3,
+  listObjectsFromS3,
+  pageObjectsFromS3,
+  splitS3Object,
+  toGetObjectRequest,
+  toGetObjectRequest2,
+  getObjectFromS3AsStream,
 } from '../../../src/utils/s3';
 
 import Connector from '../../../src/connectors/s3';
@@ -159,7 +167,7 @@ describe('utils/s3.js', () => {
     objectStream.push('name,color\nBob,Red\nAlice,Yellow'); // data in the stream
     objectStream.push(null); // end of file
 
-    const stub = sinon.stub(Connector.prototype, 'getObjectStream').returns(objectStream);
+    const stub = sinon.stub(Connector.prototype, 'getObjectStream').returns(Promise.resolve(objectStream));
 
     const uows = [{
       getRequest: {
@@ -217,7 +225,6 @@ describe('utils/s3.js', () => {
       })
       .done(done);
   });
-
 
   it('should get from s3 sns', (done) => {
     const uows = [{
@@ -388,7 +395,6 @@ describe('utils/s3.js', () => {
       .done(done);
   });
 });
-
 
 const GET_RESPONSE = {
   AcceptRanges: 'bytes',

@@ -10,7 +10,6 @@ import {
   outSkip,
 } from '../filters';
 
-
 export const materializeS3 = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   .filter(outSkip)
 

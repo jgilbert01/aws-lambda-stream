@@ -40,7 +40,6 @@ describe('flavors/update.js', () => {
       UnprocessedKeys: {},
     });
 
-
     sinon.stub(KmsConnector.prototype, 'generateDataKey').resolves(MOCK_GEN_DK_RESPONSE);
 
     const events = toDynamodbRecords([

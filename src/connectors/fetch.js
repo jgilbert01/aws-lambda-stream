@@ -1,9 +1,7 @@
 import 'isomorphic-fetch';
 
-import realFetch, { FetchError } from 'node-fetch';
+import { FetchError } from 'node-fetch';
 import Promise from 'bluebird';
-
-realFetch.Promise = Promise;
 
 class Connector {
   constructor(
@@ -30,11 +28,11 @@ class Connector {
       ...request,
     });
 
-    return fetch(url, {
+    return Promise.resolve(fetch(url, {
       agent: this.httpsAgent,
       timeout: this.timeout,
       ...request,
-    })
+    }))
       .tap(this.log)
       .then((res) => (res.ok ? res : Promise.reject(new FetchError(`HTTP Error Response: ${res.status} ${res.statusText}`, 'status-code'))))
       .then((res) => (res.status === 204 ? this.defaultResponse[204][responseType] : res[responseType]()))

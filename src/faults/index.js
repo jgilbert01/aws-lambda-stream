@@ -1,7 +1,5 @@
 import _ from 'highland';
-import * as uuid from 'uuid';
-
-import { now, trimAndRedact } from '../utils';
+import { now, trimAndRedact, uuid } from '../utils';
 
 export const FAULT_EVENT_TYPE = 'fault';
 

@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-stream",
-  "version": "0.51.0",
+  "version": "1.0.0",
   "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
@@ -18,6 +18,12 @@
   "files": [
     "lib"
   ],
+  "exports": {
+    ".": "./lib/index.js",
+    "./pipelines": "./lib/pipelines/index.js",
+    "./faults": "./lib/faults/index.js",
+    "./*": "./lib/*.js"
+  },
   "scripts": {
     "build": "npm run clean && npm run compile",
     "compile": "babel src --out-dir lib",
@@ -48,41 +54,59 @@
     "url": "https://github.com/jgilbert01/aws-lambda-stream.git"
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.450.0",
+    "@aws-sdk/client-dynamodb": "^3.450.0",
+    "@aws-sdk/client-eventbridge": "^3.450.0",
+    "@aws-sdk/client-firehose": "^3.450.0",
+    "@aws-sdk/client-kinesis": "^3.450.0",
+    "@aws-sdk/client-kms": "^3.450.0",
+    "@aws-sdk/client-lambda": "^3.450.0",
+    "@aws-sdk/client-s3": "^3.450.0",
+    "@aws-sdk/client-secrets-manager": "^3.450.0",
+    "@aws-sdk/client-sns": "^3.450.0",
+    "@aws-sdk/client-sqs": "^3.450.0",
+    "@aws-sdk/lib-dynamodb": "^3.450.0",
+    "@aws-sdk/util-dynamodb": "^3.450.0",
     "@babel/cli": "^7.10.0",
     "@babel/core": "^7.10.0",
     "@babel/plugin-transform-runtime": "^7.10.0",
     "@babel/preset-env": "^7.10.0",
     "@babel/register": "^7.10.0",
-    "aws-kms-ee": "^0.14.0",
-    "aws-sdk": "^2.1309.0",
-    "aws-sdk-mock": "^4.5.0",
+    "@babel/runtime": "^7.10.0",
+    "@smithy/node-http-handler": "^2.1.8",
+    "@smithy/util-retry": "^2.1.1",
+    "@smithy/util-stream": "^2.1.1",
+    "aws-kms-ee": "^1.0.0",
+    "aws-sdk-client-mock": "^3.0.0",
     "babel-eslint": "^10.0.0",
     "babel-plugin-istanbul": "^5.2.0",
     "better-npm-run": "^0.1.1",
+    "bluebird": "^3.7.1",
     "chai": "^4.2.0",
+    "debug": "^4.1.1",
     "eslint": "^6.7.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-formatter-pretty": "^3.0.1",
     "eslint-plugin-import": "^2.18.2",
     "fetch-mock": "^9.11.0",
-    "lint-staged": "^9.4.3",
-    "mocha": "^10.2.0",
-    "nyc": "^14.1.1",
-    "sinon": "^7.5.0",
-    "sinon-chai": "^3.3.0",
-    "@babel/runtime": "^7.10.0",
-    "bluebird": "^3.7.1",
-    "debug": "^4.1.1",
     "highland": "^2.13.5",
     "isomorphic-fetch": "^3.0.0",
+    "lint-staged": "^9.4.3",
     "lodash": "^4.17.15",
     "memory-cache": "^0.2.0",
-    "node-fetch": "^2.6.1",
-    "uuid": "^3.3.3"
+    "mocha": "^10.2.0",
+    "node-fetch": "^2.7.0",
+    "nyc": "^14.1.1",
+    "sinon": "^17.0.1",
+    "sinon-chai": "^3.7.0",
+    "uuid": "^9.0.1"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x",
-    "aws-kms-ee": "0.x",
+    "@smithy/node-http-handler": "2.x",
+    "@smithy/util-retry": "2.x",
+    "@smithy/util-stream": "2.x",
+    "aws-kms-ee": "1.x",
     "bluebird": "3.x",
     "debug": "4.x",
     "highland": "2.x",
@@ -90,7 +114,7 @@
     "lodash": "4.x",
     "memory-cache": "0.x",
     "node-fetch": "2.x",
-    "uuid": "3.x"
+    "uuid": "9.x"
   },
   "dependencies": {
     "object-sizeof": "^2.6.0"

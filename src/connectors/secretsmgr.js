@@ -1,8 +1,8 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import { config, SecretsManager } from 'aws-sdk';
+import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
-
-config.setPromisesDependency(Promise);
+import { defaultDebugLogger } from '../utils/log';
 
 /**
  * All secrets are combined to reduce the number of calls
@@ -17,12 +17,12 @@ class Connector {
   }) {
     this.debug = /* istanbul ignore next */ (msg) => debug('%j', msg);
     this.secretId = secretId;
-    this.sm = new SecretsManager({
-      httpOptions: {
-        timeout,
-        connectTimeout: timeout,
-      },
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
+    this.sm = new SecretsManagerClient({
+      requestHandler: new NodeHttpHandler({
+        requestTimeout: timeout,
+        connectionTimeout: timeout,
+      }),
+      logger: defaultDebugLogger(debug),
     });
   }
 
@@ -32,8 +32,7 @@ class Connector {
         SecretId: this.secretId,
       };
 
-      this.secrets = await this.sm.getSecretValue(params).promise()
-        // .tap(this.debug) // *** DO NOT LOGGING SECRETS ***
+      this.secrets = await Promise.resolve(this.sm.send(new GetSecretValueCommand(params)))
         .tapCatch(this.debug)
         .then((data) => Buffer.from(data.SecretString, 'base64').toString())
         .then((data) => JSON.parse(data));

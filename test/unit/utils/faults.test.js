@@ -127,7 +127,6 @@ describe('utils/faults.js', () => {
       updateRequest: await faultify(rule.toUpdateRequest)(uow, rule),
     }), false);
 
-
     _(uows)
       .flatMap(toUpdateRequest({
         toUpdateRequest: () => { throw new Error('faulty or faultyasync in stream'); },
