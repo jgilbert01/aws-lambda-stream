@@ -22,3 +22,4 @@ export * from './split';
 export * from './sqs';
 export * from './tags';
 export * from './time';
+export * from './uow';
