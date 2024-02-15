@@ -24,7 +24,15 @@ export const decryptEvent = ({
       return _(Promise.resolve(uow));
     }
 
-    const p = decryptObject(omit(uow.event, eemField), { ...uow.event[eemField], AES })
+    const p = Promise.resolve()
+      .then(() => {
+        try {
+          return decryptObject(omit(uow.event, eemField), { ...uow.event[eemField], AES });
+        } catch (err) {
+          // istanbul ignore next
+          return Promise.reject(err);
+        }
+      })
       // .tap(debug)
       .tapCatch(debug)
       .then((decryptResponse) => ({
@@ -56,7 +64,7 @@ export const encryptEvent = ({
   masterKeyAlias = process.env.MASTER_KEY_ALIAS,
   regions = (process.env.KMS_REGIONS && process.env.KMS_REGIONS.split(',')),
   AES = true,
-  parallel = Number(process.env.ENCRYPTION_PARALLEL) || Number(process.env.PARALLEL) || 8,
+    parallel = Number(process.env.ENCRYPTION_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
   const encrypt = (uow) => {
     if (!eem || !uow[sourceField]) {
@@ -68,7 +76,7 @@ export const encryptEvent = ({
       regions,
       ...eem, // fields and overrides
       AES,
-    })
+          })
       // .tap(debug)
       .tapCatch(debug)
       .then((encryptResponse) => ({
