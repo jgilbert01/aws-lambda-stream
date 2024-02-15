@@ -64,7 +64,7 @@ export const encryptEvent = ({
   masterKeyAlias = process.env.MASTER_KEY_ALIAS,
   regions = (process.env.KMS_REGIONS && process.env.KMS_REGIONS.split(',')),
   AES = true,
-    parallel = Number(process.env.ENCRYPTION_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  parallel = Number(process.env.ENCRYPTION_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
   const encrypt = (uow) => {
     if (!eem || !uow[sourceField]) {
