@@ -76,7 +76,7 @@ export const encryptEvent = ({
       regions,
       ...eem, // fields and overrides
       AES,
-          })
+    })
       // .tap(debug)
       .tapCatch(debug)
       .then((encryptResponse) => ({
