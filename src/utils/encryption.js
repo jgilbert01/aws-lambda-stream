@@ -24,7 +24,15 @@ export const decryptEvent = ({
       return _(Promise.resolve(uow));
     }
 
-    const p = decryptObject(omit(uow.event, eemField), { ...uow.event[eemField], AES })
+    const p = Promise.resolve()
+      .then(() => {
+        try {
+          return decryptObject(omit(uow.event, eemField), { ...uow.event[eemField], AES });
+        } catch (err) {
+          // istanbul ignore next
+          return Promise.reject(err);
+        }
+      })
       // .tap(debug)
       .tapCatch(debug)
       .then((decryptResponse) => ({

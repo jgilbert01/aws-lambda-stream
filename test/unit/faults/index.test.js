@@ -6,7 +6,7 @@ import Connector from '../../../src/connectors/eventbridge';
 
 import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import {
-  faults, flushFaults, FAULT_EVENT_TYPE, trimAndRedact,
+  faults, flushFaults, FAULT_EVENT_TYPE,
 } from '../../../src/faults';
 
 import { defaultOptions } from '../../../src/utils/opt';
@@ -127,52 +127,5 @@ describe('faults/index.js', () => {
         expect(collected.length).to.equal(0);
       })
       .done(done);
-  });
-
-  it('should redact batch uow', () => {
-    const uow = {
-      batch: [
-        {
-          pipeline: 'p1',
-          record: {
-            f2: 'v2', // not touched
-          },
-          event: {
-            type: 'f2',
-            entity: {
-              f1: 'v1',
-              f2: 'v2',
-            },
-            eem: { fields: ['f2'] },
-          },
-          decryptResponse: {},
-        },
-      ],
-      inputParams: {
-        f2: 'v2',
-      },
-    };
-
-    expect(trimAndRedact(uow)).to.deep.equal({
-      batch: [
-        {
-          pipeline: 'p1',
-          record: {
-            f2: 'v2',
-          },
-          event: {
-            type: 'f2',
-            entity: {
-              f1: 'v1',
-              f2: '[REDACTED]',
-            },
-            eem: { fields: ['f2'] },
-          },
-        },
-      ],
-      inputParams: {
-        f2: '[REDACTED]',
-      },
-    });
   });
 });

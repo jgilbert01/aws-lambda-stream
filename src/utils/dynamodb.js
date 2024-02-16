@@ -113,6 +113,7 @@ export const batchGetDynamoDB = ({
   batchGetResponseField = 'batchGetResponse',
   parallel = Number(process.env.GET_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+  decrypt = async (data) => data,
 } = {}) => {
   const connector = new Connector({ debug, tableName, timeout });
 
@@ -120,6 +121,16 @@ export const batchGetDynamoDB = ({
     if (!uow[batchGetRequestField]) return _(Promise.resolve(uow));
 
     const p = connector.batchGet(uow[batchGetRequestField])
+      .then(async (batchGetResponse) => ({
+        ...batchGetResponse,
+        Responses: await Object.keys(batchGetResponse.Responses).reduce(async (a, c) => {
+          a = await a;
+          return {
+            ...a,
+            [c]: await Promise.all(batchGetResponse.Responses[c]?.map(decrypt)),
+          };
+        }, {}),
+      }))
       .then((batchGetResponse) => ({ ...uow, [batchGetResponseField]: batchGetResponse }))
       .catch(rejectWithFault(uow));
 
@@ -140,6 +151,7 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
   queryResponseField = 'queryResponse',
   parallel = Number(process.env.QUERY_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+  decrypt = async (data) => data,
 } = {}) => {
   const connector = new Connector({ debug, tableName, timeout });
 
@@ -152,6 +164,7 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
     const p = (cached
       ? Promise.resolve(cached)
       : connector.query(uow[queryRequestField])
+        .then((queryResponse) => Promise.all(queryResponse.map(decrypt)))
         .then((queryResponse) => {
           memoryCache.put(req, queryResponse);
           return queryResponse;
@@ -229,7 +242,7 @@ export const scanSplitDynamoDB = ({
   scanResponseField = 'scanResponse',
   parallel = Number(process.env.SCAN_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-
+  decrypt = async (data) => data,
 } = {}) => {
   const connector = new Connector({ debug, tableName, timeout });
 
@@ -246,6 +259,7 @@ export const scanSplitDynamoDB = ({
       };
 
       connector.scan(params)
+        .then(async ({ LastEvaluatedKey, Items, ...rest }) => ({ LastEvaluatedKey, Items: await Promise.all(Items.map(decrypt)), ...rest }))
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;
           itemsCount += Items.length;
@@ -296,6 +310,7 @@ export const querySplitDynamoDB = ({
   querySplitResponseField = 'querySplitResponse',
   parallel = Number(process.env.SCAN_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+  decrypt = async (data) => data,
 } = {}) => {
   const connector = new Connector({ debug, tableName, timeout });
 
@@ -312,6 +327,7 @@ export const querySplitDynamoDB = ({
       };
 
       connector.queryPage(params)
+        .then(async ({ LastEvaluatedKey, Items, ...rest }) => ({ LastEvaluatedKey, Items: await Promise.all(Items.map(decrypt)), ...rest }))
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;
           itemsCount += Items.length;

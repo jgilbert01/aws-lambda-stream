@@ -1,8 +1,7 @@
 import _ from 'highland';
 import * as uuid from 'uuid';
-import cloneDeepWith from 'lodash/cloneDeepWith';
 
-import { now } from '../utils';
+import { now, trimAndRedact } from '../utils';
 
 export const FAULT_EVENT_TYPE = 'fault';
 
@@ -90,65 +89,11 @@ const logErr = (err) => {
         errorType: err.name,
         pipeline: err.uow.pipeline || 'undefined',
         handled: err.uow !== undefined,
+        retryable: err.retryable,
         stackTrace: err.stack,
       }));
     } else {
       console.error(err);
     }
-  }
-};
-
-export const trimAndRedact = (_uow) => {
-  const fields = (_uow.batch || [_uow]).reduce((a, c) => {
-    const eem = c.event?.eem || c.undecryptedEvent?.eem;
-    const f = eem?.fields || [];
-    return [...a, ...f];
-  }, []);
-  const cache = [];
-
-  const cloneCustomizer = (value, key) => {
-    if (fields.includes(key)) {
-      return '[REDACTED]';
-    } else {
-      if (Buffer.isBuffer(value)) {
-        return `[BUFFER: ${value.length}]`;
-      }
-
-      if (typeof value === 'object' && value !== null) {
-        if (cache.includes(value)) {
-          return '[CIRCULAR]';
-        } else {
-          cache.push(value);
-        }
-      }
-    }
-    return undefined;
-  };
-
-  const tr = (uow) => {
-    const {
-      pipeline, record, event, decryptResponse, undecryptedEvent, encryptResponse, ...rest
-    } = uow;
-
-    return {
-      pipeline,
-      record, // DO NOT redact so we can resubmit
-      ...cloneDeepWith({
-        event: undecryptedEvent || event,
-        ...rest,
-      }, cloneCustomizer),
-    };
-  };
-
-  if (!_uow.batch) {
-    return tr(_uow);
-  } else {
-    const { batch, ...rest2 } = _uow;
-    return {
-      batch: _uow.batch.map((u) => tr(u)),
-      ...cloneDeepWith({
-        ...rest2,
-      }, cloneCustomizer),
-    };
   }
 };
