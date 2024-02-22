@@ -64,16 +64,20 @@ describe('filters/index.js', () => {
   });
 
   it('should filter on compound content', () => {
+    const errorFilter = (uow) => { uow.isSkipped = true; };
     const rule = {
       filters: [
         (uow, r) => uow.event.tags.f1 === r.value,
         (uow, r) => uow.event.tags.f2 === r.value,
       ],
+      errorFilter,
       value: 'v1',
     };
 
     expect(filterOnContent(rule, { event: { tags: { f1: 'v1', f2: 'v1' } } })).to.be.true;
-    expect(filterOnContent(rule, { event: { tags: { f1: 'v2', f2: 'v1' } } })).to.be.false;
+    const event = { event: { tags: { f1: 'v2', f2: 'v1' } } };
+    expect(filterOnContent(rule, event)).to.be.false;
+    expect(event.isSkipped).to.be.true;
     expect(filterOnContent(rule, { event: { tags: { f1: 'v1', f2: 'v2' } } })).to.be.false;
   });
 });
