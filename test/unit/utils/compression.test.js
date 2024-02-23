@@ -36,7 +36,8 @@ describe('utils/compression.js', () => {
     // console.log('event.length: ', event.length); // 3317
     // console.log('compressed.length: ', compressed.length); // 1097
     // console.log('ratio: ', 100 - (compressed.length / event.length) * 100); // 67%
-    // console.log('compressed: ', JSON.stringify(JSON.parse(compressed), null, 2));
+    console.log('stringified: ', event);
+    console.log('compressed: ', compressed);
     // console.log('decompressed: ', JSON.stringify(decompressed, null, 2));
 
     expect(event.length).to.equal(3317);
