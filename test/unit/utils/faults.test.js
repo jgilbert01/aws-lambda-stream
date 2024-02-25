@@ -47,13 +47,13 @@ describe('utils/faults.js', () => {
   it('should handle faulty asynchronous function', async () => {
     const uow = {};
     try {
-      const f = () => Promise.reject(new Error('faultyasync'));
+      const f = () => Promise.reject(new Error('faultyAsync'));
       await faultyAsync(f)(uow);
     } catch (err) {
       expect(err.uow).to.deep.equal(uow);
       return;
     }
-    throw new Error('failed faultyasync');
+    throw new Error('failed faultyAsync');
   });
 
   it('should handle faultify', async () => {
@@ -104,7 +104,7 @@ describe('utils/faults.js', () => {
 
     _(uows)
       .flatMap(toUpdateRequest({
-        toUpdateRequest: () => Promise.reject(new Error('faultyasync in stream')),
+        toUpdateRequest: () => Promise.reject(new Error('faultyAsync in stream')),
       }))
       // .tap((uow) => console.log(JSON.stringify(uow, null, 2)))
       .errors((err, push) => {
@@ -129,7 +129,7 @@ describe('utils/faults.js', () => {
 
     _(uows)
       .flatMap(toUpdateRequest({
-        toUpdateRequest: () => { throw new Error('faulty or faultyasync in stream'); },
+        toUpdateRequest: () => { throw new Error('faulty or faultyAsync in stream'); },
       }))
       // .tap((uow) => console.log(JSON.stringify(uow, null, 2)))
       .errors((err, push) => {
