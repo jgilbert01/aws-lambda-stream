@@ -11,7 +11,7 @@ import {
   filterOnEventType, filterOnContent,
 } from '../filters';
 
-import { putDynamoDB } from '../utils/dynamodb';
+import { putDynamoDB } from '../sinks/dynamodb';
 
 /**
  * used when you need to correlate the same events under multiple keys

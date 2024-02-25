@@ -2,9 +2,9 @@ import _ from 'highland';
 
 import Connector from '../connectors/sns';
 
-import { rejectWithFault } from './faults';
-import { debug as d } from './print';
-import { ratelimit } from './ratelimit';
+import { rejectWithFault } from '../utils/faults';
+import { debug as d } from '../utils/print';
+import { ratelimit } from '../utils/ratelimit';
 
 export const publishToSns = ({ // eslint-disable-line import/prefer-default-export
   debug = d('sns'),

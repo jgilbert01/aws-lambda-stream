@@ -1,10 +1,14 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty,
-  putObjectToS3, getObjectFromS3, deleteObjectFromS3,
   splitObject,
 } from '../utils';
-
+import {
+  getObjectFromS3,
+} from '../queries/s3';
+import {
+  putObjectToS3, deleteObjectFromS3,
+} from '../sinks/s3';
 import {
   filterOnEventType, filterOnContent,
   outSkip,

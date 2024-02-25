@@ -1,9 +1,11 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  updateDynamoDB, splitObject, compact,
+  splitObject, compact,
 } from '../utils';
-
+import {
+  updateDynamoDB,
+} from '../sinks/dynamodb';
 import {
   filterOnEventType, filterOnContent,
   outSkip, outSourceIsSelf,

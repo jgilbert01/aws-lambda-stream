@@ -8,7 +8,7 @@ import {
 } from '../../../src';
 
 import { toKinesisRecords, fromKinesis } from '../../../src/from/kinesis';
-import { updateExpression, timestampCondition } from '../../../src/utils/dynamodb';
+import { updateExpression, timestampCondition } from '../../../src/sinks/dynamodb';
 
 import Connector from '../../../src/connectors/dynamodb';
 

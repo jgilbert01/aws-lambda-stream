@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
-import { publishToEventBridge as publish } from '../../../src/utils/eventbridge';
+import { publishToEventBridge as publish } from '../../../src/sinks/eventbridge';
 
 import Connector from '../../../src/connectors/eventbridge';
 

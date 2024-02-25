@@ -2,12 +2,12 @@ import _ from 'highland';
 
 import Publisher from '../connectors/kinesis';
 
-import { toBatchUow, unBatchUow } from './batch';
-import { rejectWithFault } from './faults';
-import { debug as d } from './print';
-import { adornStandardTags } from './tags';
-import { compress } from './compression';
-import { ratelimit } from './ratelimit';
+import { toBatchUow, unBatchUow } from '../utils/batch';
+import { rejectWithFault } from '../utils/faults';
+import { debug as d } from '../utils/print';
+import { adornStandardTags } from '../utils/tags';
+import { compress } from '../utils/compression';
+import { ratelimit } from '../utils/ratelimit';
 
 export const publishToKinesis = ({
   debug = d('kinesis'),

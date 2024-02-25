@@ -2,12 +2,12 @@ import _ from 'highland';
 
 import Connector from '../connectors/eventbridge';
 
-import { toBatchUow, unBatchUow, batchWithSize } from './batch';
-import { rejectWithFault } from './faults';
-import { debug as d } from './print';
-import { adornStandardTags } from './tags';
-import { compress } from './compression';
-import { ratelimit } from './ratelimit';
+import { toBatchUow, unBatchUow, batchWithSize } from '../utils/batch';
+import { rejectWithFault } from '../utils/faults';
+import { debug as d } from '../utils/print';
+import { adornStandardTags } from '../utils/tags';
+import { compress } from '../utils/compression';
+import { ratelimit } from '../utils/ratelimit';
 
 export const publishToEventBridge = ({ // eslint-disable-line import/prefer-default-export
   debug = d('eventbridge'),

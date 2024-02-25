@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
-import { publishToSns } from '../../../src/utils/sns';
+import { publishToSns } from '../../../src/sinks/sns';
 
 import Connector from '../../../src/connectors/sns';
 

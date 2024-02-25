@@ -2,10 +2,10 @@ import _ from 'highland';
 
 import Connector from '../connectors/firehose';
 
-import { toBatchUow, unBatchUow } from './batch';
-import { rejectWithFault } from './faults';
-import { debug as d } from './print';
-import { compress } from './compression';
+import { toBatchUow, unBatchUow } from '../utils/batch';
+import { rejectWithFault } from '../utils/faults';
+import { debug as d } from '../utils/print';
+import { compress } from '../utils/compression';
 
 export const sendToFirehose = ({
   debug = d('firehose'),
@@ -45,18 +45,6 @@ export const sendToFirehose = ({
 
     .flatMap(unBatchUow); // for cleaner logging and testing
 };
-
-// TODO
-// const handleFailedPutCount = (putResponse) => {
-//   if (putResponse.FailedPutCount > 0) {
-//     // const e = new Error();
-//     // TODO
-//     // raise error to resend (will create dups) or
-//     // resend here (will eventually timeout) and/or
-//     // raise fault with failed events
-//   }
-//   return putResponse;
-// };
 
 export const toFirehoseRecord = (e, opt) => ({
   Data: Buffer.from(`${JSON.stringify(e, compress(opt))}\n`),

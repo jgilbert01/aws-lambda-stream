@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
-import { fetch } from '../../../src/utils/fetch';
+import { fetch } from '../../../src/sinks/fetch';
 
 import Connector from '../../../src/connectors/fetch';
 

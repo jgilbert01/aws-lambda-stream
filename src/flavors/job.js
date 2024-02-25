@@ -2,11 +2,14 @@ import _ from 'highland';
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  updateDynamoDB, splitObject,
-  scanSplitDynamoDB, querySplitDynamoDB, queryAllDynamoDB, batchGetDynamoDB,
-  encryptEvent,
+  splitObject, encryptEvent,
 } from '../utils';
-
+import {
+  scanSplitDynamoDB, querySplitDynamoDB, queryAllDynamoDB, batchGetDynamoDB,
+} from '../queries/dynamodb';
+import {
+  updateDynamoDB,
+} from '../sinks/dynamodb';
 import { filterOnEventType, filterOnContent } from '../filters';
 
 export const job = (rule) => (s) => s // eslint-disable-line import/prefer-default-export

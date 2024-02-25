@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import _ from 'highland';
 
 import {
-  throwFault, rejectWithFault, faultify, faulty, faultyasync, faultyAsyncStream,
+  throwFault, rejectWithFault, faultify, faulty, faultyAsync, faultyAsyncStream,
 } from '../../../src/utils/faults';
 
 describe('utils/faults.js', () => {
@@ -48,7 +48,7 @@ describe('utils/faults.js', () => {
     const uow = {};
     try {
       const f = () => Promise.reject(new Error('faultyasync'));
-      await faultyasync(f)(uow);
+      await faultyAsync(f)(uow);
     } catch (err) {
       expect(err.uow).to.deep.equal(uow);
       return;
@@ -60,7 +60,7 @@ describe('utils/faults.js', () => {
     const uow = {};
     try {
       const f = faultify(() => { throw new Error('faultify sync'); });
-      await faultyasync(f)(uow);
+      await faultyAsync(f)(uow);
     } catch (err) {
       expect(err.uow).to.deep.equal(uow);
       return;
