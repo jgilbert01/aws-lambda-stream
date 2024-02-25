@@ -1,3 +1,1 @@
-# my-bff-service
-
-<img src="overview.png" width="700">
+Moved to https://github.com/jgilbert01/templates/tree/master/template-bff-service
