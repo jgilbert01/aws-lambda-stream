@@ -19,13 +19,12 @@ describe('utils/compression.js', () => {
     // console.log('event.length: ', event.length); // 3317
     // console.log('compressed.length: ', compressed.length); // 756
     // console.log('ratio: ', 100 - (compressed.length / event.length) * 100); // 77%
-    console.log('stringified: ', event);
-    console.log('compressed: ', compressed);
+    // console.log('stringified: ', event);
+    // console.log('compressed: ', compressed);
     // console.log('decompressed: ', decompressed);
 
     expect(event.length).to.equal(3317);
-    // TODO - In Github actions this is 760, but in my OSX environment, it's 756.
-    // expect(compressed.length).to.equal(756);
+    expect(compressed.length).to.equal(760);
     expect(decompressed).to.deep.equal(event);
   });
 

@@ -52,9 +52,13 @@ describe('from/kinesis.js', () => {
     })
       .tap(expect.fail)
       .errors((err, push) => {
-        // console.log(err);
+        // console.log(err.message);
         expect(err.name).to.equal('SyntaxError');
-        expect(err.message.substring(0, 18)).to.equal('Unexpected token b');
+        const expectedResponses = [
+          'Expected property ', // Node 20
+          'Unexpected token b', // Node 18
+        ];
+        expect(expectedResponses).to.contain(err.message.substring(0, 18));
         expect(err.uow).to.be.not.null;
       })
       // .tap(console.log)
