@@ -3,38 +3,38 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
-import { putMetrics } from '../../../src/utils/cloudwatch';
+import { invokeLambda } from '../../../src/sinks/lambda';
 
-import Connector from '../../../src/connectors/cloudwatch';
+import Connector from '../../../src/connectors/lambda';
 
-describe('utils/cloudwatch.js', () => {
+describe('utils/lambda.js', () => {
   afterEach(sinon.restore);
 
-  it('should putMetrics', (done) => {
-    const stub = sinon.stub(Connector.prototype, 'put').resolves({});
+  it('should invoke lambda', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'invoke').resolves({});
 
     const uows = [{
-      putRequest: {
-        Namespace: 'ns',
+      invokeRequest: {
+        FunctionName: 'helloworld',
       },
     }];
 
     _(uows)
-      .through(putMetrics())
+      .through(invokeLambda())
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
 
         expect(stub).to.have.been.calledWith({
-          Namespace: 'ns',
+          FunctionName: 'helloworld',
         });
 
         expect(collected.length).to.equal(1);
         expect(collected[0]).to.deep.equal({
-          putRequest: {
-            Namespace: 'ns',
+          invokeRequest: {
+            FunctionName: 'helloworld',
           },
-          putResponse: {},
+          invokeResponse: {},
         });
       })
       .done(done);

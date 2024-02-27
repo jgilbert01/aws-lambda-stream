@@ -29,13 +29,11 @@ export const faulty = (funct, ignore = false) => (uow, ...args) => { // eslint-d
   }
 };
 
-export const faultyasync = (funct, ignore = false) => (uow, ...args) =>
+export const faultyAsync = (funct, ignore = false) => (uow, ...args) =>
   funct(uow, ...args)
     .catch(rejectWithFault(uow, ignore));
 
-export const faultyAsyncStream = (funct, ignore = false) => (...args) => _(faultyasync(funct, ignore)(...args));
-
-export const faultyAsync = faultyAsyncStream; // backwards compatibility
+export const faultyAsyncStream = (funct, ignore = false) => (...args) => _(faultyAsync(funct, ignore)(...args));
 
 export const faultify = (func) => (...args) => new Promise((resolve, reject) => {
   try {

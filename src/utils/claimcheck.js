@@ -1,8 +1,6 @@
-import _ from 'highland';
-
 import { decompress } from './compression';
 import { faulty } from './faults';
-import { getObjectFromS3 } from './s3';
+import { getObjectFromS3 } from '../queries/s3';
 
 // claim-check pattern support
 // https://www.enterpriseintegrationpatterns.com/patterns/messaging/StoreInLibrary.html

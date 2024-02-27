@@ -1,4 +1,4 @@
-import { publishToEventBridge } from './eventbridge';
+import { publishToEventBridge } from '../sinks/eventbridge';
 
 import { debug } from './print';
 

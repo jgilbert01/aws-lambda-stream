@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import { toDynamodbRecords, fromDynamodb } from '../../../src/from/dynamodb';
-import { updateExpression, timestampCondition } from '../../../src/utils/dynamodb';
+import { updateExpression, timestampCondition } from '../../../src/sinks/dynamodb';
 
 import {
   initialize, initializeFrom,

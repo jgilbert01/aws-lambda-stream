@@ -2,7 +2,7 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { getSecrets } from '../../../src/utils/secretsmgr';
+import { getSecrets } from '../../../src/queries/secretsmgr';
 
 import Connector from '../../../src/connectors/secretsmgr';
 

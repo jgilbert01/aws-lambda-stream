@@ -1,6 +1,7 @@
 import _ from 'highland';
 
-import { getObjectFromS3, decompress } from '../utils';
+import { getObjectFromS3 } from '../queries/s3';
+import { decompress } from '../utils';
 
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events

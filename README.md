@@ -149,12 +149,12 @@ const toEvent = (uow) => ({
 
 > Note: It is best to perform mapping in a separate upstream step from the step that will perform the async-non-blocking-io to help maximize the potential for concurrent processing. (aka cooperative programming)
 
-## Connectors
+## Connectors and Sinks
 At the end of a stream processor there is usually a _sink_ step that persists the results to a datastore or another stream. These external calls are wrapped in thin `Connector` classes so that they can be easily _mocked_ for unit testing.
 
-These connectors are then wrapped with utility functions, such as `update` and `publish`, to integrate them into the streaming framework. For example, the promise returned from the connector is normalized to a [stream](https://caolan.github.io/highland/#_(source)), fault handling is provided and features such as [parallel](https://caolan.github.io/highland/#parallel) and [batch](https://caolan.github.io/highland/#batch) are utilized.
+These connectors are then wrapped with _sink_ functions, such as `update` and `publish`, to integrate them into the streaming framework. For example, the promise returned from the connector is normalized to a [stream](https://caolan.github.io/highland/#_(source)), fault handling is provided and features such as [parallel](https://caolan.github.io/highland/#parallel) and [batch](https://caolan.github.io/highland/#batch) are utilized.
 
-These utility functions leverage _currying_ to override default configuration settings, such as the _batchSize_ and the number of _parallel_ asyn-non-blocking-io executions.
+These _sink_ functions leverage _currying_ to override default configuration settings, such as the _batchSize_ and the number of _parallel_ asyn-non-blocking-io executions.
 
 Here is the example of using the `update` function.
 
@@ -307,7 +307,7 @@ const PIPELINES = {
 Here are some example rules. The `id`, `flavor`, and `eventType` fields are required. The remaining fields are defined by the specified pipeline flavor. You can define functions inline, but it is best to implement and unit test them separately.
 
 ```javascript
-import materialize from 'aws-lambda-stream';
+import { materialize } from 'aws-lambda-stream';
 
 const RULES = [
   {
@@ -432,7 +432,6 @@ There are various other utilities in the utils folder.
 * `update` - stream steps for updating rows in a single DynamoDB table
 * `updateExpression` - creates an expression from a plain old json object
   * see _Mapping_ above
-  * _consider using [DynamoDB Toolbox](https://github.com/jeremydaly/dynamodb-toolbox) for richer support_
 * `timestampCondition` - creates an expression for performing _inverse oplocks_
 
 In addition:
@@ -481,11 +480,8 @@ The following links contain additional information:
 * My [Blog](https://medium.com/@jgilbert001) covers many topics such as _System Wide Event Sourcing & CQRS_
 
 ## Project Templates
-The following project templates are provided to help get your event platform up and running:
+The following project templates are provided to help get your event platform up and running: https://github.com/jgilbert01/templates
 
 * event-hub
 * event-lake-s3
-* and more coming...
-
-Create your own project using the Serverless Framework, such as:
-`sls create --template-url https://github.com/jgilbert01/aws-lambda-stream/tree/master/templates/event-hub --path myprefix-event-hub`
+* and more...

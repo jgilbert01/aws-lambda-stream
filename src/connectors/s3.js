@@ -1,8 +1,12 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import { S3, config } from 'aws-sdk';
+// import { S3, config } from 'aws-sdk';
+import { Readable } from 'stream';
+import {
+  DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
+} from '@aws-sdk/client-s3';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
-
-config.setPromisesDependency(Promise);
+import { defaultDebugLogger } from '../utils/log';
 
 class Connector {
   constructor({
@@ -12,12 +16,12 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.bucketName = bucketName || 'undefined';
-    this.bucket = new S3({
-      httpOptions: {
-        timeout,
-        connectTimeout: timeout,
-      },
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
+    this.bucket = new S3Client({
+      requestHandler: new NodeHttpHandler({
+        requestTimeout: timeout,
+        connectionTimeout: timeout,
+      }),
+      logger: defaultDebugLogger(debug),
     });
   }
 
@@ -27,9 +31,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this.bucket.putObject(params).promise()
-      .tap(this.debug)
-      .tapCatch(this.debug);
+    return this._sendCommand(new PutObjectCommand(params));
   }
 
   deleteObject(inputParams) {
@@ -38,9 +40,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this.bucket.deleteObject(params).promise()
-      .tap(this.debug)
-      .tapCatch(this.debug);
+    return this._sendCommand(new DeleteObjectCommand(params));
   }
 
   getObject(inputParams) {
@@ -49,9 +49,8 @@ class Connector {
       ...inputParams,
     };
 
-    return this.bucket.getObject(params).promise()
-      .tap(this.debug)
-      .tapCatch(this.debug);
+    return this._sendCommand(new GetObjectCommand(params))
+      .then(async (response) => ({ ...response, Body: await response.Body.transformToString() }));
   }
 
   getObjectStream(inputParams) {
@@ -60,7 +59,8 @@ class Connector {
       ...inputParams,
     };
 
-    return this.bucket.getObject(params).createReadStream();
+    return this._sendCommand(new GetObjectCommand(params))
+      .then((response) => Readable.from(response.Body));
   }
 
   listObjects(inputParams) {
@@ -69,7 +69,11 @@ class Connector {
       ...inputParams,
     };
 
-    return this.bucket.listObjectsV2(params).promise()
+    return this._sendCommand(new ListObjectsV2Command(params));
+  }
+
+  _sendCommand(command) {
+    return Promise.resolve(this.bucket.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

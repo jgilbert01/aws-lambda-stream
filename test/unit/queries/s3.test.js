@@ -5,76 +5,19 @@ import _ from 'highland';
 import { Readable } from 'stream';
 
 import {
-  putObjectToS3, deleteObjectFromS3, getObjectFromS3, listObjectsFromS3, pageObjectsFromS3, splitS3Object, toGetObjectRequest, toGetObjectRequest2, getObjectFromS3AsStream,
-} from '../../../src/utils/s3';
+  getObjectFromS3,
+  listObjectsFromS3,
+  pageObjectsFromS3,
+  splitS3Object,
+  toGetObjectRequest,
+  toGetObjectRequest2,
+  getObjectFromS3AsStream,
+} from '../../../src/queries/s3';
 
 import Connector from '../../../src/connectors/s3';
 
 describe('utils/s3.js', () => {
   afterEach(sinon.restore);
-
-  it('should put object', (done) => {
-    const stub = sinon.stub(Connector.prototype, 'putObject').resolves({});
-
-    const uows = [{
-      putRequest: {
-        Body: JSON.stringify({ f1: 'v1' }),
-        Key: 'k1',
-      },
-    }];
-
-    _(uows)
-      .through(putObjectToS3())
-      .collect()
-      .tap((collected) => {
-        // console.log(JSON.stringify(collected, null, 2));
-
-        expect(stub).to.have.been.calledWith({
-          Body: JSON.stringify({ f1: 'v1' }),
-          Key: 'k1',
-        });
-
-        expect(collected.length).to.equal(1);
-        expect(collected[0]).to.deep.equal({
-          putRequest: {
-            Body: JSON.stringify({ f1: 'v1' }),
-            Key: 'k1',
-          },
-          putResponse: {},
-        });
-      })
-      .done(done);
-  });
-
-  it('should delete object', (done) => {
-    const stub = sinon.stub(Connector.prototype, 'deleteObject').resolves({ DeleteMarker: false });
-
-    const uows = [{
-      deleteRequest: {
-        Key: 'k1',
-      },
-    }];
-
-    _(uows)
-      .through(deleteObjectFromS3())
-      .collect()
-      .tap((collected) => {
-        // console.log(JSON.stringify(collected, null, 2));
-
-        expect(stub).to.have.been.calledWith({
-          Key: 'k1',
-        });
-
-        expect(collected.length).to.equal(1);
-        expect(collected[0]).to.deep.equal({
-          deleteRequest: {
-            Key: 'k1',
-          },
-          deleteResponse: { DeleteMarker: false },
-        });
-      })
-      .done(done);
-  });
 
   it('should get object', (done) => {
     const stub = sinon.stub(Connector.prototype, 'getObject').resolves({
@@ -159,7 +102,7 @@ describe('utils/s3.js', () => {
     objectStream.push('name,color\nBob,Red\nAlice,Yellow'); // data in the stream
     objectStream.push(null); // end of file
 
-    const stub = sinon.stub(Connector.prototype, 'getObjectStream').returns(objectStream);
+    const stub = sinon.stub(Connector.prototype, 'getObjectStream').returns(Promise.resolve(objectStream));
 
     const uows = [{
       getRequest: {
@@ -217,7 +160,6 @@ describe('utils/s3.js', () => {
       })
       .done(done);
   });
-
 
   it('should get from s3 sns', (done) => {
     const uows = [{
@@ -388,7 +330,6 @@ describe('utils/s3.js', () => {
       .done(done);
   });
 });
-
 
 const GET_RESPONSE = {
   AcceptRanges: 'bytes',

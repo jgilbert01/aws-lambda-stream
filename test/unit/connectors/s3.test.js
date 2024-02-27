@@ -1,21 +1,32 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import AWS from 'aws-sdk-mock';
 import _ from 'highland';
+import { Readable } from 'stream';
+import { mockClient } from 'aws-sdk-client-mock';
+import {
+  DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
+} from '@aws-sdk/client-s3';
+import { sdkStreamMixin } from '@smithy/util-stream';
 
 import Connector from '../../../src/connectors/s3';
 
 import { debug } from '../../../src/utils';
 
 describe('connectors/s3.js', () => {
+  let mockS3 = mockClient(S3Client);
+
+  beforeEach(() => {
+    mockS3 = mockClient(S3Client);
+  });
+
   afterEach(() => {
-    AWS.restore('S3');
+    mockS3.restore();
   });
 
   it('should put object', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, {}));
-    AWS.mock('S3', 'putObject', spy);
+    const spy = sinon.spy(() => ({}));
+    mockS3.on(PutObjectCommand).callsFake(spy);
 
     const inputParams = {
       Body: JSON.stringify({ f1: 'v1' }),
@@ -36,8 +47,8 @@ describe('connectors/s3.js', () => {
   });
 
   it('should get object', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, { Body: 'b' }));
-    AWS.mock('S3', 'getObject', spy);
+    const spy = sinon.spy(() => ({ Body: sdkStreamMixin(Readable.from(Buffer.from('b'))) }));
+    mockS3.on(GetObjectCommand).callsFake(spy);
 
     const inputParams = {
       Key: 'k1',
@@ -56,7 +67,8 @@ describe('connectors/s3.js', () => {
   });
 
   it('should get object as stream', (done) => {
-    AWS.mock('S3', 'getObject', Buffer.from('data'));
+    const spy = sinon.spy(() => ({ Body: sdkStreamMixin(Readable.from(Buffer.from('data'))) }));
+    mockS3.on(GetObjectCommand).callsFake(spy);
 
     const inputParams = {
       Key: 'k1',
@@ -68,16 +80,18 @@ describe('connectors/s3.js', () => {
     }).getObjectStream(inputParams);
 
     _(objectStream)
+      .flatMap((readable) => _(readable))
+      .collect()
       .tap((collected) => {
-        expect(collected).to.be.instanceOf(Buffer);
-        expect(collected.toString()).to.equal('data');
+        expect(collected[0]).to.be.instanceOf(Buffer);
+        expect(collected[0].toString()).to.equal('data');
       })
       .done(done);
   });
 
   it('should delete object', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, { DeleteMarker: false }));
-    AWS.mock('S3', 'deleteObject', spy);
+    const spy = sinon.spy(() => ({ DeleteMarker: false }));
+    mockS3.on(DeleteObjectCommand).callsFake(spy);
 
     const inputParams = {
       Key: 'k1',
@@ -98,7 +112,7 @@ describe('connectors/s3.js', () => {
   });
 
   it('should list objects', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, {
+    const spy = sinon.spy(() => ({
       IsTruncated: false,
       NextContinuationToken: '',
       Contents: [
@@ -116,7 +130,7 @@ describe('connectors/s3.js', () => {
       MaxKeys: 1000,
       CommonPrefixes: [],
     }));
-    AWS.mock('S3', 'listObjectsV2', spy);
+    mockS3.on(ListObjectsV2Command).callsFake(spy);
 
     const inputParams = {
       Prefix: 'p1',

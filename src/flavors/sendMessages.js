@@ -1,9 +1,17 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  queryDynamoDB, batchGetDynamoDB,
-  sendToSqs, publishToSns, compact,
+  compact,
 } from '../utils';
+import {
+  queryAllDynamoDB, batchGetDynamoDB,
+} from '../queries/dynamodb';
+import {
+  publishToSns,
+} from '../sinks/sns';
+import {
+  sendToSqs,
+} from '../sinks/sqs';
 
 import { filterOnEventType, filterOnContent, outLatched } from '../filters';
 
@@ -18,7 +26,7 @@ export const sendMessages = (rule) => (s) => s // eslint-disable-line import/pre
   .through(compact(rule))
 
   .map(toQueryRequest(rule))
-  .through(queryDynamoDB(rule))
+  .through(queryAllDynamoDB(rule))
 
   .map(toGetRequest(rule))
   .through(batchGetDynamoDB(rule))

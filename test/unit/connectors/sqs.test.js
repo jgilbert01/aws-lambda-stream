@@ -1,20 +1,27 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import AWS from 'aws-sdk-mock';
 
+import { mockClient } from 'aws-sdk-client-mock';
+import { SQSClient, SendMessageBatchCommand } from '@aws-sdk/client-sqs';
 import Connector from '../../../src/connectors/sqs';
 
 import { debug } from '../../../src/utils';
 
 describe('connectors/sqs.js', () => {
+  let mockSqs = mockClient(SQSClient);
+
+  beforeEach(() => {
+    mockSqs = mockClient(SQSClient);
+  });
+
   afterEach(() => {
-    AWS.restore('SQS');
+    mockSqs.restore();
   });
 
   it('should send msg', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, { Successful: [{ Id: '1' }] }));
-    AWS.mock('SQS', 'sendMessageBatch', spy);
+    const spy = sinon.spy(() => ({ Successful: [{ Id: '1' }] }));
+    mockSqs.on(SendMessageBatchCommand).callsFake(spy);
 
     const inputParams = {
       Entries: [
@@ -44,8 +51,8 @@ describe('connectors/sqs.js', () => {
       { Successful: [{ Id: '3' }] },
     ];
 
-    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
-    AWS.mock('SQS', 'sendMessageBatch', spy);
+    const spy = sinon.spy(() => responses.shift());
+    mockSqs.on(SendMessageBatchCommand).callsFake(spy);
 
     const inputParams = {
       Entries: [
@@ -106,8 +113,8 @@ describe('connectors/sqs.js', () => {
       { Successful: [{ Id: '2' }], Failed: [{ Id: '3' }] },
     ];
 
-    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
-    AWS.mock('SQS', 'sendMessageBatch', spy);
+    const spy = sinon.spy(() => responses.shift());
+    mockSqs.on(SendMessageBatchCommand).callsFake(spy);
 
     const inputParams = {
       Entries: [
@@ -126,7 +133,7 @@ describe('connectors/sqs.js', () => {
       ],
     };
 
-    const data = await new Connector({
+    await new Connector({
       debug: debug('sqs'),
       queueUrl: 'q1',
       retryConfig: {

@@ -1,8 +1,8 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import { config, CloudWatch } from 'aws-sdk';
+import { CloudWatchClient, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
-
-config.setPromisesDependency(Promise);
+import { defaultDebugLogger } from '../utils/log';
 
 class Connector {
   constructor({
@@ -10,11 +10,12 @@ class Connector {
     timeout = Number(process.env.CW_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.cw = new CloudWatch({
-      httpOptions: {
-        timeout,
-      },
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
+    this.cw = new CloudWatchClient({
+      requestHandler: new NodeHttpHandler({
+        requestTimeout: timeout,
+        connectionTimeout: timeout,
+      }),
+      logger: defaultDebugLogger(debug),
     });
   }
 
@@ -24,7 +25,8 @@ class Connector {
       MetricData,
     };
 
-    return this.cw.putMetricData(params).promise()
+    const command = new PutMetricDataCommand(params);
+    return Promise.resolve(this.cw.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

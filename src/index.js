@@ -4,4 +4,6 @@ export * from './filters';
 export * from './flavors';
 export * from './from';
 export * from './pipelines';
+export * from './queries';
+export * from './sinks';
 export * from './utils';

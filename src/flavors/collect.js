@@ -13,7 +13,7 @@ import {
   outSkip,
 } from '../filters';
 
-import { putDynamoDB } from '../utils/dynamodb';
+import { putDynamoDB } from '../sinks/dynamodb';
 
 /**
  * collects events in a micro event store

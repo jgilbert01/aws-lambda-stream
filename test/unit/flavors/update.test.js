@@ -13,11 +13,13 @@ import { toDynamodbRecords, fromDynamodb } from '../../../src/from/dynamodb';
 import { defaultOptions } from '../../../src/utils/opt';
 import {
   toPkQueryRequest, toGetRequest,
+} from '../../../src/queries/dynamodb';
+import {
   updateExpression, timestampCondition,
-} from '../../../src/utils/dynamodb';
+} from '../../../src/sinks/dynamodb';
 import { DynamoDBConnector } from '../../../src/connectors';
 
-import { upd as update } from '../../../src/flavors/update';
+import { update } from '../../../src/flavors/update';
 
 describe('flavors/update.js', () => {
   beforeEach(() => {
@@ -39,7 +41,6 @@ describe('flavors/update.js', () => {
       },
       UnprocessedKeys: {},
     });
-
 
     sinon.stub(KmsConnector.prototype, 'generateDataKey').resolves(MOCK_GEN_DK_RESPONSE);
 

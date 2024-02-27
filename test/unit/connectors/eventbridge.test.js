@@ -1,20 +1,27 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import AWS from 'aws-sdk-mock';
+import { mockClient } from 'aws-sdk-client-mock';
 
+import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
 import Connector from '../../../src/connectors/eventbridge';
 
 import { debug } from '../../../src/utils';
 
 describe('connectors/eventbridge.js', () => {
+  let mockEventBridge;
+
+  beforeEach(() => {
+    mockEventBridge = mockClient(EventBridgeClient);
+  });
+
   afterEach(() => {
-    AWS.restore('EventBridge');
+    mockEventBridge.restore();
   });
 
   it('should publish', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, { Entries: [{ EventId: '1' }], FailedEntryCount: 0 }));
-    AWS.mock('EventBridge', 'putEvents', spy);
+    const spy = sinon.spy((_) => ({ Entries: [{ EventId: '1' }], FailedEntryCount: 0 }));
+    mockEventBridge.on(PutEventsCommand).callsFake(spy);
 
     const inputParams = {
       Entries: [
@@ -43,8 +50,8 @@ describe('connectors/eventbridge.js', () => {
       { Entries: [{ EventId: '3' }], FailedEntryCount: 0 },
     ];
 
-    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
-    AWS.mock('EventBridge', 'putEvents', spy);
+    const spy = sinon.spy((_) => responses.shift());
+    mockEventBridge.on(PutEventsCommand).callsFake(spy);
 
     const inputParams = {
       Entries: [
@@ -106,8 +113,8 @@ describe('connectors/eventbridge.js', () => {
       { Entries: [{ EventId: '2' }, { ErrorCode: 'X' }], FailedEntryCount: 1 },
     ];
 
-    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
-    AWS.mock('EventBridge', 'putEvents', spy);
+    const spy = sinon.spy((_) => responses.shift());
+    mockEventBridge.on(PutEventsCommand).callsFake(spy);
 
     const inputParams = {
       Entries: [
@@ -129,7 +136,7 @@ describe('connectors/eventbridge.js', () => {
       ],
     };
 
-    const data = await new Connector({
+    await new Connector({
       debug: debug('eventbridge'),
       retryConfig: {
         maxRetries: 1,

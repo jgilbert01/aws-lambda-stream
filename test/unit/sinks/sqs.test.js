@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
-import { sendToSqs } from '../../../src/utils/sqs';
+import { sendToSqs } from '../../../src/sinks/sqs';
 
 import Connector from '../../../src/connectors/sqs';
 

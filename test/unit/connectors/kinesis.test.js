@@ -1,20 +1,27 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import AWS from 'aws-sdk-mock';
+import { mockClient } from 'aws-sdk-client-mock';
+import { KinesisClient, PutRecordsCommand } from '@aws-sdk/client-kinesis';
 
 import Connector from '../../../src/connectors/kinesis';
 
 import { debug } from '../../../src/utils';
 
 describe('connectors/kinesis.js', () => {
+  let mockKinesis;
+
+  beforeEach(() => {
+    mockKinesis = mockClient(KinesisClient);
+  });
+
   afterEach(() => {
-    AWS.restore('Kinesis');
+    mockKinesis.restore();
   });
 
   it('should publish', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, { Records: [{ SequenceNumber: '1' }], FailedRecordCount: 0 }));
-    AWS.mock('Kinesis', 'putRecords', spy);
+    const spy = sinon.spy((_) => ({ Records: [{ SequenceNumber: '1' }], FailedRecordCount: 0 }));
+    mockKinesis.on(PutRecordsCommand).callsFake(spy);
 
     const inputParams = {
       Records: [
@@ -44,8 +51,8 @@ describe('connectors/kinesis.js', () => {
       { Records: [{ SequenceNumber: '3' }], FailedRecordCount: 0 },
     ];
 
-    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
-    AWS.mock('Kinesis', 'putRecords', spy);
+    const spy = sinon.spy((_) => responses.shift());
+    mockKinesis.on(PutRecordsCommand).callsFake(spy);
 
     const inputParams = {
       Records: [
@@ -108,8 +115,8 @@ describe('connectors/kinesis.js', () => {
       { Records: [{ SequenceNumber: '2' }, { ErrorCode: 'X' }], FailedRecordCount: 1 },
     ];
 
-    const spy = sinon.spy((params, cb) => cb(null, responses.shift()));
-    AWS.mock('Kinesis', 'putRecords', spy);
+    const spy = sinon.spy((_) => responses.shift());
+    mockKinesis.on(PutRecordsCommand).callsFake(spy);
 
     const inputParams = {
       Records: [
@@ -128,7 +135,7 @@ describe('connectors/kinesis.js', () => {
       ],
     };
 
-    const data = await new Connector({
+    await new Connector({
       debug: debug('kinesis'),
       streamName: 's1',
       retryConfig: {

@@ -2,8 +2,8 @@ import _ from 'highland';
 
 import Connector from '../connectors/cloudwatch';
 
-import { rejectWithFault } from './faults';
-import { debug as d } from './print';
+import { rejectWithFault } from '../utils/faults';
+import { debug as d } from '../utils/print';
 
 export const putMetrics = ({ // eslint-disable-line import/prefer-default-export
   debug = d('cw'),

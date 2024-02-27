@@ -2,25 +2,29 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import debug from 'debug';
-import AWS from 'aws-sdk-mock';
-import Promise from 'bluebird';
+import { mockClient } from 'aws-sdk-client-mock';
+import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 
 import Connector from '../../../src/connectors/lambda';
 
-AWS.Promise = Promise;
-
 describe('connectors/lambda.js', () => {
-  afterEach(() => {
-    AWS.restore('Lambda');
+  let mockLambda;
+
+  beforeEach(() => {
+    mockLambda = mockClient(LambdaClient);
   });
 
-  it('should put', async () => {
-    const spy = sinon.spy((params, cb) => cb(null, {
+  afterEach(() => {
+    mockLambda.restore();
+  });
+
+  it('should invoke', async () => {
+    const spy = sinon.spy((_) => ({
       StatusCode: 200,
       ExecutedVersion: '$LATEST',
       Payload: '"hello fred"',
     }));
-    AWS.mock('Lambda', 'invoke', spy);
+    mockLambda.on(InvokeCommand).callsFake(spy);
 
     const params = {
       FunctionName: 'helloworld',

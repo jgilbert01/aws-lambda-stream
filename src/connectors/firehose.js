@@ -1,8 +1,8 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import { Firehose, config } from 'aws-sdk';
+import { FirehoseClient, PutRecordBatchCommand } from '@aws-sdk/client-firehose';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
-
-config.setPromisesDependency(Promise);
+import { defaultDebugLogger } from '../utils/log';
 
 class Connector {
   constructor({
@@ -12,12 +12,12 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.deliveryStreamName = deliveryStreamName || 'undefined';
-    this.stream = new Firehose({
-      httpOptions: {
-        timeout,
-        connectTimeout: timeout,
-      },
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
+    this.stream = new FirehoseClient({
+      requestHandler: new NodeHttpHandler({
+        requestTimeout: timeout,
+        connectionTimeout: timeout,
+      }),
+      logger: defaultDebugLogger(debug),
     });
   }
 
@@ -27,7 +27,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this.stream.putRecordBatch(params).promise()
+    return Promise.resolve(this.stream.send(new PutRecordBatchCommand(params)))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

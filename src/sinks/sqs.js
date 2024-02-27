@@ -2,10 +2,10 @@ import _ from 'highland';
 
 import Connector from '../connectors/sqs';
 
-import { toBatchUow, unBatchUow } from './batch';
-import { ratelimit } from './ratelimit';
-import { rejectWithFault } from './faults';
-import { debug as d } from './print';
+import { toBatchUow, unBatchUow } from '../utils/batch';
+import { ratelimit } from '../utils/ratelimit';
+import { rejectWithFault } from '../utils/faults';
+import { debug as d } from '../utils/print';
 
 export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   debug = d('sqs'),

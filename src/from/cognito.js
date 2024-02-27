@@ -1,9 +1,8 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 import _ from 'highland';
-import * as uuid from 'uuid';
 import kebabCase from 'lodash/kebabCase';
 
-import { faulty } from '../utils';
+import { faulty, uuid } from '../utils';
 
 export const fromCognito = (event, { eventTypePrefix = 'aws-cognito' } = {}) => // eslint-disable-line import/prefer-default-export
 

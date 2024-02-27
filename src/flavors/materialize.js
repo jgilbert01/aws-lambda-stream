@@ -1,14 +1,15 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
-  updateDynamoDB, splitObject, compact,
+  splitObject, compact,
 } from '../utils';
-
+import {
+  updateDynamoDB,
+} from '../sinks/dynamodb';
 import {
   filterOnEventType, filterOnContent,
   outSkip, outSourceIsSelf,
 } from '../filters';
-
 
 export const materialize = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   .filter(outSkip)

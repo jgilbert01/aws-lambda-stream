@@ -1,8 +1,8 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import { config, Lambda } from 'aws-sdk';
+import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
-
-config.setPromisesDependency(Promise);
+import { defaultDebugLogger } from '../utils/log';
 
 class Connector {
   constructor({
@@ -10,17 +10,17 @@ class Connector {
     timeout = Number(process.env.LAMBDA_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.lambda = new Lambda({
-      httpOptions: {
-        timeout,
-        connectTimeout: timeout,
-      },
-      logger: { log: /* istanbul ignore next */ (msg) => debug('%s', msg.replace(/\n/g, '\r')) },
+    this.lambda = new LambdaClient({
+      requestHandler: new NodeHttpHandler({
+        requestTimeout: timeout,
+        connectionTimeout: timeout,
+      }),
+      logger: defaultDebugLogger(debug),
     });
   }
 
   invoke(params) {
-    return this.lambda.invoke(params).promise()
+    return Promise.resolve(this.lambda.send(new InvokeCommand(params)))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

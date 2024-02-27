@@ -1,16 +1,21 @@
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, splitObject,
-  queryDynamoDB, updateDynamoDB, batchGetDynamoDB,
   compact,
 } from '../utils';
+
+import {
+  queryAllDynamoDB, batchGetDynamoDB,
+} from '../queries/dynamodb';
+import {
+  updateDynamoDB,
+} from '../sinks/dynamodb';
 
 import { filterOnEventType, filterOnContent } from '../filters';
 
 import { normalize } from './correlate';
 
-// TODO qualify dynamodb utils in v1 and rename this back to update
-export const upd = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
+export const update = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   // reacting to collected events vs change events
   .map((uow) => (uow.record.eventName === 'INSERT' && uow.record.dynamodb.Keys.sk.S === 'EVENT' ? /* istanbul ignore next */ normalize(uow) : uow))
 
@@ -22,7 +27,7 @@ export const upd = (rule) => (s) => s // eslint-disable-line import/prefer-defau
   .through(compact(rule))
 
   .map(toQuery(rule))
-  .through(queryDynamoDB(rule))
+  .through(queryAllDynamoDB(rule))
 
   .through(splitObject({
     splitTargetField: rule.queryResponseField || 'queryResponse',

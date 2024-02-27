@@ -3,7 +3,8 @@
 //----------------------------
 
 // use this filter in listeners to not consume events my service just emitted
-export const outSourceIsSelf = (uow) => !uow.event.tags || uow.event.tags.source !== (process.env.PROJECT || /* istanbul ignore next */ process.env.SERVERLESS_PROJECT);
+export const outSourceIsSelf = (uow) =>
+  !uow.event.tags || uow.event.tags.source !== (process.env.PROJECT || /* istanbul ignore next */ process.env.SERVERLESS_PROJECT);
 
 // use this filter in triggers to not emit events in reaction to an update from a listener
 // listeners should set latched = true

@@ -11,7 +11,7 @@ import {
 import { fromDynamodb, toDynamodbRecords } from '../../../src/from/dynamodb';
 import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import { prefilterOnEventTypes } from '../../../src/filters';
-import { updateExpression } from '../../../src/utils/dynamodb';
+import { updateExpression } from '../../../src/sinks/dynamodb';
 import { initialize, initializeFrom } from '../../../src';
 import { materialize } from '../../../src/flavors/materialize';
 import Connector from '../../../src/connectors/dynamodb';
