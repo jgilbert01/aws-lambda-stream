@@ -16,5 +16,5 @@ export const defaultOptions = { // eslint-disable-line import/prefer-default-exp
   eemField: 'eem',
   masterKeyAlias: process.env.MASTER_KEY_ALIAS,
   regions: (process.env.KMS_REGIONS && process.env.KMS_REGIONS.split(',')),
-  AES: true,
+  AES: process.env.AES !== 'false',
 };

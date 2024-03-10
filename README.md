@@ -6,14 +6,15 @@ The event signature for many Lambda functions is an array containing a micro-bat
 
 Support is provided for AWS EventBridge, Kinesis, DynamoDB Streams and more.
 
->Note: The original code base has been used in production for years. This specific open-sourced version is in BETA while the various features are ported and documented.
-
 ## Install
 
 `npm install aws-lambda-stream --save`
 
+#### Using AWS SDK v2?
+aws-lambda-stream@v1 is using AWS SDK v3. If you are using AWS SDK v2, please use aws-lambda-stream@v0.51.0.
+
 ## Typical Scenario
-The following diagram depicts a tyipcal scenario for using this library to implement event sourcing and cqrs patterns. State changes in the database of Service X trigger the publication of domain events and Service Y consumes the events and caches the desired data in materialized views to support its requirements.
+The following diagram depicts a typical scenario for using this library to implement event sourcing and cqrs patterns. State changes in the database of Service X trigger the publication of domain events and Service Y consumes the events and caches the desired data in materialized views to support its requirements.
 
 <img src="overview.png" width="700">
 
@@ -198,7 +199,7 @@ interface FaultEvent extends Event {
 
 When an error is thrown in a _Highland.js_ stream, the error will skip over all the remaining steps until it is either caught by an [errors](https://caolan.github.io/highland/#errors) step or it reaches the end of the stream and all processing stops with the error.
 
-When you want to handle a poison event and raise a `fault` event then simply catch the error, adorn the current `uow` to the error and rethrow the error. Several utilities are provided to assist: `throwFault` for standard try/catch, `rejectWithFault` for promises, and `faulty` and `faultyAsync` are function wrappers.
+When you want to handle a poison event and raise a `fault` event then simply catch the error, adorn the current `uow` to the error and rethrow the error. Several utilities are provided to assist: `throwFault` for standard try/catch, `rejectWithFault` for promises, and `faulty` and `faultyAsyncStream` are function wrappers.
 
 Here is an example of using `throwFault`.
 
@@ -228,8 +229,6 @@ import { faults, flushFaults, toPromise } from 'aws-lambda-stream';
 ```
 
 The `faults` function tests to see if the `err` has a `uow` adorned. If so then it buffers a `fault` event. The `flushFaults` stream will published all the buffered `fault` events once all events in the batch have been processed. This ensures that the `fault` events are not prematurely published in case an unhandled error occurs later in the batch.
-
->I plan to open source a `fault-monitor` service and the `aws-lambda-stream-cli`. The monitor stores the fault events in S3.  The `cli` supports `resubmitting` the poison events to the function that raised the `fault`.
 
 ## Pipelines
 As mentioned above, we are multiplexing many event types through a single stream for a variety of good reasons. Therefore, we want to maximize the utilization of each function invocation by acting on as many events as possible. However, we also want to maintain good clean separation of the processing logic for these different event types.
@@ -394,8 +393,6 @@ The Highland.js [batch](https://caolan.github.io/highland/#batch) feature allows
 
 However, be aware that most of the aws-sdk batch apis do not succeed or fail as a unit. Therefore you either have to selectively retry the failed requests and/or ensure that these calls are idempotent. Therefore I usually try to first optimize using the `parellel` feature and then move onto `batch` if needs be.
 
-_I will look at adding selective retry as a feature of this library._
-
 ### Grouping / Reducing
 Another way to increase throughput is by grouping related events and thereby reducing the number external calls you will need to make. The Highland.js [group](https://caolan.github.io/highland/#group) feature allows us to easily group related records.  The `toGroupUows` utility provided by this library formats these into batched units of work so that we can easily raise a `fault` for a group and `resubmit` the group.
 
@@ -484,4 +481,5 @@ The following project templates are provided to help get your event platform up 
 
 * event-hub
 * event-lake-s3
+* event-fault-monitor
 * and more...
