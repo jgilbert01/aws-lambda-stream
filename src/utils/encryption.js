@@ -9,7 +9,7 @@ import { rejectWithFault } from './faults';
 import { debug as d } from './print';
 
 // -----------------------------------
-// used in listeners
+// used in listeners index
 // -----------------------------------
 
 export const decryptEvent = ({
@@ -52,7 +52,64 @@ export const decryptEvent = ({
 };
 
 // -----------------------------------
-// used in triggers prior to publish
+// used in trigger index
+// -----------------------------------
+
+export const decryptChangeEvent = ({
+  debug = d('enc'),
+  prefilter = () => false,
+  eemField = 'eem',
+  AES = true,
+  decryptOld = true,
+  parallel = Number(process.env.ENCRYPTION_PARALLEL) || Number(process.env.PARALLEL) || 8,
+} = {}) => {
+  const decrypt = (uow) => {
+    if (!((uow.event.raw.new || uow.event.raw.old)[eemField]) || !prefilter(uow)) {
+      return _(Promise.resolve(uow));
+    }
+
+    const p = Promise.resolve()
+      .then(() => {
+        try {
+          return Promise.all([
+            uow.event.raw.new
+              ? decryptObject(omit(uow.event.raw.new, eemField), { ...uow.event.raw.new[eemField], AES })
+              : Promise.resolve(undefined),
+            decryptOld && uow.event.raw.old
+              ? decryptObject(omit(uow.event.raw.old, eemField), { ...uow.event.raw.old[eemField], AES })
+              : Promise.resolve(undefined),
+          ]);
+        } catch (err) {
+          // istanbul ignore next
+          return Promise.reject(err);
+        }
+      })
+      // .tap(debug)
+      .tapCatch(debug)
+      .then((decryptResponse) => ({
+        ...uow,
+        decryptResponse,
+        event: {
+          ...uow.event,
+          raw: {
+            new: decryptResponse[0]?.object,
+            old: decryptResponse[1]?.object,
+          },
+        },
+        undecryptedEvent: uow.event,
+      }))
+      .catch(rejectWithFault(uow));
+
+    return _(p); // wrap promise in a stream
+  };
+
+  return (s) => s
+    .map(decrypt)
+    .parallel(parallel);
+};
+
+// -----------------------------------
+// used in trigger pipelines prior to publish
 // -----------------------------------
 
 export const encryptEvent = ({
@@ -98,7 +155,7 @@ export const encryptEvent = ({
 };
 
 // -------------------------------------
-// used in listener or command functions
+// used in listener pipelines prior to save
 // -------------------------------------
 
 export const encryptData = ({
