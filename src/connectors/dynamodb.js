@@ -21,6 +21,7 @@ class Connector {
   constructor({
     debug,
     tableName,
+    removeUndefinedValues = true,
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
   }) {
@@ -34,7 +35,11 @@ class Connector {
       retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
       logger: defaultDebugLogger(debug),
     });
-    this.db = DynamoDBDocumentClient.from(dynamoClient);
+    this.db = DynamoDBDocumentClient.from(dynamoClient, {
+      marshallOptions: {
+        removeUndefinedValues,
+      },
+    });
     this.retryConfig = retryConfig;
   }
 
