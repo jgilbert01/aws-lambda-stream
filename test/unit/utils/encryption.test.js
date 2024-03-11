@@ -6,7 +6,7 @@ import _ from 'highland';
 import { KmsConnector, MOCK_GEN_DK_RESPONSE, MOCK_DECRYPT_DK_RESPONSE } from 'aws-kms-ee';
 
 import {
-  decryptEvent, encryptEvent, encryptData, decryptData,
+  decryptEvent, encryptEvent, decryptChangeEvent, encryptData, decryptData,
 } from '../../../src/utils';
 import { fromDynamodb, toDynamodbRecords } from '../../../src/from/dynamodb';
 import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
@@ -348,6 +348,232 @@ describe('utils/encryption.js', () => {
       expect(await decrypt({})).to.deep.equal({});
       // no eem field
       expect(await decrypt({ f1: 'v1' })).to.deep.equal({ f1: 'v1' });
+    });
+
+    it('should decrypt a change event - trigger function - created', (done) => {
+      const events = toDynamodbRecords([
+        {
+          timestamp: 1572832690,
+          keys: {
+            pk: '1',
+            sk: 'thing',
+          },
+          newImage: {
+            pk: '1',
+            sk: 'thing',
+            discriminator: 'thing',
+            name: 'Im4xIg==',
+            description: 'ImQxIg==',
+            status: 's1',
+            eem: {
+              masterKeyAlias: 'alias/aws-kms-ee',
+              dataKeys: {
+                'us-west-2': MOCK_GEN_DK_RESPONSE.CiphertextBlob.toString('base64'),
+              },
+              fields: [
+                'name',
+                'description',
+              ],
+            },
+          },
+        },
+      ]);
+
+      fromDynamodb(events)
+        .through(decryptChangeEvent({
+          prefilter: prefilterOnEventTypes([{ eventType: /^thing-(created|updated|deleted)/ }]),
+          AES: false,
+        }))
+        .collect()
+        .tap((collected) => {
+          // console.log(JSON.stringify(collected, null, 2));
+
+          expect(collected.length).to.equal(1);
+          expect(collected[0].event).to.deep.equal({
+            id: '0',
+            type: 'thing-created',
+            partitionKey: '1',
+            timestamp: 1572832690000,
+            tags: {
+              region: 'us-west-2',
+            },
+            raw: {
+              new: {
+                pk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'n1',
+                description: 'd1',
+                status: 's1',
+              },
+              old: undefined,
+            },
+          });
+        })
+        .done(done);
+    });
+
+    it('should decrypt a change event - trigger function - updated', (done) => {
+      const events = toDynamodbRecords([
+        {
+          timestamp: 1572832690,
+          keys: {
+            pk: '1',
+            sk: 'thing',
+          },
+          newImage: {
+            pk: '1',
+            sk: 'thing',
+            discriminator: 'thing',
+            name: 'Im4xIg==',
+            description: 'ImQxIg==',
+            status: 's1',
+            eem: {
+              masterKeyAlias: 'alias/aws-kms-ee',
+              dataKeys: {
+                'us-west-2': MOCK_GEN_DK_RESPONSE.CiphertextBlob.toString('base64'),
+              },
+              fields: [
+                'name',
+                'description',
+              ],
+            },
+          },
+          oldImage: {
+            pk: '1',
+            sk: 'thing',
+            discriminator: 'thing',
+            name: 'Im4xIg==',
+            description: 'ImQxIg==',
+            status: 's1',
+            eem: {
+              masterKeyAlias: 'alias/aws-kms-ee',
+              dataKeys: {
+                'us-west-2': MOCK_GEN_DK_RESPONSE.CiphertextBlob.toString('base64'),
+              },
+              fields: [
+                'name',
+                'description',
+              ],
+            },
+          },
+        },
+      ]);
+
+      fromDynamodb(events)
+        .through(decryptChangeEvent({
+          prefilter: prefilterOnEventTypes([{ eventType: /^thing-(created|updated|deleted)/ }]),
+          AES: false,
+        }))
+        .collect()
+        .tap((collected) => {
+          // console.log(JSON.stringify(collected, null, 2));
+
+          expect(collected.length).to.equal(1);
+          expect(collected[0].event).to.deep.equal({
+            id: '0',
+            type: 'thing-updated',
+            partitionKey: '1',
+            timestamp: 1572832690000,
+            tags: {
+              region: 'us-west-2',
+            },
+            raw: {
+              new: {
+                pk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'n1',
+                description: 'd1',
+                status: 's1',
+              },
+              old: {
+                pk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'n1',
+                description: 'd1',
+                status: 's1',
+              },
+            },
+          });
+        })
+        .done(done);
+    });
+
+    it('should decrypt a change event - trigger function - deleted', (done) => {
+      const events = toDynamodbRecords([
+        {
+          timestamp: 1572832690,
+          keys: {
+            pk: '1',
+            sk: 'thing',
+          },
+          oldImage: {
+            pk: '1',
+            sk: 'thing',
+            discriminator: 'thing',
+            name: 'Im4xIg==',
+            description: 'ImQxIg==',
+            status: 's1',
+            eem: {
+              masterKeyAlias: 'alias/aws-kms-ee',
+              dataKeys: {
+                'us-west-2': MOCK_GEN_DK_RESPONSE.CiphertextBlob.toString('base64'),
+              },
+              fields: [
+                'name',
+                'description',
+              ],
+            },
+          },
+        },
+      ]);
+
+      fromDynamodb(events)
+        .through(decryptChangeEvent({
+          prefilter: prefilterOnEventTypes([{ eventType: /^thing-(created|updated|deleted)/ }]),
+          AES: false,
+        }))
+        .collect()
+        .tap((collected) => {
+          // console.log(JSON.stringify(collected, null, 2));
+
+          expect(collected.length).to.equal(1);
+          expect(collected[0].event).to.deep.equal({
+            id: '0',
+            type: 'thing-deleted',
+            partitionKey: '1',
+            timestamp: 1572832690000,
+            tags: {
+              region: 'us-west-2',
+            },
+            raw: {
+              new: undefined,
+              old: {
+                pk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'n1',
+                description: 'd1',
+                status: 's1',
+              },
+            },
+          });
+        })
+        .done(done);
+    });
+
+    it('should cover skip - new', (done) => {
+      decryptChangeEvent()(_([{ event: { raw: { new: {} } } }])).done(done);
+    });
+
+    it('should cover skip - old', (done) => {
+      decryptChangeEvent()(_([{ event: { raw: { old: {} } } }])).done(done);
+    });
+
+    it('should cover skip - prefilter', (done) => {
+      decryptChangeEvent()(_([{ event: { raw: { new: { eem: {} } } } }])).done(done);
     });
   });
 });
