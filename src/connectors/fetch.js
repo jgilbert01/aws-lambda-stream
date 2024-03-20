@@ -1,3 +1,4 @@
+/* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 import 'isomorphic-fetch';
 
 import { FetchError } from 'node-fetch';
