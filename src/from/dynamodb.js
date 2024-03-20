@@ -127,7 +127,7 @@ export const outGlobalTableExtraModify = (record) => {
 };
 
 // test helper
-export const toDynamodbRecords = (events) => ({
+export const toDynamodbRecords = (events, { removeUndefinedValues = true } = {}) => ({
   Records: events.map((e, i) =>
     ({
       eventID: `${i}`,
@@ -137,9 +137,9 @@ export const toDynamodbRecords = (events) => ({
       awsRegion: 'us-west-2',
       dynamodb: {
         ApproximateCreationDateTime: e.timestamp,
-        Keys: e.keys ? marshall(e.keys, { removeUndefinedValues: true }) : /* istanbul ignore next */ undefined,
-        NewImage: e.newImage ? marshall(e.newImage, { removeUndefinedValues: true }) : undefined,
-        OldImage: e.oldImage ? marshall(e.oldImage, { removeUndefinedValues: true }) : undefined,
+        Keys: e.keys ? marshall(e.keys, { removeUndefinedValues }) : /* istanbul ignore next */ undefined,
+        NewImage: e.newImage ? marshall(e.newImage, { removeUndefinedValues }) : undefined,
+        OldImage: e.oldImage ? marshall(e.oldImage, { removeUndefinedValues }) : undefined,
 
         SequenceNumber: `${i}`,
         // SizeBytes: 59,
