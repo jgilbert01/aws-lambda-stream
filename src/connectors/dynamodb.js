@@ -143,10 +143,14 @@ class Connector {
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
       .then(() => this._executeCommand(new BatchGetCommand(params))
         .then((resp) => {
-          if (Object.keys(resp.UnprocessedKeys || /* istanbul ignore next */ {}).length > 0) {
-            return this._batchGet(unprocessed(params, resp), [...attempts, resp]);
+          const response = {
+            Responses: {},
+            ...resp,
+          };
+          if (Object.keys(response.UnprocessedKeys || /* istanbul ignore next */ {}).length > 0) {
+            return this._batchGet(unprocessed(params, response), [...attempts, response]);
           } else {
-            return accumlate(attempts, resp);
+            return accumlate(attempts, response);
           }
         }));
   }
@@ -169,7 +173,7 @@ const accumlate = (attempts, resp) => attempts.reduceRight((a, c) => ({
   ...a,
   Responses: Object.keys(a.Responses).reduce((a2, c2) => ({
     ...a2,
-    [c2]: [...a2[c2], ...a.Responses[c2]],
+    [c2]: [...(a2[c2] || []), ...a.Responses[c2]],
   }), { ...c.Responses }),
   attempts: [...attempts, resp],
 }), resp);
