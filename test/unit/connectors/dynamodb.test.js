@@ -398,6 +398,212 @@ describe('connectors/dynamodb.js', () => {
     });
   });
 
+  it('should retry when missing Responses', async () => {
+    const responses = [
+      {
+        UnprocessedKeys: {
+          t1: {
+            Keys: [
+              {
+                pk: '4',
+                sk: 'thing',
+              },
+              {
+                pk: '5',
+                sk: 'thing',
+              },
+              {
+                pk: '6',
+                sk: 'thing',
+              },
+            ],
+          },
+        },
+      },
+      {
+        UnprocessedKeys: {
+          t1: {
+            Keys: [
+              {
+                pk: '4',
+                sk: 'thing',
+              },
+              {
+                pk: '5',
+                sk: 'thing',
+              },
+              {
+                pk: '6',
+                sk: 'thing',
+              },
+            ],
+          },
+        },
+      },
+      {
+        Responses: {
+          t1: [
+            {
+              pk: '4',
+              sk: 'thing',
+              name: 'Thing four',
+            },
+            {
+              pk: '5',
+              sk: 'thing',
+              name: 'Thing five',
+            },
+            {
+              pk: '6',
+              sk: 'thing',
+              name: 'Thing six',
+            },
+          ],
+        },
+        UnprocessedKeys: {},
+      },
+    ];
+
+    const spy = sinon.spy((_) => responses.shift());
+    mockDdb.on(BatchGetCommand).callsFake(spy);
+
+    const inputParams = {
+      RequestItems: {
+        t1: {
+          Keys: [
+            {
+              pk: '4',
+              sk: 'thing',
+            },
+            {
+              pk: '5',
+              sk: 'thing',
+            },
+            {
+              pk: '6',
+              sk: 'thing',
+            },
+          ],
+        },
+      },
+    };
+
+    const data = await new Connector({
+      debug: debug('dynamodb'),
+    }).batchGet(inputParams);
+
+    expect(spy).to.have.been.calledWith({
+      RequestItems: {
+        t1: {
+          Keys: [inputParams.RequestItems.t1.Keys[0], inputParams.RequestItems.t1.Keys[1], inputParams.RequestItems.t1.Keys[2]],
+        },
+      },
+    });
+    expect(spy).to.have.been.calledWith({
+      RequestItems: {
+        t1: {
+          Keys: [inputParams.RequestItems.t1.Keys[0], inputParams.RequestItems.t1.Keys[1], inputParams.RequestItems.t1.Keys[2]],
+        },
+      },
+    });
+    expect(spy).to.have.been.calledWith({
+      RequestItems: {
+        t1: {
+          Keys: [inputParams.RequestItems.t1.Keys[0], inputParams.RequestItems.t1.Keys[1], inputParams.RequestItems.t1.Keys[2]],
+        },
+      },
+    });
+
+    expect(data).to.deep.equal({
+      Responses: {
+        t1: [
+          {
+            pk: '4',
+            sk: 'thing',
+            name: 'Thing four',
+          },
+          {
+            pk: '5',
+            sk: 'thing',
+            name: 'Thing five',
+          },
+          {
+            pk: '6',
+            sk: 'thing',
+            name: 'Thing six',
+          },
+        ],
+      },
+      UnprocessedKeys: {},
+      attempts: [
+        {
+          Responses: {},
+          UnprocessedKeys: {
+            t1: {
+              Keys: [
+                {
+                  pk: '4',
+                  sk: 'thing',
+                },
+                {
+                  pk: '5',
+                  sk: 'thing',
+                },
+                {
+                  pk: '6',
+                  sk: 'thing',
+                },
+              ],
+            },
+          },
+        },
+        {
+          Responses: {},
+          UnprocessedKeys: {
+            t1: {
+              Keys: [
+                {
+                  pk: '4',
+                  sk: 'thing',
+                },
+                {
+                  pk: '5',
+                  sk: 'thing',
+                },
+                {
+                  pk: '6',
+                  sk: 'thing',
+                },
+              ],
+            },
+          },
+        },
+        {
+          Responses: {
+            t1: [
+              {
+                pk: '4',
+                sk: 'thing',
+                name: 'Thing four',
+              },
+              {
+                pk: '5',
+                sk: 'thing',
+                name: 'Thing five',
+              },
+              {
+                pk: '6',
+                sk: 'thing',
+                name: 'Thing six',
+              },
+            ],
+          },
+          UnprocessedKeys: {},
+        },
+      ],
+    });
+  });
+
   it('should throw on max retry', async () => {
     const responses = [
       {
