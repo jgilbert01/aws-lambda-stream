@@ -51,6 +51,7 @@ class Connector {
 
     return this._executeCommand(new UpdateCommand(params))
       .catch((err) => {
+        /* istanbul ignore else */
         if (err.name === 'ConditionalCheckFailedException') {
           return {};
         }
