@@ -50,10 +50,12 @@ class Connector {
     };
 
     return this._executeCommand(new UpdateCommand(params))
-      .catch(/* istanbul ignore next */(err) => {
-        if (err.code === 'ConditionalCheckFailedException') {
+      .catch((err) => {
+        /* istanbul ignore else */
+        if (err.name === 'ConditionalCheckFailedException') {
           return {};
         }
+        /* istanbul ignore next */
         return Promise.reject(err);
       });
   }
