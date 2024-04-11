@@ -9,6 +9,9 @@ import {
   ScanCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
+import {
+  ConditionalCheckFailedException,
+} from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { debug } from '../../../src/utils';
 import Connector from '../../../src/connectors/dynamodb';
@@ -89,6 +92,25 @@ describe('connectors/dynamodb.js', () => {
       ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
       ReturnValues: 'ALL_NEW',
     });
+    expect(data).to.deep.equal({});
+  });
+
+  it('should raise and catch oplock', async () => {
+    mockDdb.on(UpdateCommand).rejects(new ConditionalCheckFailedException({}));
+
+    const UPDATE_REQUEST = {
+      Key: {
+        pk: '1',
+        sk: 'thing',
+      },
+    };
+
+    const data = await new Connector({
+      debug: debug('dynamodb'),
+      tableName: 'my-service-entities',
+    })
+      .update(UPDATE_REQUEST);
+
     expect(data).to.deep.equal({});
   });
 
