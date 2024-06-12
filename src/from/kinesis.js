@@ -3,6 +3,7 @@ import _ from 'highland';
 import {
   faulty, decompress, compress, claimcheck,
 } from '../utils';
+import { outSkip } from '../filters';
 
 export const fromKinesis = (event) =>
 
@@ -23,6 +24,7 @@ export const fromKinesis = (event) =>
         ...JSON.parse(uow.event, decompress),
       },
     })))
+    .filter(outSkip)
     .through(claimcheck());
 
 // test helper
@@ -34,7 +36,7 @@ export const toKinesisRecords = (events) => ({
       eventID: `shardId-000000000000:${i}`,
       // eventName: 'aws:kinesis:record',
       // invokeIdentityArn: 'arn:aws:iam::123456789012:role/lambda-role',
-      awsRegion: 'us-west-2',
+      awsRegion: process.env.AWS_REGION || 'us-west-2',
       // eventSourceARN: 'arn:aws:kinesis:us-west-2:123456789012:stream/lambda-stream',
       kinesis: {
         // kinesisSchemaVersion: '1.0',

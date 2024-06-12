@@ -3,6 +3,7 @@ import _ from 'highland';
 import {
   faulty, decompress, compress, claimcheck,
 } from '../utils';
+import { outSkip } from '../filters';
 
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events
@@ -26,6 +27,7 @@ export const fromSqsEvent = (event) => _(event.Records)
       ...JSON.parse(record.body, decompress),
     },
   })))
+  .filter(outSkip)
   .through(claimcheck());
 
 // test helper

@@ -70,7 +70,7 @@ export const toS3Records = (notifications) => ({
     ({
     // eventVersion: '2.1',
       eventSource: 'aws:s3',
-      awsRegion: 'us-west-2',
+      awsRegion: process.env.AWS_REGION || 'us-west-2',
       // eventTime: '2019-09-03T19:37:27.192Z',
       // eventName: 'ObjectCreated:Put',
       // userIdentity: {

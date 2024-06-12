@@ -36,7 +36,6 @@ import { putDynamoDB } from '../sinks/dynamodb';
  */
 
 export const collect = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
-  .filter(outSkip)
 
   .filter(onEventType(rule))
   .tap(printStartPipeline)

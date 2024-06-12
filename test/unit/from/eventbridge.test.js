@@ -21,7 +21,7 @@ describe('from/eventbridge.js', () => {
             'version': '0',
             'id': '0',
             'source': 'test',
-            'region': 'us-west-1',
+            'region': 'us-west-2',
             'detail-type': 't1',
             'detail': {
               type: 't1',
