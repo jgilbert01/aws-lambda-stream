@@ -24,7 +24,7 @@ export const toEventBridgeRecord = (event) => ({
   'source': 'test',
   // 'account': '0123456789012',
   // 'time': '2020-03-30T08:26:41Z',
-  'region': process.env.AWS_REGION || 'us-west-2',
+  'region': process.env.AWS_REGION || /* istanbul ignore next */ 'us-west-2',
   // 'resources': [],
   'detail-type': event.type,
   'detail': event,
