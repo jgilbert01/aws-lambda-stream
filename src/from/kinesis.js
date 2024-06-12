@@ -36,7 +36,7 @@ export const toKinesisRecords = (events) => ({
       eventID: `shardId-000000000000:${i}`,
       // eventName: 'aws:kinesis:record',
       // invokeIdentityArn: 'arn:aws:iam::123456789012:role/lambda-role',
-      awsRegion: process.env.AWS_REGION || 'us-west-2',
+      awsRegion: process.env.AWS_REGION || /* istanbul ignore next */ 'us-west-2',
       // eventSourceARN: 'arn:aws:kinesis:us-west-2:123456789012:stream/lambda-stream',
       kinesis: {
         // kinesisSchemaVersion: '1.0',

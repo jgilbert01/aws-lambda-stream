@@ -52,7 +52,7 @@ export const toSqsRecords = (messages) => ({
       },
       // messageAttributes: {},
       // md5OfBody: 'e4e68fb7bd0e697a0ae8f1bb342846b3',
-      awsRegion: m.region || 'us-west-2',
+      awsRegion: m.region || /* istanbul ignore next */ 'us-west-2',
       // eventSourceARN: 'arn:aws:sqs:us-west-2:123456789012:my-queue',
     })),
 });
