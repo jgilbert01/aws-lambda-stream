@@ -10,6 +10,13 @@ describe('from/kinesis.js', () => {
         type: 't1',
         partitionKey: '1',
       },
+      {
+        type: 't1',
+        partitionKey: '1',
+        tags: {
+          skip: true,
+        },
+      },
     ]);
 
     fromKinesis(event)

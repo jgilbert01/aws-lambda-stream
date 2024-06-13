@@ -114,6 +114,12 @@ describe('from/sqs.js', () => {
           name: 'thing1',
         },
       },
+      {
+        type: 'thing-created',
+        tags: {
+          skip: true,
+        },
+      },
     ]);
 
     fromSqsEvent(event)

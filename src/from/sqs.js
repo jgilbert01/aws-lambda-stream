@@ -3,6 +3,7 @@ import _ from 'highland';
 import {
   faulty, decompress, compress, claimcheck,
 } from '../utils';
+import { outSkip } from '../filters';
 
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events
@@ -26,6 +27,7 @@ export const fromSqsEvent = (event) => _(event.Records)
       ...JSON.parse(record.body, decompress),
     },
   })))
+  .filter(outSkip)
   .through(claimcheck());
 
 // test helper
@@ -50,7 +52,7 @@ export const toSqsRecords = (messages) => ({
       },
       // messageAttributes: {},
       // md5OfBody: 'e4e68fb7bd0e697a0ae8f1bb342846b3',
-      awsRegion: m.region || 'us-west-2',
+      awsRegion: m.region || /* istanbul ignore next */ 'us-west-2',
       // eventSourceARN: 'arn:aws:sqs:us-west-2:123456789012:my-queue',
     })),
 });

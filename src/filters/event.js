@@ -2,6 +2,8 @@ import isArray from 'lodash/isArray';
 import isFunction from 'lodash/isFunction';
 
 export const filterOnEventType = (rule, uow) => {
+  uow.debug && uow.debug('filterOnEventType: ', rule.eventType, uow.event.type);
+
   if (typeof rule.eventType === 'string') {
     return uow.event.type === rule.eventType;
   } else if (rule.eventType instanceof RegExp) {
