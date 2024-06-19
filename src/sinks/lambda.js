@@ -28,24 +28,6 @@ export const invokeLambda = ({
     .parallel(parallel);
 };
 
-export const createEventSourceMapping = ({
-  debug = d('lambda'),
-} = {}) => {
-  const connector = new Connector({ debug });
-
-  const invoke = (uow) => {
-    if (!uow.createRequest) return _(Promise.resolve(uow));
-
-    const p = connector.createEventSourceMapping(uow.createRequest)
-      .then((createResponse) => ({ ...uow, createResponse }))
-      .catch(rejectWithFault(uow));
-
-    return _(p); // wrap promise in a stream
-  };
-
-  return (s) => s.flatMap(invoke);
-};
-
 export const updateEventSourceMapping = ({
   debug = d('lambda'),
 } = {}) => {
@@ -56,24 +38,6 @@ export const updateEventSourceMapping = ({
 
     const p = connector.updateEventSourceMapping(uow.updateRequest)
       .then((updateResponse) => ({ ...uow, updateResponse }))
-      .catch(rejectWithFault(uow));
-
-    return _(p); // wrap promise in a stream
-  };
-
-  return (s) => s.flatMap(invoke);
-};
-
-export const deleteEventSourceMapping = ({
-  debug = d('lambda'),
-} = {}) => {
-  const connector = new Connector({ debug });
-
-  const invoke = (uow) => {
-    if (!uow.deleteRequest) return _(Promise.resolve(uow));
-
-    const p = connector.deleteEventSourceMapping(uow.deleteRequest)
-      .then((deleteResponse) => ({ ...uow, deleteResponse }))
       .catch(rejectWithFault(uow));
 
     return _(p); // wrap promise in a stream
