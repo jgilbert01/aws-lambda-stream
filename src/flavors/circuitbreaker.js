@@ -13,8 +13,8 @@ const toUpdateRequest = (opt) => faulty((uow) => ({
   ...uow,
   updateRequest: {
     UUID: process.env.ESM_ID, // Ref: TriggerEventSourceMappingDynamodbEntitiesTable
-    Enabled: uow.record.alarmData.state.value !== 'ALARM',
-    BatchSize: uow.record.alarmData.state.value === 'INSUFFICIENT_DATA'
+    Enabled: uow.event.alarmData.state.value !== 'ALARM',
+    BatchSize: uow.event.alarmData.state.value === 'INSUFFICIENT_DATA'
       ? 1 : process.env.BATCH_SIZE || 100,
   },
 }));

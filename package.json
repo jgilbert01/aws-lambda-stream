@@ -40,6 +40,7 @@
       "command": "nyc mocha --recursive \"./test/unit/**/*.test.js\"",
       "env": {
         "AWS_REGION": "us-west-2",
+        "FAILOVER_REGION": "us-east-1",
         "KMS_REGIONS": "us-west-2",
         "NODE_ENV": "test"
       }

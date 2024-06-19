@@ -5,7 +5,9 @@ import _ from 'highland';
 
 import {
   invokeLambda,
+  createEventSourceMapping,
   updateEventSourceMapping,
+  deleteEventSourceMapping,
 } from '../../../src/sinks/lambda';
 
 import Connector from '../../../src/connectors/lambda';
@@ -38,6 +40,41 @@ describe('sinks/lambda.js', () => {
             FunctionName: 'helloworld',
           },
           invokeResponse: {},
+        });
+      })
+      .done(done);
+  });
+
+  it('should create esm', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'createEventSourceMapping').resolves({});
+
+    const uows = [{
+      createRequest: {
+        Enabled: false,
+        BatchSize: 10,
+      },
+    }, {
+      createRequest: undefined,
+    }];
+
+    _(uows)
+      .through(createEventSourceMapping())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(stub).to.have.been.calledWith({
+          Enabled: false,
+          BatchSize: 10,
+        });
+
+        expect(collected.length).to.equal(2);
+        expect(collected[0]).to.deep.equal({
+          createRequest: {
+            Enabled: false,
+            BatchSize: 10,
+          },
+          createResponse: {},
         });
       })
       .done(done);
@@ -76,6 +113,38 @@ describe('sinks/lambda.js', () => {
             BatchSize: 10,
           },
           updateResponse: {},
+        });
+      })
+      .done(done);
+  });
+
+  it('should delete esm', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'deleteEventSourceMapping').resolves({});
+
+    const uows = [{
+      deleteRequest: {
+        UUID: '1',
+      },
+    }, {
+      deleteRequest: undefined,
+    }];
+
+    _(uows)
+      .through(deleteEventSourceMapping())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(stub).to.have.been.calledWith({
+          UUID: '1',
+        });
+
+        expect(collected.length).to.equal(2);
+        expect(collected[0]).to.deep.equal({
+          deleteRequest: {
+            UUID: '1',
+          },
+          deleteResponse: {},
         });
       })
       .done(done);

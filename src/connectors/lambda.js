@@ -1,7 +1,10 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 import {
   InvokeCommand,
+  ListEventSourceMappingsCommand,
+  CreateEventSourceMappingCommand,
   UpdateEventSourceMappingCommand,
+  DeleteEventSourceMappingCommand,
   LambdaClient,
 } from '@aws-sdk/client-lambda';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
@@ -27,8 +30,20 @@ class Connector {
     return this._sendCommand(new InvokeCommand(params));
   }
 
+  listEventSourceMappings(params) {
+    return this._sendCommand(new ListEventSourceMappingsCommand(params));
+  }
+
+  createEventSourceMapping(params) {
+    return this._sendCommand(new CreateEventSourceMappingCommand(params));
+  }
+
   updateEventSourceMapping(params) {
     return this._sendCommand(new UpdateEventSourceMappingCommand(params));
+  }
+
+  deleteEventSourceMapping(params) {
+    return this._sendCommand(new DeleteEventSourceMappingCommand(params));
   }
 
   _sendCommand(command) {
