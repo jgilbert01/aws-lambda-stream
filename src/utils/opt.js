@@ -1,6 +1,10 @@
+import { isServerError, isThrottlingError, isTransientError } from '@smithy/service-error-classification';
+
 import { publishToEventBridge } from '../sinks/eventbridge';
 
 import { debug } from './print';
+
+export const retryable = (err, opt) => (isThrottlingError(err) || isTransientError(err) || isServerError(err));
 
 export const defaultOptions = { // eslint-disable-line import/prefer-default-export
   debug: debug('handler'),
@@ -17,4 +21,8 @@ export const defaultOptions = { // eslint-disable-line import/prefer-default-exp
   masterKeyAlias: process.env.MASTER_KEY_ALIAS,
   regions: (process.env.KMS_REGIONS && process.env.KMS_REGIONS.split(',')),
   AES: process.env.AES !== 'false',
+
+  // lambda retry
+  // can disable in index file by setting to undefined
+  retryable,
 };

@@ -57,7 +57,7 @@ describe('faults/index.js', () => {
         },
       }))
       .map(simulateHandledError)
-      .errors(faults)
+      .errors(faults(defaultOptions))
       .through(flushFaults(defaultOptions))
 
       .collect()
@@ -119,7 +119,34 @@ describe('faults/index.js', () => {
 
     fromKinesis(events)
       .map(simulateUnhandledError)
-      .errors(faults)
+      .errors(faults(defaultOptions))
+      .stopOnError(spy)
+      .collect()
+      .tap((collected) => {
+        expect(spy).to.have.been.calledWith(err);
+        expect(collected.length).to.equal(0);
+      })
+      .done(done);
+  });
+
+  it('should account for retriable error', (done) => {
+    const spy = sinon.spy();
+    const err = new Error('retriable error');
+    const simulateRetriableError = (uow) => {
+      err.uow = uow; // retry even though uow is attached
+      err.code = 'ECONNREFUSED';
+      throw err;
+    };
+
+    const events = toKinesisRecords([
+      {
+        type: 'u1',
+      },
+    ]);
+
+    fromKinesis(events)
+      .map(simulateRetriableError)
+      .errors(faults(defaultOptions))
       .stopOnError(spy)
       .collect()
       .tap((collected) => {
