@@ -27,8 +27,9 @@ export const getObjectFromS3 = ({
   getRequestField = 'getRequest',
   getResponseField = 'getResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  xrayEnabled = process.env.XRAY_ENABLED === 'true',
 } = {}) => {
-  const connector = new Connector({ debug, bucketName });
+  const connector = new Connector({ debug, bucketName, xrayEnabled });
 
   const getObject = (uow) => {
     if (!uow[getRequestField]) return _(Promise.resolve(uow));
@@ -52,8 +53,9 @@ export const getObjectFromS3AsStream = ({
   getResponseField = 'getResponse',
   delimiter = '\n',
   splitFilter = () => true,
+  xrayEnabled = process.env.XRAY_ENABLED === 'true',
 } = {}) => {
-  const connector = new Connector({ debug, bucketName });
+  const connector = new Connector({ debug, bucketName, xrayEnabled });
 
   const getObject = (uow) => {
     if (!uow[getRequestField]) return _(Promise.resolve(uow));
@@ -96,8 +98,9 @@ export const listObjectsFromS3 = ({
   listRequestField = 'listRequest',
   listResponseField = 'listResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  xrayEnabled = process.env.XRAY_ENABLED === 'true',
 } = {}) => {
-  const connector = new Connector({ debug, bucketName });
+  const connector = new Connector({ debug, bucketName, xrayEnabled });
 
   const listObjects = (uow) => {
     /* istanbul ignore if */
@@ -120,8 +123,9 @@ export const pageObjectsFromS3 = ({
   bucketName = process.env.BUCKET_NAME,
   listRequestField = 'listRequest',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  xrayEnabled = process.env.XRAY_ENABLED === 'true',
 } = {}) => {
-  const connector = new Connector({ debug, bucketName });
+  const connector = new Connector({ debug, bucketName, xrayEnabled });
 
   const listObjects = (uow) => {
     let { ContinuationToken } = uow[listRequestField];

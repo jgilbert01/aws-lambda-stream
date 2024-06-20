@@ -12,9 +12,10 @@ export const putObjectToS3 = ({
   putRequestField = 'putRequest',
   putResponseField = 'putResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  xrayEnabled = process.env.XRAY_ENABLED === 'true',
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, bucketName });
+  const connector = new Connector({ debug, bucketName, xrayEnabled });
 
   const putObject = (uow) => {
     if (!uow[putRequestField]) return _(Promise.resolve(uow));
@@ -38,8 +39,9 @@ export const deleteObjectFromS3 = ({
   deleteRequestField = 'deleteRequest',
   deleteResponseField = 'deleteResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  xrayEnabled = process.env.XRAY_ENABLED === 'true',
 } = {}) => {
-  const connector = new Connector({ debug, bucketName });
+  const connector = new Connector({ debug, bucketName, xrayEnabled });
 
   const deleteObject = (uow) => {
     if (!uow[deleteRequestField]) return _(Promise.resolve(uow));

@@ -4,6 +4,7 @@ import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfiguredRetryStrategy } from '@smithy/util-retry';
 import Promise from 'bluebird';
 
+import { captureAWSv3Client } from 'aws-xray-sdk-core';
 import {
   defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
@@ -15,10 +16,11 @@ class Connector {
     streamName = process.env.STREAM_NAME,
     timeout = Number(process.env.KINESIS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
+    xrayEnabled = process.env.XRAY_ENABLED === 'true',
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.streamName = streamName || 'undefined';
-    this.stream = new KinesisClient({
+    this.stream = this.buildClient(xrayEnabled, {
       requestHandler: new NodeHttpHandler({
         requestTimeout: timeout,
         connectionTimeout: timeout,
@@ -27,6 +29,11 @@ class Connector {
       logger: defaultDebugLogger(debug),
     });
     this.retryConfig = retryConfig;
+  }
+
+  buildClient(xrayEnabled, opt) {
+    const sdkClient = new KinesisClient(opt);
+    return xrayEnabled ? captureAWSv3Client(sdkClient) : sdkClient;
   }
 
   putRecords(inputParams) {

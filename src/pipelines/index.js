@@ -1,5 +1,6 @@
 import _ from 'highland';
 import memoryCache from 'memory-cache';
+import AWSXray from 'aws-xray-sdk-core';
 
 import { faults, flushFaults } from '../faults';
 
@@ -46,6 +47,7 @@ export const initializeFrom = (rules) => rules.reduce(
 );
 
 const assemble = (opt) => (head, includeFaultHandler = true) => {
+  const xrayEnabled = Boolean(opt.xrayEnabled);
   const keys = Object.keys(thePipelines);
 
   debug('assemble: %j', keys);
@@ -77,7 +79,9 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
           ...uow,
           ...addDebug(p.id),
         }))
-        .through(p);
+        .map(startSegment(xrayEnabled))
+        .through(p)
+        .map(endSegment);
     });
 
     debug('FORK: %s', lines[last].id);
@@ -88,23 +92,46 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
         ...uow,
         ...addDebug(p.id),
       }))
-      .through(lines[last]);
+      .map(startSegment(xrayEnabled))
+      .through(lines[last])
+      .map(endSegment);
   }
 
   let s = _(lines).merge();
 
   if (includeFaultHandler) {
     s = s.errors(faults)
+      .map(startFaultSegment(xrayEnabled))
       .through(flushFaults({
         ...opt,
         ...addDebug('fault'),
-      }));
+      }))
+      .map(endSegment);
   }
 
   return s;
 };
 
 const addDebug = (id) => ({ debug: d(`pl:${id}`) });
+
+const startSegment = (xrayEnabled) => (uow) => (xrayEnabled ? {
+  xraySegment: AWSXray.getSegment().addNewSubsegment(uow.pipeline),
+  ...uow,
+} : {
+  ...uow,
+});
+
+const startFaultSegment = (xrayEnabled) => (uow) => (xrayEnabled ? {
+  xraySegment: AWSXray.getSegment().addNewSubsegment('FaultHandler'),
+  ...uow,
+} : {
+  ...uow,
+});
+
+const endSegment = ({ xraySegment, ...uow }) => {
+  xraySegment?.close();
+  return uow;
+};
 
 const addEncryptors = (opt) => ({
   encrypt: encryptData(opt),

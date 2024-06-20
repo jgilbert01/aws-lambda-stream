@@ -107,6 +107,7 @@
     "@smithy/util-retry": "2.x",
     "@smithy/util-stream": "2.x",
     "aws-kms-ee": "1.x",
+    "aws-xray-sdk-core": "3.x",
     "bluebird": "3.x",
     "debug": "4.x",
     "highland": "2.x",
