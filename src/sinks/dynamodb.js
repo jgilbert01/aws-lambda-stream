@@ -71,7 +71,7 @@ export const updateDynamoDB = ({
       .then((updateResponse) => ({ ...uow, [updateResponseField]: updateResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, 'save', { parallel }) || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, 'save') || p); // wrap promise in a stream
   };
 
   return (s) => s
