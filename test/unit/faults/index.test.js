@@ -10,6 +10,7 @@ import {
 } from '../../../src/faults';
 
 import { defaultOptions } from '../../../src/utils/opt';
+import { retryable } from '../../../src/utils/retry';
 
 let publishStub;
 
@@ -130,6 +131,7 @@ describe('faults/index.js', () => {
   });
 
   it('should account for retriable error', (done) => {
+    process.env.STREAM_RETRY_ENABLED = 'true';
     const spy = sinon.spy();
     const err = new Error('retriable error');
     const simulateRetriableError = (uow) => {
@@ -146,10 +148,11 @@ describe('faults/index.js', () => {
 
     fromKinesis(events)
       .map(simulateRetriableError)
-      .errors(faults(defaultOptions))
+      .errors(faults({ retryable, ...defaultOptions }))
       .stopOnError(spy)
       .collect()
       .tap((collected) => {
+        delete process.env.STREAM_RETRY_ENABLED;
         expect(spy).to.have.been.calledWith(err);
         expect(collected.length).to.equal(0);
       })

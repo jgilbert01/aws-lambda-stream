@@ -1,10 +1,6 @@
-import { isServerError, isThrottlingError, isTransientError } from '@smithy/service-error-classification';
-
 import { publishToEventBridge } from '../sinks/eventbridge';
-
 import { debug } from './print';
-
-export const retryable = (err, opt) => (isThrottlingError(err) || isTransientError(err) || isServerError(err));
+import { retryable } from './retry';
 
 export const defaultOptions = { // eslint-disable-line import/prefer-default-export
   debug: debug('handler'),

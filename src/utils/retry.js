@@ -1,3 +1,4 @@
+import { isServerError, isThrottlingError, isTransientError } from '@smithy/service-error-classification';
 import Promise from 'bluebird';
 
 export const defaultRetryConfig = {
@@ -21,3 +22,7 @@ export const getDelay = (baseMillis, attempt) => {
 };
 
 export const defaultBackoffDelay = (attempt) => getDelay(Number(process.env.BASE_BACKOFF_MILLIS) || 200, attempt);
+
+export const retryable = (err, opt) =>
+  (isThrottlingError(err) || isTransientError(err) || isServerError(err))
+  && process.env.STREAM_RETRY_ENABLED === 'true';
