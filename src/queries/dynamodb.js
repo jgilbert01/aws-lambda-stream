@@ -44,7 +44,7 @@ export const batchGetDynamoDB = ({
       .then((batchGetResponse) => ({ ...uow, [batchGetResponseField]: batchGetResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, 'get') || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -81,7 +81,7 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
       .then((queryResponse) => ({ ...uow, [queryResponseField]: queryResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, 'query') || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -162,7 +162,8 @@ export const scanSplitDynamoDB = ({
         ExclusiveStartKey: cursor,
       };
 
-      connector.scan(params)
+      const p = connector.scan(params);
+      (uow.metrics?.w(p, 'scan') || p)
         .then(async ({ LastEvaluatedKey, Items, ...rest }) => ({ LastEvaluatedKey, Items: await Promise.all(Items.map(decrypt)), ...rest }))
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;
@@ -228,7 +229,8 @@ export const querySplitDynamoDB = ({
         ExclusiveStartKey: cursor,
       };
 
-      connector.queryPage(params)
+      const p = connector.queryPage(params);
+      (uow.metrics?.w(p, 'query') || p)
         .then(async ({ LastEvaluatedKey, Items, ...rest }) => ({ LastEvaluatedKey, Items: await Promise.all(Items.map(decrypt)), ...rest }))
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;

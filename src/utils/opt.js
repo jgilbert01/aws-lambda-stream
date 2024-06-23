@@ -1,6 +1,7 @@
 import { publishToEventBridge } from '../sinks/eventbridge';
 
 import { debug } from './print';
+import * as metrics from '../metrics';
 
 export const defaultOptions = { // eslint-disable-line import/prefer-default-export
   debug: debug('handler'),
@@ -8,6 +9,7 @@ export const defaultOptions = { // eslint-disable-line import/prefer-default-exp
   publish: publishToEventBridge,
 
   metricsEnabled: process.env.ENABLE_METRICS === 'true',
+  metrics,
 
   maxRequestSize: Number(process.env.MAX_REQ_SIZE) || 1024 * 256, // 262,144
   compressionThreshold: Number(process.env.COMPRESSION_THRESHOLD) || 1024 * 10,

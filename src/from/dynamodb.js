@@ -4,6 +4,8 @@ import _ from 'highland';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import { faulty } from '../utils';
 
+import * as metrics from '../metrics';
+
 export const fromDynamodb = (event, {
   pkFn = 'pk',
   skFn = 'sk',
@@ -42,6 +44,7 @@ export const fromDynamodb = (event, {
               : undefined,
           },
         },
+        metrics: metrics.startUow(record.dynamodb.ApproximateCreationDateTime * 1000, event.Records.length),
       })));
 
 // https://www.trek10.com/blog/dynamodb-single-table-relational-modeling
@@ -134,7 +137,7 @@ export const toDynamodbRecords = (events, { removeUndefinedValues = true } = {})
       eventName: !e.oldImage ? 'INSERT' : !e.newImage ? 'REMOVE' : 'MODIFY', // eslint-disable-line no-nested-ternary
       // eventVersion: '1.0',
       eventSource: 'aws:dynamodb',
-      awsRegion: 'us-west-2',
+      awsRegion: process.env.AWS_REGION || 'us-west-2',
       dynamodb: {
         ApproximateCreationDateTime: e.timestamp,
         Keys: e.keys ? marshall(e.keys, { removeUndefinedValues }) : /* istanbul ignore next */ undefined,

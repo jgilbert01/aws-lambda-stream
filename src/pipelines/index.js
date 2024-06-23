@@ -77,6 +77,10 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
           ...uow,
           ...addDebug(p.id),
         }))
+        .map((uow) => ({
+          ...uow,
+          metrics: uow.metrics?.startPipeline(uow),
+        }))
         .through(p);
     });
 
@@ -88,10 +92,15 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
         ...uow,
         ...addDebug(p.id),
       }))
+      .map((uow) => ({
+        ...uow,
+        metrics: uow.metrics?.startPipeline(uow, keys.length),
+      }))
       .through(lines[last]);
   }
 
-  let s = _(lines).merge();
+  let s = _(lines).merge()
+    .tap((uow) => uow.metrics?.endPipeline());
 
   if (includeFaultHandler) {
     s = s.errors(faults)

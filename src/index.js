@@ -3,6 +3,7 @@ export * from './faults';
 export * from './filters';
 export * from './flavors';
 export * from './from';
+export * from './metrics';
 export * from './pipelines';
 export * from './queries';
 export * from './sinks';

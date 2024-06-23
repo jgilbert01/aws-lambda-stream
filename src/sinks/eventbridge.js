@@ -52,7 +52,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
       .catch(rejectWithFault(batchUow, !handleErrors))
       .then((publishResponse) => ({ ...batchUow, publishResponse }));
 
-    return _(p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, 'publish') || p); // wrap promise in a stream
   };
 
   return (s) => s
