@@ -6,7 +6,7 @@ import { getSecrets } from '../../../src/queries/secretsmgr';
 
 import Connector from '../../../src/connectors/secretsmgr';
 
-describe('utils/secretsmgr.js', () => {
+describe('queries/secretsmgr.js', () => {
   afterEach(sinon.restore);
 
   it('should get secrets', async () => {
