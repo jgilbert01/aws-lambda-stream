@@ -719,8 +719,7 @@ describe('from/dynamodb.js', () => {
     fromDynamodb(events, { ignoreTtlExpiredEvents: true })
       .collect()
       .tap((collected) => {
-        console.log(JSON.stringify(collected, null, 2));
-
+        // console.log(JSON.stringify(collected, null, 2));
         expect(collected.length).to.equal(1);
       })
       .done(done);
