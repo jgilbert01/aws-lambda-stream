@@ -48,6 +48,10 @@ export const initializeFrom = (rules) => rules.reduce(
 
 const assemble = (opt) => (head, includeFaultHandler = true) => {
   const xrayEnabled = Boolean(opt.xrayEnabled);
+  if(xrayEnabled) {
+    AWSXray.capturePromise();
+    AWSXray.captureHTTPsGlobal(require('https'));
+  }
   const keys = Object.keys(thePipelines);
 
   debug('assemble: %j', keys);
@@ -122,14 +126,14 @@ const startSegment = (xrayEnabled) => (uow) => (xrayEnabled ? {
 });
 
 const startFaultSegment = (xrayEnabled) => (uow) => (xrayEnabled ? {
-  xraySegment: AWSXray.getSegment().addNewSubsegment('FaultHandler'),
+  xraySegment: AWSXray.getSegment().addNewSubsegment('FlushFaults'),
   ...uow,
 } : {
   ...uow,
 });
 
-const endSegment = ({ xraySegment, ...uow }) => {
-  xraySegment?.close();
+const endSegment = (uow) => {
+  uow.xraySegment?.close();
   return uow;
 };
 

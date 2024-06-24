@@ -21,10 +21,9 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
   retryConfig,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, retryConfig, xrayEnabled });
+  const connector = new Connector({ debug, retryConfig, ...opt });
 
   const toPublishRequestEntry = (uow) => ({
     ...uow,

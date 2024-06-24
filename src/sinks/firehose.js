@@ -14,10 +14,9 @@ export const sendToFirehose = ({
   batchSize = Number(process.env.FIREHOSE_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
   parallel = Number(process.env.FIREHOSE_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, deliveryStreamName, xrayEnabled });
+  const connector = new Connector({ debug, deliveryStreamName, ...opt });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,

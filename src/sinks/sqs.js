@@ -13,10 +13,9 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   messageField = 'message',
   batchSize = Number(process.env.SQS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, queueUrl, xrayEnabled });
+  const connector = new Connector({ debug, queueUrl, ...opt });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,

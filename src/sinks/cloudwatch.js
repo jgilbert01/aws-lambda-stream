@@ -9,9 +9,9 @@ export const putMetrics = ({ // eslint-disable-line import/prefer-default-export
   debug = d('cw'),
   putField = 'putRequest',
   parallel = Number(process.env.CW_PARALLEL) || Number(process.env.PARALLEL) || 8,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
+  ...opt
 } = {}) => {
-  const connector = new Connector({ debug, xrayEnabled });
+  const connector = new Connector({ debug, ...opt });
 
   const put = (uow) => {
     const p = connector.put(uow[putField])

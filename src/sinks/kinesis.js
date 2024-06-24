@@ -16,10 +16,9 @@ export const publishToKinesis = ({
   batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
   ...opt
 } = {}) => {
-  const connector = new Publisher({ debug, streamName, xrayEnabled });
+  const connector = new Publisher({ debug, streamName, ...opt });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,

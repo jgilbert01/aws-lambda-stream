@@ -58,11 +58,10 @@ export const updateDynamoDB = ({
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   removeUndefinedValues = true,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
   ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, removeUndefinedValues, xrayEnabled,
+    debug, tableName, timeout, removeUndefinedValues, ...opt
   });
 
   const invoke = (uow) => {
@@ -87,10 +86,10 @@ export const putDynamoDB = ({
   putRequestField = 'putRequest',
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
+  ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, xrayEnabled,
+    debug, tableName, timeout, ...opt
   });
 
   const invoke = (uow) => {

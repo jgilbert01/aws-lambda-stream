@@ -14,10 +14,10 @@ export const batchGetDynamoDB = ({
   parallel = Number(process.env.GET_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
+  ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, xrayEnabled,
+    debug, tableName, timeout, ...opt
   });
 
   const invoke = (uow) => {
@@ -63,10 +63,10 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
   parallel = Number(process.env.QUERY_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
+  ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, xrayEnabled,
+    debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {
@@ -153,10 +153,10 @@ export const scanSplitDynamoDB = ({
   parallel = Number(process.env.SCAN_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
+  ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, xrayEnabled,
+    debug, tableName, timeout, ...opt,
   });
 
   const scan = (uow) => {
@@ -222,10 +222,10 @@ export const querySplitDynamoDB = ({
   parallel = Number(process.env.SCAN_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
-  xrayEnabled = process.env.XRAY_ENABLED === 'true',
+  ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, xrayEnabled,
+    debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {
