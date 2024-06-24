@@ -100,12 +100,6 @@ export const outReplicas = (record) => {
     return image['aws:rep:updateregion'].S === process.env.AWS_REGION;
   }
 
-  // v2
-  if (image.awsregion) {
-    // only process events from the current region
-    return image.awsregion.S === process.env.AWS_REGION;
-  }
-
   return true;
 };
 
@@ -137,7 +131,7 @@ export const toDynamodbRecords = (events, { removeUndefinedValues = true } = {})
       eventName: !e.oldImage ? 'INSERT' : !e.newImage ? 'REMOVE' : 'MODIFY', // eslint-disable-line no-nested-ternary
       // eventVersion: '1.0',
       eventSource: 'aws:dynamodb',
-      awsRegion: process.env.AWS_REGION || 'us-west-2',
+      awsRegion: process.env.AWS_REGION || /* istanbul ignore next */ 'us-west-2',
       dynamodb: {
         ApproximateCreationDateTime: e.timestamp,
         Keys: e.keys ? marshall(e.keys, { removeUndefinedValues }) : /* istanbul ignore next */ undefined,
