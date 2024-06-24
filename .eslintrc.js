@@ -30,7 +30,7 @@ module.exports = {
     "prefer-template": 1,
     "import/no-unresolved": 1,
     "import/no-extraneous-dependencies": [2, { "devDependencies": ["**/test/**/*.js"] }],
-    "global-require": 1,
+    "global-require": 0,
     "no-underscore-dangle": 0,
     "new-cap": 0,
     "no-use-before-define": 0,
