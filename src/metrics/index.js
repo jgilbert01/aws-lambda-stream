@@ -29,7 +29,7 @@ export const startUow = (publishTime, batchSize) => {
 
 export class PipelineMetrics {
   constructor({
-    pipeline, publishTime, timer,
+    pipeline, publishTime, timer, gauges,
   }) {
     this.pipeline = pipeline || 'default';
     this.timer = new Timer({
@@ -37,6 +37,14 @@ export class PipelineMetrics {
       last: timer?.last,
       checkpoints: timer?.checkpoints,
     });
+    this.gauges = gauges || {};
+  }
+
+  gauge(key, value) {
+    // console.log('gauge: ', key, value);
+    const k = `${this.pipeline}|${key}`;
+    this.gauges[k] = [...(this.gauges[k] || []), ...(Array.isArray(value) ? value : [value])];
+    return this;
   }
 
   startPipeline({ pipeline }, pipelineCount) {
@@ -114,15 +122,31 @@ const calculateMetrics = (collected) => {
       ...a,
       ...Object.entries(timer.checkpoints)
         .map(([key, { value }]) => ({ key, value })),
-    ], []);
-
-  const grouped = checkpoints
+    ], [])
     .reduce((a, { key, value }) => ({
       ...a,
       [key]: [...(a[key] || []), value],
     }), {});
 
-  const stats = Object.entries(grouped)
+  // console.log('checkpoints: ', checkpoints);
+
+  const gauges = collected
+    .reduce((a, { metrics: { gauges } }) => [ // eslint-disable-line no-shadow
+      ...a,
+      ...Object.entries(gauges)
+        .map(([key, value]) => ({ key, value })),
+    ], [])
+    .reduce((a, { key, value }) => ({
+      ...a,
+      [key]: [...(a[key] || []), ...value],
+    }), {});
+
+  // console.log('gauges: ', gauges);
+
+  const stats = Object.entries({
+    ...checkpoints,
+    ...gauges,
+  })
     .reduce((a, [key, values]) => ({
       ...a,
       [key]: calculateStats(values),
@@ -135,7 +159,11 @@ const calculateMetrics = (collected) => {
       [`${splitKey(key).pipeline}|stream.pipeline.utilization`]: count / collected.length,
     }), {});
 
-  return { ...functionMetrics, ...pipelineUtilization, ...stats };
+  return {
+    ...functionMetrics,
+    ...pipelineUtilization,
+    ...stats,
+  };
 };
 
 export const toPromiseWithMetrics = (s) =>

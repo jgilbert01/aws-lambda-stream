@@ -416,6 +416,7 @@ describe('utils/batch.js', () => {
                 },
               },
             ],
+            metrics: undefined,
           },
           {
             debug: 'x',
@@ -434,6 +435,7 @@ describe('utils/batch.js', () => {
                 },
               },
             ],
+            metrics: undefined,
           },
         ]);
       })
