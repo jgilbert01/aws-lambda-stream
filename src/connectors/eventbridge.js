@@ -3,7 +3,6 @@ import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge
 import Promise from 'bluebird';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfiguredRetryStrategy } from '@smithy/util-retry';
-import { captureAWSv3Client } from 'aws-xray-sdk-core';
 import {
   defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
@@ -17,7 +16,7 @@ class Connector {
     xrayEnabled = process.env.XRAY_ENABLED === 'true',
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.bus = this.buildClient(xrayEnabled, {
+    this.bus = new EventBridgeClient({
       requestHandler: new NodeHttpHandler({
         requestTimeout: timeout,
         connectionTimeout: timeout,
@@ -25,12 +24,8 @@ class Connector {
       retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
       logger: defaultDebugLogger(debug),
     });
+    if(xrayEnabled) this.bus = require('../utils/xray').captureSdkClientTraces(this.bus);
     this.retryConfig = retryConfig;
-  }
-
-  buildClient(xrayEnabled, opt) {
-    const sdkClient = new EventBridgeClient(opt);
-    return xrayEnabled ? captureAWSv3Client(sdkClient) : sdkClient;
   }
 
   putEvents(params) {

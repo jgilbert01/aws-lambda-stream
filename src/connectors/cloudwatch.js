@@ -12,18 +12,14 @@ class Connector {
     xrayEnabled = process.env.XRAY_ENABLED === 'true',
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.cw = this.buildClient(xrayEnabled, {
+    this.cw = new CloudWatchClient({
       requestHandler: new NodeHttpHandler({
         requestTimeout: timeout,
         connectionTimeout: timeout,
       }),
       logger: defaultDebugLogger(debug),
     });
-  }
-
-  buildClient(xrayEnabled, opt) {
-    const sdkClient = new CloudWatchClient(opt);
-    return xrayEnabled ? captureAWSv3Client(sdkClient) : sdkClient;
+    if(xrayEnabled) this.cw = require('../utils/xray').captureSdkClientTraces(this.cw);
   }
 
   put({ Namespace, MetricData }) {

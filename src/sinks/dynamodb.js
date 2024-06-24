@@ -67,7 +67,7 @@ export const updateDynamoDB = ({
   const invoke = (uow) => {
     if (!uow[updateRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.update(uow[updateRequestField])
+    const p = connector.update(uow[updateRequestField], uow?.traceContext)
       .then((updateResponse) => ({ ...uow, [updateResponseField]: updateResponse }))
       .catch(rejectWithFault(uow));
 
@@ -95,7 +95,7 @@ export const putDynamoDB = ({
   const invoke = (uow) => {
     if (!uow[putRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.put(uow[putRequestField])
+    const p = connector.put(uow[putRequestField], uow?.traceContext)
       .then((putResponse) => ({ ...uow, putResponse }))
       .catch(rejectWithFault(uow));
 

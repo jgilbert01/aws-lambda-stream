@@ -4,7 +4,6 @@ import { SQSClient, SendMessageBatchCommand } from '@aws-sdk/client-sqs';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfiguredRetryStrategy } from '@smithy/util-retry';
 
-import { captureAWSv3Client } from 'aws-xray-sdk-core';
 import {
   defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
@@ -20,7 +19,7 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.queueUrl = queueUrl || 'undefined';
-    this.queue = this.buildClient(xrayEnabled, {
+    this.queue = new SQSClient({
       requestHandler: new NodeHttpHandler({
         requestTimeout: timeout,
         connectionTimeout: timeout,
@@ -28,12 +27,8 @@ class Connector {
       retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
       logger: defaultDebugLogger(debug),
     });
+    if(xrayEnabled) this.queue = require('../utils/xray').captureSdkClientTraces(this.queue);
     this.retryConfig = retryConfig;
-  }
-
-  buildClient(xrayEnabled, opt) {
-    const sdkClient = new SQSClient(opt);
-    return xrayEnabled ? captureAWSv3Client(sdkClient) : sdkClient;
   }
 
   sendMessageBatch(inputParams) {

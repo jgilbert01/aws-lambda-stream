@@ -12,7 +12,6 @@ import Promise from 'bluebird';
 import _ from 'highland';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfiguredRetryStrategy } from '@smithy/util-retry';
-import { captureAWSv3Client } from 'aws-xray-sdk-core';
 import {
   defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
@@ -30,7 +29,7 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
-    const dynamoClient = this.buildClient(xrayEnabled, {
+    const dynamoClient = new DynamoDBClient({
       requestHandler: new NodeHttpHandler({
         requestTimeout: timeout,
         connectionTimeout: timeout,
@@ -44,21 +43,18 @@ class Connector {
         removeUndefinedValues,
       },
     });
+    
     this.retryConfig = retryConfig;
+    this.xrayEnabled = xrayEnabled;
   }
 
-  buildClient(xrayEnabled, opt) {
-    const sdkClient = new DynamoDBClient(opt);
-    return xrayEnabled ? captureAWSv3Client(sdkClient) : sdkClient;
-  }
-
-  update(inputParams) {
+  update(inputParams, traceContext = {}) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new UpdateCommand(params))
+    return this._executeCommand(new UpdateCommand(params), traceContext)
       .catch((err) => {
         /* istanbul ignore else */
         if (err.name === 'ConditionalCheckFailedException') {
@@ -69,28 +65,28 @@ class Connector {
       });
   }
 
-  put(inputParams) {
+  put(inputParams, traceContext = {}) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new PutCommand(params));
+    return this._executeCommand(new PutCommand(params), traceContext);
   }
 
-  batchGet(inputParams) {
+  batchGet(inputParams, traceContext = {}) {
     const params = {
       ...inputParams,
     };
 
-    return this._batchGet(params, []);
+    return this._batchGet(params, [], traceContext);
   }
 
-  query(inputParams) {
-    return this.queryAll(inputParams);
+  query(inputParams, traceContext = {}) {
+    return this.queryAll(inputParams, traceContext);
   }
 
-  queryAll(inputParams) {
+  queryAll(inputParams, traceContext = {}) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
@@ -101,7 +97,7 @@ class Connector {
 
     return _((push, next) => {
       params.ExclusiveStartKey = cursor;
-      return this._executeCommand(new QueryCommand(params))
+      return this._executeCommand(new QueryCommand(params), traceContext)
         .then((data) => {
           itemsCount += data.Items.length;
 
@@ -130,44 +126,45 @@ class Connector {
       .toPromise(Promise);
   }
 
-  queryPage(inputParams) {
+  queryPage(inputParams, traceContext = {}) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new QueryCommand(params));
+    return this._executeCommand(new QueryCommand(params), traceContext);
   }
 
-  scan(inputParams) {
+  scan(inputParams, traceContext = {}) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new ScanCommand(params));
+    return this._executeCommand(new ScanCommand(params), traceContext);
   }
 
-  _batchGet(params, attempts) {
+  _batchGet(params, attempts, traceContext = {}) {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._executeCommand(new BatchGetCommand(params))
+      .then(() => this._executeCommand(new BatchGetCommand(params), traceContext)
         .then((resp) => {
           const response = {
             Responses: {},
             ...resp,
           };
           if (Object.keys(response.UnprocessedKeys || /* istanbul ignore next */ {}).length > 0) {
-            return this._batchGet(unprocessed(params, response), [...attempts, response]);
+            return this._batchGet(unprocessed(params, response), [...attempts, response], traceContext);
           } else {
             return accumlate(attempts, response);
           }
         }));
   }
 
-  _executeCommand(command) {
-    return Promise.resolve(this.db.send(command))
+  _executeCommand(command, traceContext = {}) {
+    const client = this.xrayEnabled ? require('../utils/xray').captureSdkClientTraces(this.db, traceContext) : this.db;
+    return Promise.resolve(client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

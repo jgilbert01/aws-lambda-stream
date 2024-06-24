@@ -6,7 +6,6 @@ import {
 } from '@aws-sdk/client-s3';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
-import { captureAWSv3Client } from 'aws-xray-sdk-core';
 import { defaultDebugLogger } from '../utils/log';
 
 class Connector {
@@ -18,18 +17,14 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.bucketName = bucketName || 'undefined';
-    this.bucket = this.buildClient(xrayEnabled, {
+    this.bucket = new S3Client({
       requestHandler: new NodeHttpHandler({
         requestTimeout: timeout,
         connectionTimeout: timeout,
       }),
       logger: defaultDebugLogger(debug),
     });
-  }
-
-  buildClient(xrayEnabled, opt) {
-    const sdkClient = new S3Client(opt);
-    return xrayEnabled ? captureAWSv3Client(sdkClient) : sdkClient;
+    if(xrayEnabled) this.bucket = require('../utils/xray').captureSdkClientTraces(this.bucket);
   }
 
   putObject(inputParams) {

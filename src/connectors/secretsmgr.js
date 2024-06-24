@@ -2,7 +2,6 @@
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
-import { captureAWSv3Client } from 'aws-xray-sdk-core';
 import { defaultDebugLogger } from '../utils/log';
 
 /**
@@ -19,18 +18,14 @@ class Connector {
   }) {
     this.debug = /* istanbul ignore next */ (msg) => debug('%j', msg);
     this.secretId = secretId;
-    this.sm = this.buildClient(xrayEnabled, {
+    this.sm = new SecretsManagerClient({
       requestHandler: new NodeHttpHandler({
         requestTimeout: timeout,
         connectionTimeout: timeout,
       }),
       logger: defaultDebugLogger(debug),
     });
-  }
-
-  buildClient(xrayEnabled, opt) {
-    const sdkClient = new SecretsManagerClient(opt);
-    return xrayEnabled ? captureAWSv3Client(sdkClient) : sdkClient;
+    if(xrayEnabled) this.sm = require('../utils/xray').captureSdkClientTraces(this.sm);
   }
 
   async get() {

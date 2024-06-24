@@ -1,6 +1,5 @@
 import _ from 'highland';
 import memoryCache from 'memory-cache';
-import AWSXray from 'aws-xray-sdk-core';
 
 import { faults, flushFaults } from '../faults';
 
@@ -48,10 +47,7 @@ export const initializeFrom = (rules) => rules.reduce(
 
 const assemble = (opt) => (head, includeFaultHandler = true) => {
   const xrayEnabled = Boolean(opt.xrayEnabled);
-  if(xrayEnabled) {
-    AWSXray.capturePromise();
-    AWSXray.captureHTTPsGlobal(require('https'));
-  }
+  if(xrayEnabled) require('../utils/xray').clearPipelineSegments();
   const keys = Object.keys(thePipelines);
 
   debug('assemble: %j', keys);
@@ -83,9 +79,9 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
           ...uow,
           ...addDebug(p.id),
         }))
-        .map(startSegment(xrayEnabled))
+        .map(startSegment(xrayEnabled, p.id))
         .through(p)
-        .map(endSegment);
+        .through(endSegment(xrayEnabled, p.id))
     });
 
     debug('FORK: %s', lines[last].id);
@@ -96,21 +92,21 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
         ...uow,
         ...addDebug(p.id),
       }))
-      .map(startSegment(xrayEnabled))
+      .map(startSegment(xrayEnabled, p.id))
       .through(lines[last])
-      .map(endSegment);
+      .through(endSegment(xrayEnabled, p.id));
   }
 
   let s = _(lines).merge();
 
   if (includeFaultHandler) {
     s = s.errors(faults)
-      .map(startFaultSegment(xrayEnabled))
+      .map(startSegment(xrayEnabled, 'FlushFaults'))
       .through(flushFaults({
         ...opt,
         ...addDebug('fault'),
       }))
-      .map(endSegment);
+      .through(endSegment(xrayEnabled, 'FlushFaults'));
   }
 
   return s;
@@ -118,24 +114,11 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
 
 const addDebug = (id) => ({ debug: d(`pl:${id}`) });
 
-const startSegment = (xrayEnabled) => (uow) => (xrayEnabled ? {
-  xraySegment: AWSXray.getSegment().addNewSubsegment(uow.pipeline),
-  ...uow,
-} : {
-  ...uow,
-});
+const startSegment = (xrayEnabled, pipelineId) =>
+  xrayEnabled ? require('../utils/xray').startPipelineSegment(pipelineId) : (uow) => uow;
 
-const startFaultSegment = (xrayEnabled) => (uow) => (xrayEnabled ? {
-  xraySegment: AWSXray.getSegment().addNewSubsegment('FlushFaults'),
-  ...uow,
-} : {
-  ...uow,
-});
-
-const endSegment = (uow) => {
-  uow.xraySegment?.close();
-  return uow;
-};
+const endSegment = (xrayEnabled, pipelineId) => (s) =>
+  xrayEnabled ? s.through(require('../utils/xray').terminateSegment(pipelineId)) : s;
 
 const addEncryptors = (opt) => ({
   encrypt: encryptData(opt),

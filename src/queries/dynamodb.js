@@ -28,7 +28,7 @@ export const batchGetDynamoDB = ({
 
     const p = (cached
       ? /* istanbul ignore next */ Promise.resolve(cached)
-      : connector.batchGet(uow[batchGetRequestField])
+      : connector.batchGet(uow[batchGetRequestField], uow?.traceContext)
         .then(async (batchGetResponse) => ({
           ...batchGetResponse,
           Responses: await Object.keys(batchGetResponse.Responses).reduce(async (a, c) => {
@@ -77,7 +77,7 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
 
     const p = (cached
       ? Promise.resolve(cached)
-      : connector.query(uow[queryRequestField])
+      : connector.query(uow[queryRequestField], uow?.traceContext)
         .then((queryResponse) => Promise.all(queryResponse.map(decrypt)))
         .then((queryResponse) => {
           memoryCache.put(req, queryResponse);
@@ -171,7 +171,7 @@ export const scanSplitDynamoDB = ({
         ExclusiveStartKey: cursor,
       };
 
-      connector.scan(params)
+      connector.scan(params, uow?.traceContext)
         .then(async ({ LastEvaluatedKey, Items, ...rest }) => ({ LastEvaluatedKey, Items: await Promise.all(Items.map(decrypt)), ...rest }))
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;
@@ -240,7 +240,7 @@ export const querySplitDynamoDB = ({
         ExclusiveStartKey: cursor,
       };
 
-      connector.queryPage(params)
+      connector.queryPage(params, uow?.traceContext)
         .then(async ({ LastEvaluatedKey, Items, ...rest }) => ({ LastEvaluatedKey, Items: await Promise.all(Items.map(decrypt)), ...rest }))
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;
