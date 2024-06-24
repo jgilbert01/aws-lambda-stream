@@ -683,4 +683,45 @@ describe('from/dynamodb.js', () => {
       })
       .done(done);
   });
+
+  it('should ignore expired ttl', (done) => {
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1573005490000,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        oldImage: {
+          pk: '1',
+          sk: 'thing',
+          name: 'N1',
+          ttl: 1573005490,
+          timestamp: 1573005490000,
+        },
+      },
+      {
+        timestamp: 1573005490,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        oldImage: {
+          pk: '1',
+          sk: 'thing',
+          name: 'N1',
+          ttl: 1573015490, // hasn't expired yet
+          timestamp: 1573005490000,
+        },
+      },
+    ]);
+
+    fromDynamodb(events, { ignoreTtlExpiredEvents: true })
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(1);
+      })
+      .done(done);
+  });
 });
