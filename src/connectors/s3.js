@@ -13,7 +13,7 @@ class Connector {
     debug,
     bucketName = process.env.BUCKET_NAME,
     timeout = Number(process.env.S3_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    xrayEnabled = process.env.XRAY_ENABLED === 'true',
+    xrayEnabled = false,
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.bucketName = bucketName || 'undefined';

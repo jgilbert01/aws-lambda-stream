@@ -9,7 +9,7 @@ class Connector {
     debug,
     deliveryStreamName = process.env.DELIVERY_STREAM_NAME,
     timeout = Number(process.env.FIREHOSE_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    xrayEnabled = process.env.XRAY_ENABLED === 'true',
+    xrayEnabled = false,
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.deliveryStreamName = deliveryStreamName || 'undefined';

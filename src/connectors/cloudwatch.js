@@ -9,7 +9,7 @@ class Connector {
   constructor({
     debug,
     timeout = Number(process.env.CW_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    xrayEnabled = process.env.XRAY_ENABLED === 'true',
+    xrayEnabled = false,
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.cw = new CloudWatchClient({

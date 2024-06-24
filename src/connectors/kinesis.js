@@ -15,7 +15,7 @@ class Connector {
     streamName = process.env.STREAM_NAME,
     timeout = Number(process.env.KINESIS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
-    xrayEnabled = process.env.XRAY_ENABLED === 'true',
+    xrayEnabled = false,
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.streamName = streamName || 'undefined';

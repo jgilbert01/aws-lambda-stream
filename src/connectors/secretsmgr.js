@@ -14,7 +14,7 @@ class Connector {
     debug,
     secretId,
     timeout = Number(process.env.SECRETSMGR_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    xrayEnabled = process.env.XRAY_ENABLED === 'true',
+    xrayEnabled = false,
   }) {
     this.debug = /* istanbul ignore next */ (msg) => debug('%j', msg);
     this.secretId = secretId;

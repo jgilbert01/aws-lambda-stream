@@ -8,7 +8,7 @@ class Connector {
   constructor({
     debug,
     timeout = Number(process.env.LAMBDA_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    xrayEnabled = process.env.XRAY_ENABLED === 'true',
+    xrayEnabled = false,
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.lambda = new LambdaClient({
