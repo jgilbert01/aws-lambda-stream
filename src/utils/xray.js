@@ -1,6 +1,6 @@
 import AWSXray, {
-    captureAWSv3Client,
-    setSegment
+  captureAWSv3Client,
+  setSegment,
 } from 'aws-xray-sdk-core';
 import debug from 'debug';
 import _ from 'highland';
@@ -18,52 +18,51 @@ let pipelineSegments = {};
  * should be nested under. Otherwise, xray automode derives parent segment from
  * current context.
  */
-export const captureSdkClientTraces = (sdkClient, traceContext = {}) => {
-    // const parentSegment = traceContext?.xraySegment;
-    // TODO - Set parent segment on capture. Automode in xray currently
-    // prevents this.
-    return captureAWSv3Client(sdkClient);
-}
+export const captureSdkClientTraces = (sdkClient, traceContext = {}) =>
+// const parentSegment = traceContext?.xraySegment;
+// TODO - Set parent segment on capture. Automode in xray currently
+// prevents this.
+  captureAWSv3Client(sdkClient);
 
 /**
  * Clear pipeline segments before an invocation.
  */
 export const clearPipelineSegments = () => {
-    pipelineSegments = {};
-}
+  pipelineSegments = {};
+};
 
 /**
  * Starts a segment for a particular pipeline by id. Only start 1 segment
  * per pipeline id. Append to uow.
  */
 export const startPipelineSegment = (pipelineId) => (uow) => {
-    if(!pipelineSegments[pipelineId]) {
-        const segment = AWSXray.getSegment().addNewSubsegment(pipelineId);
-        pipelineSegments[pipelineId] = segment;
-    }
-    return {
-        traceContext: {
-            xraySegment: pipelineSegments[pipelineId]
-        },
-        ...uow,
-    };
-}
+  if (!pipelineSegments[pipelineId]) {
+    const segment = AWSXray.getSegment().addNewSubsegment(pipelineId);
+    pipelineSegments[pipelineId] = segment;
+  }
+  return {
+    traceContext: {
+      xraySegment: pipelineSegments[pipelineId],
+    },
+    ...uow,
+  };
+};
 
 /**
  * Through stream to manage terminating the segment when the pipeline terminates.
  */
 export const terminateSegment = (pipelineId) => (s) =>
-    s.consume((err, x, push, next) => {
-        // Normal operations unless we're at the end of the stream
-        if(err) {
-            push(err);
-            next();
-        } else if (x === _.nil) {
+  s.consume((err, x, push, next) => {
+    // Normal operations unless we're at the end of the stream
+    if (err) {
+      push(err);
+      next();
+    } else if (x === _.nil) {
             // Terminate segment and continue.
             pipelineSegments[pipelineId]?.close();
             push(null, x);
-        } else {
-            push(null, x);
-            next();
-        }
-    });
+    } else {
+      push(null, x);
+      next();
+    }
+  });

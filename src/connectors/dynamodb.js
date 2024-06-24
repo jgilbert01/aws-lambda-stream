@@ -43,7 +43,7 @@ class Connector {
         removeUndefinedValues,
       },
     });
-    
+
     this.retryConfig = retryConfig;
     this.xrayEnabled = xrayEnabled;
   }

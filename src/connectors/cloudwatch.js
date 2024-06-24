@@ -19,7 +19,7 @@ class Connector {
       }),
       logger: defaultDebugLogger(debug),
     });
-    if(xrayEnabled) this.cw = require('../utils/xray').captureSdkClientTraces(this.cw);
+    if (xrayEnabled) this.cw = require('../utils/xray').captureSdkClientTraces(this.cw);
   }
 
   put({ Namespace, MetricData }) {

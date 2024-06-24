@@ -27,7 +27,7 @@ class Connector {
       retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
       logger: defaultDebugLogger(debug),
     });
-    if(xrayEnabled) this.queue = require('../utils/xray').captureSdkClientTraces(this.queue);
+    if (xrayEnabled) this.queue = require('../utils/xray').captureSdkClientTraces(this.queue);
     this.retryConfig = retryConfig;
   }
 

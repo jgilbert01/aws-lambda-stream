@@ -18,7 +18,7 @@ class Connector {
       }),
       logger: defaultDebugLogger(debug),
     });
-    if(xrayEnabled) this.lambda = require('../utils/xray').captureSdkClientTraces(this.lambda);
+    if (xrayEnabled) this.lambda = require('../utils/xray').captureSdkClientTraces(this.lambda);
   }
 
   invoke(params) {

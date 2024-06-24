@@ -17,7 +17,7 @@ export const batchGetDynamoDB = ({
   ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, ...opt
+    debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {

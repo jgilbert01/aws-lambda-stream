@@ -47,7 +47,7 @@ export const initializeFrom = (rules) => rules.reduce(
 
 const assemble = (opt) => (head, includeFaultHandler = true) => {
   const xrayEnabled = Boolean(opt.xrayEnabled);
-  if(xrayEnabled) require('../utils/xray').clearPipelineSegments();
+  if (xrayEnabled) require('../utils/xray').clearPipelineSegments();
   const keys = Object.keys(thePipelines);
 
   debug('assemble: %j', keys);
@@ -81,7 +81,7 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
         }))
         .map(startSegment(xrayEnabled, p.id))
         .through(p)
-        .through(endSegment(xrayEnabled, p.id))
+        .through(endSegment(xrayEnabled, p.id));
     });
 
     debug('FORK: %s', lines[last].id);
@@ -115,10 +115,10 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
 const addDebug = (id) => ({ debug: d(`pl:${id}`) });
 
 const startSegment = (xrayEnabled, pipelineId) =>
-  xrayEnabled ? require('../utils/xray').startPipelineSegment(pipelineId) : (uow) => uow;
+  (xrayEnabled ? require('../utils/xray').startPipelineSegment(pipelineId) : (uow) => uow);
 
 const endSegment = (xrayEnabled, pipelineId) => (s) =>
-  xrayEnabled ? s.through(require('../utils/xray').terminateSegment(pipelineId)) : s;
+  (xrayEnabled ? s.through(require('../utils/xray').terminateSegment(pipelineId)) : s);
 
 const addEncryptors = (opt) => ({
   encrypt: encryptData(opt),

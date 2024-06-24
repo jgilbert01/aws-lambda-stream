@@ -20,7 +20,7 @@ class Connector {
       }),
       logger: defaultDebugLogger(debug),
     });
-    if(xrayEnabled) this.stream = require('../utils/xray').captureSdkClientTraces(this.stream);
+    if (xrayEnabled) this.stream = require('../utils/xray').captureSdkClientTraces(this.stream);
   }
 
   putRecordBatch(inputParams) {

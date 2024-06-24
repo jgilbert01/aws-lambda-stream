@@ -25,7 +25,7 @@ class Connector {
       }),
       logger: defaultDebugLogger(debug),
     });
-    if(xrayEnabled) this.sm = require('../utils/xray').captureSdkClientTraces(this.sm);
+    if (xrayEnabled) this.sm = require('../utils/xray').captureSdkClientTraces(this.sm);
   }
 
   async get() {

@@ -24,7 +24,7 @@ class Connector {
       }),
       logger: defaultDebugLogger(debug),
     });
-    if(xrayEnabled) this.bucket = require('../utils/xray').captureSdkClientTraces(this.bucket);
+    if (xrayEnabled) this.bucket = require('../utils/xray').captureSdkClientTraces(this.bucket);
   }
 
   putObject(inputParams) {
