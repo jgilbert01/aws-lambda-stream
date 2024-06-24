@@ -78,6 +78,7 @@
     "@smithy/util-stream": "^2.1.1",
     "aws-kms-ee": "^1.0.0",
     "aws-sdk-client-mock": "^3.0.0",
+    "aws-xray-sdk-core": "^3.9.0",
     "babel-eslint": "^10.0.0",
     "babel-plugin-istanbul": "^5.2.0",
     "better-npm-run": "^0.1.1",
