@@ -11,6 +11,7 @@ export const fromDynamodb = (event, {
   skFn = 'sk',
   discriminatorFn = 'discriminator',
   eventTypePrefix = undefined,
+  ignoreTtlExpiredEvents = false,
 } = {}) => // eslint-disable-line import/prefer-default-export
 
   // prepare the event stream
@@ -20,6 +21,9 @@ export const fromDynamodb = (event, {
     // global table support
     .filter(outReplicas)
     .filter(outGlobalTableExtraModify)
+    //--------------------------------
+    // ttl support
+    .filter(outTtlExpiredEvents(ignoreTtlExpiredEvents))
     //--------------------------------
 
     .map(faulty((record) =>
@@ -88,11 +92,32 @@ const calculateEventTypeSuffix = (record) => {
 //--------------------------------------------
 // global table support - version: 2017.11.29
 //--------------------------------------------
+// or use the following:
+//
+// filterPatterns:
+//   - eventName: [ INSERT, MODIFY ]
+//     dynamodb:
+//       NewImage:
+//         awsregion:
+//           S:
+//             - ${opt:region}
+//   - eventName: [ REMOVE ]
+//     dynamodb:
+//       OldImage:
+//         awsregion:
+//           S:
+//             - ${opt:region}
 
 export const outReplicas = (record) => {
   const image = record.dynamodb.NewImage || record.dynamodb.OldImage;
 
   // is this a global table event
+  // v2
+  if (image.awsregion) {
+    // only process events from the current region
+    return image.awsregion.S === process.env.AWS_REGION;
+  }
+
   // v1
   /* istanbul ignore next */
   if (image['aws:rep:updateregion']) {
@@ -107,6 +132,12 @@ export const outReplicas = (record) => {
 export const outGlobalTableExtraModify = (record) => {
   const { NewImage, OldImage } = record.dynamodb;
 
+  // v2
+  if (NewImage && NewImage.awsregion && OldImage && !OldImage.awsregion) {
+    // skip
+    return false;
+  }
+
   // v1
   /* istanbul ignore next */
   if (NewImage && NewImage['aws:rep:updateregion'] && OldImage && !OldImage['aws:rep:updateregion']) {
@@ -114,13 +145,33 @@ export const outGlobalTableExtraModify = (record) => {
     return false;
   }
 
-  // v2
-  if (NewImage && NewImage.awsregion && OldImage && !OldImage.awsregion) {
-    // skip
-    return false;
-  }
-
   return true;
+};
+
+//--------------------------------------------
+// ttl support or use filterPatterns
+//--------------------------------------------
+
+export const outTtlExpiredEvents = (ignoreTtlExpiredEvents) => (record) => {
+  // this is not a REMOVE event
+  if (record.eventName !== 'REMOVE') return true;
+
+  const { OldImage } = record.dynamodb;
+
+  // this record does not have ttl
+  if (!OldImage.ttl || !OldImage.timestamp) return true;
+
+  // ttl has not expired
+  if (Number(OldImage.ttl.N) * 1000 > Number(OldImage.timestamp.N)) return true;
+
+  // this is a ttl expired event
+  // should we ignore it
+  /* istanbul ignore else */
+  if (ignoreTtlExpiredEvents) {
+    return false;
+  } else {
+    return true;
+  }
 };
 
 // test helper
