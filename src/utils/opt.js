@@ -8,7 +8,7 @@ export const defaultOptions = { // eslint-disable-line import/prefer-default-exp
   publish: publishToEventBridge,
 
   metricsEnabled: process.env.ENABLE_METRICS === 'true',
-  xrayEnabled: process.env.XRAY_ENABLED === 'true',
+  xrayEnabled: process.env.XRAY_ENABLED === 'true' || process.env.AWS_XRAY_DAEMON_ADDRESS,
 
   maxRequestSize: Number(process.env.MAX_REQ_SIZE) || 1024 * 256, // 262,144
   compressionThreshold: Number(process.env.COMPRESSION_THRESHOLD) || 1024 * 10,
