@@ -41,7 +41,9 @@
       "env": {
         "AWS_REGION": "us-west-2",
         "KMS_REGIONS": "us-west-2",
-        "NODE_ENV": "test"
+        "NODE_ENV": "test",
+        "AWS_ACCESS_KEY_ID": "notarealaccesskeyid",
+        "AWS_SECRET_ACCESS_KEY": "notarealsecretaccesskey"
       }
     }
   },
