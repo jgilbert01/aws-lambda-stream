@@ -68,7 +68,6 @@ export class PipelineMetrics {
 
   endPipeline() {
     this.timer.end(`${this.pipeline}|stream.pipeline.time`);
-    // TODO conditional xray
     return this;
   }
 
@@ -95,6 +94,22 @@ export class PipelineMetrics {
     });
   }
 }
+
+export const endPipeline = (s, pipelineId) =>
+  s.consume((err, x, push, next) => {
+    if (err) {
+      push(err);
+      next();
+    } else if (x === _.nil) {
+      // TODO conditional xray
+      push(null, x);
+    } else {
+      // per uow
+      x.metrics?.endPipeline();
+      push(null, x);
+      next();
+    }
+  });
 
 const calculateStats = (values) =>
   values.reduce((a, value, i) => ({
@@ -189,9 +204,8 @@ export const toPromiseWithMetrics = (s) =>
       .resume();
   });
 
-export const capture = (client, command, step, opt, ctx) => {
+export const capture = (client, command, step, opt, ctx) =>
   // console.log('capture: ', step, opt, ctx);
   // addMiddleware(client, command, step, opt, ctx);
   // TODO conditional xray
-  return client || command;
-};
+  client || command;

@@ -71,36 +71,22 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
       const os = head.observe();
 
       lines[i] = os
-        // shallow clone of data per pipeline
-        .map((uow) => ({
-          pipeline: p.id,
-          ...uow,
-          ...addDebug(p.id),
-        }))
-        .map((uow) => ({
-          ...uow,
-          metrics: uow.metrics?.startPipeline(uow),
-        }))
-        .through(p);
+        .map(initPipeline(p.id))
+        .map(startPipeline)
+        .through(p)
+        .through(endPipeline(opt, p.id));
     });
 
     debug('FORK: %s', lines[last].id);
     const p = lines[last];
     lines[last] = head
-      .map((uow) => ({
-        pipeline: p.id,
-        ...uow,
-        ...addDebug(p.id),
-      }))
-      .map((uow) => ({
-        ...uow,
-        metrics: uow.metrics?.startPipeline(uow, keys.length),
-      }))
-      .through(lines[last]);
+      .map(initPipeline(p.id))
+      .map(startPipeline)
+      .through(lines[last])
+      .through(endPipeline(opt, p.id));
   }
 
-  let s = _(lines).merge()
-    .tap((uow) => uow.metrics?.endPipeline());
+  let s = _(lines).merge();
 
   if (includeFaultHandler) {
     s = s.errors(faults)
@@ -114,6 +100,21 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
 };
 
 const addDebug = (id) => ({ debug: d(`pl:${id}`) });
+
+const initPipeline = (pipeline) => (uow) => ({
+  // shallow clone of data per pipeline
+  pipeline,
+  ...uow,
+  ...addDebug(pipeline),
+});
+
+const startPipeline = (uow) => ({
+  ...uow,
+  metrics: uow.metrics?.startPipeline(uow),
+});
+
+const endPipeline = (opt, pipelineId) => (s) =>
+  (opt.metrics ? opt.metrics.endPipeline(s, pipelineId) : s);
 
 const addEncryptors = (opt) => ({
   encrypt: encryptData(opt),
