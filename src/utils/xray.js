@@ -1,7 +1,4 @@
-import AWSXray, {
-  captureAWSv3Client,
-  setSegment,
-} from 'aws-xray-sdk-core';
+import AWSXray from 'aws-xray-sdk-core';
 import debug from 'debug';
 import _ from 'highland';
 
@@ -19,10 +16,10 @@ let pipelineSegments = {};
  * current context.
  */
 export const captureSdkClientTraces = (sdkClient, traceContext = {}) =>
-// const parentSegment = traceContext?.xraySegment;
-// TODO - Set parent segment on capture. Automode in xray currently
-// prevents this.
-  captureAWSv3Client(sdkClient);
+  // const parentSegment = traceContext?.xraySegment;
+  // TODO - Set parent segment on capture. Automode in xray currently
+  // prevents this.
+  AWSXray.captureAWSv3Client(sdkClient);
 
 /**
  * Clear pipeline segments before an invocation.
@@ -30,6 +27,8 @@ export const captureSdkClientTraces = (sdkClient, traceContext = {}) =>
 export const clearPipelineSegments = () => {
   pipelineSegments = {};
 };
+
+export const getPipelineSegments = () => pipelineSegments;
 
 /**
  * Starts a segment for a particular pipeline by id. Only start 1 segment
@@ -58,9 +57,9 @@ export const terminateSegment = (pipelineId) => (s) =>
       push(err);
       next();
     } else if (x === _.nil) {
-            // Terminate segment and continue.
-            pipelineSegments[pipelineId]?.close();
-            push(null, x);
+      // Terminate segment and continue.
+      pipelineSegments[pipelineId]?.close();
+      push(null, x);
     } else {
       push(null, x);
       next();

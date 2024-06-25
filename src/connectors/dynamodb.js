@@ -43,18 +43,18 @@ class Connector {
         removeUndefinedValues,
       },
     });
+    if (xrayEnabled) this.db = require('../utils/xray').captureSdkClientTraces(this.db);
 
     this.retryConfig = retryConfig;
-    this.xrayEnabled = xrayEnabled;
   }
 
-  update(inputParams, traceContext = {}) {
+  update(inputParams) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new UpdateCommand(params), traceContext)
+    return this._executeCommand(new UpdateCommand(params))
       .catch((err) => {
         /* istanbul ignore else */
         if (err.name === 'ConditionalCheckFailedException') {
@@ -65,28 +65,28 @@ class Connector {
       });
   }
 
-  put(inputParams, traceContext = {}) {
+  put(inputParams) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new PutCommand(params), traceContext);
+    return this._executeCommand(new PutCommand(params));
   }
 
-  batchGet(inputParams, traceContext = {}) {
+  batchGet(inputParams) {
     const params = {
       ...inputParams,
     };
 
-    return this._batchGet(params, [], traceContext);
+    return this._batchGet(params, []);
   }
 
-  query(inputParams, traceContext = {}) {
-    return this.queryAll(inputParams, traceContext);
+  query(inputParams) {
+    return this.queryAll(inputParams);
   }
 
-  queryAll(inputParams, traceContext = {}) {
+  queryAll(inputParams) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
@@ -97,7 +97,7 @@ class Connector {
 
     return _((push, next) => {
       params.ExclusiveStartKey = cursor;
-      return this._executeCommand(new QueryCommand(params), traceContext)
+      return this._executeCommand(new QueryCommand(params))
         .then((data) => {
           itemsCount += data.Items.length;
 
@@ -126,45 +126,44 @@ class Connector {
       .toPromise(Promise);
   }
 
-  queryPage(inputParams, traceContext = {}) {
+  queryPage(inputParams) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new QueryCommand(params), traceContext);
+    return this._executeCommand(new QueryCommand(params));
   }
 
-  scan(inputParams, traceContext = {}) {
+  scan(inputParams) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new ScanCommand(params), traceContext);
+    return this._executeCommand(new ScanCommand(params));
   }
 
-  _batchGet(params, attempts, traceContext = {}) {
+  _batchGet(params, attempts) {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._executeCommand(new BatchGetCommand(params), traceContext)
+      .then(() => this._executeCommand(new BatchGetCommand(params))
         .then((resp) => {
           const response = {
             Responses: {},
             ...resp,
           };
           if (Object.keys(response.UnprocessedKeys || /* istanbul ignore next */ {}).length > 0) {
-            return this._batchGet(unprocessed(params, response), [...attempts, response], traceContext);
+            return this._batchGet(unprocessed(params, response), [...attempts, response]);
           } else {
             return accumlate(attempts, response);
           }
         }));
   }
 
-  _executeCommand(command, traceContext = {}) {
-    const client = this.xrayEnabled ? require('../utils/xray').captureSdkClientTraces(this.db, traceContext) : this.db;
-    return Promise.resolve(client.send(command))
+  _executeCommand(command) {
+    return Promise.resolve(this.db.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }
