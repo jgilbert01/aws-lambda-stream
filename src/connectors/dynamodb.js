@@ -43,7 +43,7 @@ class Connector {
         removeUndefinedValues,
       },
     });
-    if (xrayEnabled) this.db = require('../utils/xray').captureSdkClientTraces(this.db);
+    if (xrayEnabled) this.db = require('../utils/xray').captureSdkClientTraces(this.db, true);
 
     this.retryConfig = retryConfig;
   }

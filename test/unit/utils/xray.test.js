@@ -4,6 +4,7 @@ import sinon from 'sinon';
 import AWSXray from 'aws-xray-sdk-core';
 import _ from 'highland';
 import debug from 'debug';
+import nock from 'nock';
 import { throwFault, toPromise } from '../../../src/utils';
 import { initialize, initializeFrom } from '../../../src/pipelines';
 
@@ -311,12 +312,58 @@ describe('utils/xray.js', () => {
     });
 
     describe('dynamodb', () => {
+      // afterEach(nock.restore);
+
       it('integrates with connector if enabled', () => {
         validateConnector(DynamoConnector, true);
       });
 
       it('does not integrate with connector if not enabled', () => {
         validateConnector(DynamoConnector, false);
+      });
+
+      it('injects middleware to capture input', async () => {
+        nock(`https://dynamodb.${process.env.AWS_REGION}.amazonaws.com`)
+          .post('/')
+          .reply(200, { Responses: { 'test-table': [] }, UnprocessedKeys: {} });
+
+        AWSXray.enableAutomaticMode();
+        const namespace = AWSXray.getNamespace();
+        namespace.enter(namespace.createContext());
+        AWSXray.setSegment(new AWSXray.Segment('Root'));
+
+        const connector = new DynamoConnector({ debug: debug('test'), xrayEnabled: true, tableName: 'test-table' });
+        await connector.batchGet({
+          RequestItems: {
+            'test-table': {
+              Keys: [
+                {
+                  pk: 'test-pk',
+                  sk: 'test-sk',
+                },
+              ],
+            },
+          },
+        });
+
+        const segment = AWSXray.getSegment();
+        const subsegment = segment.subsegments[0];
+        expect(subsegment.metadata).to.deep.eq({
+          default: {
+            Input: {
+              RequestItems: {
+                'test-table': {
+                  Keys: [
+                    {
+                      pk: { S: 'test-pk' },
+                      sk: { S: 'test-sk' },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        });
       });
     });
   });
