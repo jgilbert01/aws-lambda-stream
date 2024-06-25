@@ -13,14 +13,14 @@ export const publishToSns = ({ // eslint-disable-line import/prefer-default-expo
   parallel = Number(process.env.SNS_PARALLEL) || Number(process.env.PARALLEL) || 8,
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, topicArn });
+  const connector = new Connector({ debug, topicArn, ...opt });
 
   const publish = (uow) => {
-    const p = connector.publish(uow[messageField])
+    const p = connector.publish(uow[messageField], uow)
       .then((publishResponse) => ({ ...uow, publishResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, 'publish') || /* istanbul ignore next */ p); // wrap promise in a stream
   };
 
   return (s) => s

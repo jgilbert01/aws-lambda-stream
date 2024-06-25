@@ -15,7 +15,7 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, queueUrl });
+  const connector = new Connector({ debug, queueUrl, ...opt });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,
@@ -32,11 +32,11 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
       return _(Promise.resolve(batchUow));
     }
 
-    const p = connector.sendMessageBatch(batchUow.inputParams)
+    const p = connector.sendMessageBatch(batchUow.inputParams, batchUow)
       .then((sendMessageBatchResponse) => ({ ...batchUow, sendMessageBatchResponse }))
       .catch(rejectWithFault(batchUow));
 
-    return _(p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, 'send') || p); // wrap promise in a stream
   };
 
   return (s) => s

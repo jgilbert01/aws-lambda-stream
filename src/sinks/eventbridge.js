@@ -23,7 +23,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   retryConfig,
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, retryConfig });
+  const connector = new Connector({ debug, retryConfig, ...opt });
 
   const toPublishRequestEntry = (uow) => ({
     ...uow,
@@ -48,7 +48,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
     if (!batchUow[publishRequestField].Entries.length) {
       return _(Promise.resolve(batchUow));
     }
-    const p = connector.putEvents(batchUow[publishRequestField])
+    const p = connector.putEvents(batchUow[publishRequestField], batchUow)
       .catch(rejectWithFault(batchUow, !handleErrors))
       .then((publishResponse) => ({ ...batchUow, publishResponse }));
 

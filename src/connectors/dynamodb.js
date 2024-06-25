@@ -25,6 +25,7 @@ class Connector {
     removeUndefinedValues = true,
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
@@ -36,13 +37,14 @@ class Connector {
       retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
       logger: defaultDebugLogger(debug),
     });
-    this.db = DynamoDBDocumentClient.from(dynamoClient, {
+    this.client = DynamoDBDocumentClient.from(dynamoClient, {
       marshallOptions: {
         convertEmptyValues,
         removeUndefinedValues,
       },
     });
     this.retryConfig = retryConfig;
+    this.opt = opt;
   }
 
   update(inputParams) {
@@ -159,8 +161,9 @@ class Connector {
         }));
   }
 
-  _executeCommand(command) {
-    return Promise.resolve(this.db.send(command))
+  _executeCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'dynamodb', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

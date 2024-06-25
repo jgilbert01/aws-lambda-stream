@@ -18,7 +18,7 @@ export const publishToKinesis = ({
   handleErrors = true,
   ...opt
 } = {}) => {
-  const connector = new Publisher({ debug, streamName });
+  const connector = new Publisher({ debug, streamName, ...opt });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,
@@ -34,11 +34,11 @@ export const publishToKinesis = ({
       return _(Promise.resolve(batchUow));
     }
 
-    const p = connector.putRecords(batchUow.inputParams)
+    const p = connector.putRecords(batchUow.inputParams, batchUow)
       .then((publishResponse) => ({ ...batchUow, publishResponse }))
       .catch(rejectWithFault(batchUow, !handleErrors));
 
-    return _(p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, 'publish') || p); // wrap promise in a stream
   };
 
   return (s) => s

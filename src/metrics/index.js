@@ -2,11 +2,13 @@ import _ from 'highland';
 import Promise from 'bluebird';
 
 import Timer from './timer';
+// import { addMiddleware } from './middleware';
 
 let functionMetrics = {};
 
 export const clear = () => {
   functionMetrics = {};
+  // TODO conditional xray
 };
 
 export const convertKinesisTs = (ts) => {
@@ -60,11 +62,13 @@ export class PipelineMetrics {
       functionMetrics['stream.pipeline.count'] = pipelineCount;
     }
 
+    // TODO conditional xray
     return clone;
   }
 
   endPipeline() {
     this.timer.end(`${this.pipeline}|stream.pipeline.time`);
+    // TODO conditional xray
     return this;
   }
 
@@ -184,3 +188,10 @@ export const toPromiseWithMetrics = (s) =>
     })
       .resume();
   });
+
+export const capture = (client, command, step, opt, ctx) => {
+  // console.log('capture: ', step, opt, ctx);
+  // addMiddleware(client, command, step, opt, ctx);
+  // TODO conditional xray
+  return client || command;
+};

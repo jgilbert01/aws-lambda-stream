@@ -16,7 +16,7 @@ export const sendToFirehose = ({
   handleErrors = true,
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, deliveryStreamName });
+  const connector = new Connector({ debug, deliveryStreamName, ...opt });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,
@@ -27,12 +27,12 @@ export const sendToFirehose = ({
   });
 
   const putRecordBatch = (batchUow) => {
-    const p = connector.putRecordBatch(batchUow.inputParams)
+    const p = connector.putRecordBatch(batchUow.inputParams, batchUow)
       .then((putResponse) => ({ ...batchUow, putResponse }))
       .catch(rejectWithFault(batchUow, !handleErrors));
     // .then(handleFailedPutCount);
 
-    return _(p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, 'save') || p); // wrap promise in a stream
   };
 
   return (s) => s
