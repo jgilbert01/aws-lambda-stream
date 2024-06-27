@@ -11,19 +11,29 @@ import { defaultDebugLogger } from '../utils/log';
 class Connector {
   constructor({
     debug,
+    pipelineId,
     timeout = Number(process.env.BUS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.bus = new EventBridgeClient({
-      requestHandler: new NodeHttpHandler({
-        requestTimeout: timeout,
-        connectionTimeout: timeout,
-      }),
-      retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
-      logger: defaultDebugLogger(debug),
-    });
+    this.bus = Connector.getClient(pipelineId, debug, timeout);
     this.retryConfig = retryConfig;
+  }
+
+  static clients = {};
+
+  static getClient(pipelineId, debug, timeout) {
+    if (!this.clients[pipelineId]) {
+      this.clients[pipelineId] = new EventBridgeClient({
+        requestHandler: new NodeHttpHandler({
+          requestTimeout: timeout,
+          connectionTimeout: timeout,
+        }),
+        retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
+        logger: defaultDebugLogger(debug),
+      });
+    }
+    return this.clients[pipelineId];
   }
 
   putEvents(params) {
