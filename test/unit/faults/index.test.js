@@ -165,6 +165,7 @@ describe('faults/index.js', () => {
           eventID: 'shardId-000000000000:0',
           eventSource: 'aws:kinesis',
           kinesis: {
+            // NOT compressed
             data: 'eyJ0eXBlIjoiZjEiLCJib2R5IjoiMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwIn0=',
             sequenceNumber: '0',
           },
@@ -197,6 +198,7 @@ describe('faults/index.js', () => {
               eventID: 'shardId-000000000000:0',
               eventSource: 'aws:kinesis',
               kinesis: {
+                // NOT compressed
                 data: 'eyJ0eXBlIjoiZjEiLCJib2R5IjoiMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwIn0=',
                 sequenceNumber: '0',
               },
@@ -209,6 +211,7 @@ describe('faults/index.js', () => {
               eventID: 'shardId-000000000000:1',
               eventSource: 'aws:kinesis',
               kinesis: {
+                // NOT compressed
                 data: 'eyJ0eXBlIjoiZjIiLCJib2R5IjoiMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwIn0=',
                 sequenceNumber: '1',
               },
