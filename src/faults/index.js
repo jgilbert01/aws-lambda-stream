@@ -103,6 +103,10 @@ export const limitFaultSize = (fault, opt) => {
   const size = Buffer.byteLength(str);
   if (size > opt.maxRequestSize) {
     // just include what is essential to resubmit faults
+    // if it is still too big there is not a lot we can do
+    // maybe reduce the batch size
+    // maybe the original event is too big with unnecessary data
+    // TODO add-source-side-claim-check-support - https://github.com/jgilbert01/aws-lambda-stream/issues/355
     return {
       ...fault,
       uow: fault.uow.batch ? {
@@ -112,11 +116,6 @@ export const limitFaultSize = (fault, opt) => {
       },
     };
   } else {
-    // if it is still too big there is not a lot we can do
-    // it will error out and start the retry cycle
-    // maybe reduce the batch size
-    // maybe the original event is too big with unnecessary data
-    // TODO add-source-side-claim-check-support - https://github.com/jgilbert01/aws-lambda-stream/issues/355
     return fault;
   }
 };
