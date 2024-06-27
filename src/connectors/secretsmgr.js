@@ -12,18 +12,28 @@ import { defaultDebugLogger } from '../utils/log';
 class Connector {
   constructor({
     debug,
+    pipelineId,
     secretId,
     timeout = Number(process.env.SECRETSMGR_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
     this.debug = /* istanbul ignore next */ (msg) => debug('%j', msg);
     this.secretId = secretId;
-    this.sm = new SecretsManagerClient({
-      requestHandler: new NodeHttpHandler({
-        requestTimeout: timeout,
-        connectionTimeout: timeout,
-      }),
-      logger: defaultDebugLogger(debug),
-    });
+    this.sm = Connector.getClient(pipelineId, debug, timeout);
+  }
+
+  static clients = {};
+
+  static getClient(pipelineId, debug, timeout) {
+    if (!this.clients[pipelineId]) {
+      this.clients[pipelineId] = new SecretsManagerClient({
+        requestHandler: new NodeHttpHandler({
+          requestTimeout: timeout,
+          connectionTimeout: timeout,
+        }),
+        logger: defaultDebugLogger(debug),
+      });
+    }
+    return this.clients[pipelineId];
   }
 
   async get() {

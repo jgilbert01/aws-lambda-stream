@@ -22,13 +22,14 @@ export const toGetObjectRequest2 = (uow) => ({
 });
 
 export const getObjectFromS3 = ({
+  id: pipelineId,
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,
   getRequestField = 'getRequest',
   getResponseField = 'getResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
-  const connector = new Connector({ debug, bucketName });
+  const connector = new Connector({ pipelineId, debug, bucketName });
 
   const getObject = (uow) => {
     if (!uow[getRequestField]) return _(Promise.resolve(uow));
@@ -46,6 +47,7 @@ export const getObjectFromS3 = ({
 };
 
 export const getObjectFromS3AsStream = ({
+  id: pipelineId,
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,
   getRequestField = 'getRequest',
@@ -53,7 +55,7 @@ export const getObjectFromS3AsStream = ({
   delimiter = '\n',
   splitFilter = () => true,
 } = {}) => {
-  const connector = new Connector({ debug, bucketName });
+  const connector = new Connector({ pipelineId, debug, bucketName });
 
   const getObject = (uow) => {
     if (!uow[getRequestField]) return _(Promise.resolve(uow));
@@ -91,13 +93,14 @@ export const splitS3Object = ({
 };
 
 export const listObjectsFromS3 = ({
+  id: pipelineId,
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,
   listRequestField = 'listRequest',
   listResponseField = 'listResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
-  const connector = new Connector({ debug, bucketName });
+  const connector = new Connector({ pipelineId, debug, bucketName });
 
   const listObjects = (uow) => {
     /* istanbul ignore if */
@@ -116,12 +119,13 @@ export const listObjectsFromS3 = ({
 };
 
 export const pageObjectsFromS3 = ({
+  id: pipelineId,
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,
   listRequestField = 'listRequest',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
 } = {}) => {
-  const connector = new Connector({ debug, bucketName });
+  const connector = new Connector({ pipelineId, debug, bucketName });
 
   const listObjects = (uow) => {
     let { ContinuationToken } = uow[listRequestField];

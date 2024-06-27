@@ -51,6 +51,7 @@ export const pkCondition = (fieldName = 'pk') => ({
 });
 
 export const updateDynamoDB = ({
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.ENTITY_TABLE_NAME || process.env.EVENT_TABLE_NAME,
   updateRequestField = 'updateRequest',
@@ -61,7 +62,7 @@ export const updateDynamoDB = ({
   ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, removeUndefinedValues,
+    pipelineId, debug, tableName, timeout, removeUndefinedValues,
   });
 
   const invoke = (uow) => {
@@ -81,13 +82,16 @@ export const updateDynamoDB = ({
 };
 
 export const putDynamoDB = ({
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME,
   putRequestField = 'putRequest',
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
 } = {}) => {
-  const connector = new Connector({ debug, tableName, timeout });
+  const connector = new Connector({
+    pipelineId, debug, tableName, timeout,
+  });
 
   const invoke = (uow) => {
     if (!uow[putRequestField]) return _(Promise.resolve(uow));
