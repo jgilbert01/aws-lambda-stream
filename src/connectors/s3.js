@@ -11,20 +11,30 @@ import { defaultDebugLogger } from '../utils/log';
 class Connector {
   constructor({
     debug,
+    pipelineId,
     bucketName = process.env.BUCKET_NAME,
     timeout = Number(process.env.S3_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.bucketName = bucketName || 'undefined';
-    this.bucket = new S3Client({
-      requestHandler: new NodeHttpHandler({
-        requestTimeout: timeout,
-        connectionTimeout: timeout,
-      }),
-      logger: defaultDebugLogger(debug),
-    });
+    this.client = Connector.getClient(pipelineId, debug, timeout);
     this.opt = opt;
+  }
+
+  static clients = {};
+
+  static getClient(pipelineId, debug, timeout) {
+    if (!this.clients[pipelineId]) {
+      this.clients[pipelineId] = new S3Client({
+        requestHandler: new NodeHttpHandler({
+          requestTimeout: timeout,
+          connectionTimeout: timeout,
+        }),
+        logger: defaultDebugLogger(debug),
+      });
+    }
+    return this.clients[pipelineId];
   }
 
   putObject(inputParams, ctx) {
@@ -76,7 +86,7 @@ class Connector {
 
   _sendCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 's3', this.opt, ctx);
-    return Promise.resolve(this.bucket.send(command))
+    return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

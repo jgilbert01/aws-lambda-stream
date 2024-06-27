@@ -132,8 +132,8 @@ export const outReplicas = (record) => {
 export const outGlobalTableExtraModify = (record) => {
   const { NewImage, OldImage } = record.dynamodb;
 
-  // v2
-  if (NewImage && NewImage.awsregion && OldImage && !OldImage.awsregion) {
+  // v1/v2 transition
+  if (NewImage && NewImage.awsregion && OldImage && (!OldImage.awsregion && !OldImage['aws:rep:updateregion'])) {
     // skip
     return false;
   }

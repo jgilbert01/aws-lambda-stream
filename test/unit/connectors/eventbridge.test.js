@@ -19,6 +19,15 @@ describe('connectors/eventbridge.js', () => {
     mockEventBridge.restore();
   });
 
+  it('should reuse client per pipeline', () => {
+    const client1 = Connector.getClient('test1', debug('test'));
+    const client2 = Connector.getClient('test1', debug('test'));
+    const client3 = Connector.getClient('test2', debug('test'));
+
+    expect(client1).to.eq(client2);
+    expect(client2).to.not.eq(client3);
+  });
+
   it('should publish', async () => {
     const spy = sinon.spy((_) => ({ Entries: [{ EventId: '1' }], FailedEntryCount: 0 }));
     mockEventBridge.on(PutEventsCommand).callsFake(spy);

@@ -19,6 +19,15 @@ describe('connectors/firehose.js', () => {
     mockFirehose.restore();
   });
 
+  it('should reuse client per pipeline', () => {
+    const client1 = Connector.getClient('test1', debug('test'));
+    const client2 = Connector.getClient('test1', debug('test'));
+    const client3 = Connector.getClient('test2', debug('test'));
+
+    expect(client1).to.eq(client2);
+    expect(client2).to.not.eq(client3);
+  });
+
   it('should put', async () => {
     const spy = sinon.spy((_) => ({}));
     mockFirehose.on(PutRecordBatchCommand).callsFake(spy);

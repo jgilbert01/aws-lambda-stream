@@ -7,6 +7,7 @@ import { rejectWithFault } from '../utils/faults';
 import { debug as d } from '../utils/print';
 
 export const batchGetDynamoDB = ({
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME,
   batchGetRequestField = 'batchGetRequest',
@@ -17,7 +18,7 @@ export const batchGetDynamoDB = ({
   ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, ...opt,
+    pipelineId, debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {
@@ -56,6 +57,7 @@ export const batchGetDynamoDB = ({
 };
 
 export const queryAllDynamoDB = (/* istanbul ignore next */{
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME,
   queryRequestField = 'queryRequest',
@@ -66,7 +68,7 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
   ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, ...opt,
+    pipelineId, debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {
@@ -146,6 +148,7 @@ export const toGetRequest = (uow, rule) => {
 };
 
 export const scanSplitDynamoDB = ({
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME || process.env.TABLE_NAME,
   scanRequestField = 'scanRequest',
@@ -156,7 +159,7 @@ export const scanSplitDynamoDB = ({
   ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, ...opt,
+    pipelineId, debug, tableName, timeout, ...opt,
   });
 
   const scan = (uow) => {
@@ -216,6 +219,7 @@ export const scanSplitDynamoDB = ({
 };
 
 export const querySplitDynamoDB = ({
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME || process.env.TABLE_NAME,
   querySplitRequestField = 'querySplitRequest',
@@ -226,7 +230,7 @@ export const querySplitDynamoDB = ({
   ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, ...opt,
+    pipelineId, debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {

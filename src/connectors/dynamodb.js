@@ -22,6 +22,7 @@ class Connector {
     debug,
     tableName,
     convertEmptyValues,
+    pipelineId,
     removeUndefinedValues = true,
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
@@ -29,31 +30,40 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
-    const dynamoClient = new DynamoDBClient({
-      requestHandler: new NodeHttpHandler({
-        requestTimeout: timeout,
-        connectionTimeout: timeout,
-      }),
-      retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
-      logger: defaultDebugLogger(debug),
-    });
-    this.client = DynamoDBDocumentClient.from(dynamoClient, {
-      marshallOptions: {
-        convertEmptyValues,
-        removeUndefinedValues,
-      },
-    });
+    this.client = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout);
     this.retryConfig = retryConfig;
     this.opt = opt;
   }
 
-  update(inputParams) {
+  static clients = {};
+
+  static getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout) {
+    if (!this.clients[pipelineId]) {
+      const dynamoClient = new DynamoDBClient({
+        requestHandler: new NodeHttpHandler({
+          requestTimeout: timeout,
+          connectionTimeout: timeout,
+        }),
+        retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
+        logger: defaultDebugLogger(debug),
+      });
+      this.clients[pipelineId] = DynamoDBDocumentClient.from(dynamoClient, {
+        marshallOptions: {
+          convertEmptyValues,
+          removeUndefinedValues,
+        },
+      });
+    }
+    return this.clients[pipelineId];
+  }
+
+  update(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new UpdateCommand(params))
+    return this._executeCommand(new UpdateCommand(params), ctx)
       .catch((err) => {
         /* istanbul ignore else */
         if (err.name === 'ConditionalCheckFailedException') {
@@ -64,28 +74,28 @@ class Connector {
       });
   }
 
-  put(inputParams) {
+  put(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new PutCommand(params));
+    return this._executeCommand(new PutCommand(params), ctx);
   }
 
-  batchGet(inputParams) {
+  batchGet(inputParams, ctx) {
     const params = {
       ...inputParams,
     };
 
-    return this._batchGet(params, []);
+    return this._batchGet(params, [], ctx);
   }
 
-  query(inputParams) {
-    return this.queryAll(inputParams);
+  query(inputParams, ctx) {
+    return this.queryAll(inputParams, ctx);
   }
 
-  queryAll(inputParams) {
+  queryAll(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
@@ -96,7 +106,7 @@ class Connector {
 
     return _((push, next) => {
       params.ExclusiveStartKey = cursor;
-      return this._executeCommand(new QueryCommand(params))
+      return this._executeCommand(new QueryCommand(params), ctx)
         .then((data) => {
           itemsCount += data.Items.length;
 
@@ -125,36 +135,36 @@ class Connector {
       .toPromise(Promise);
   }
 
-  queryPage(inputParams) {
+  queryPage(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new QueryCommand(params));
+    return this._executeCommand(new QueryCommand(params), ctx);
   }
 
-  scan(inputParams) {
+  scan(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new ScanCommand(params));
+    return this._executeCommand(new ScanCommand(params), ctx);
   }
 
-  _batchGet(params, attempts) {
+  _batchGet(params, attempts, ctx) {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._executeCommand(new BatchGetCommand(params))
+      .then(() => this._executeCommand(new BatchGetCommand(params), ctx)
         .then((resp) => {
           const response = {
             Responses: {},
             ...resp,
           };
           if (Object.keys(response.UnprocessedKeys || /* istanbul ignore next */ {}).length > 0) {
-            return this._batchGet(unprocessed(params, response), [...attempts, response]);
+            return this._batchGet(unprocessed(params, response), [...attempts, response], ctx);
           } else {
             return accumlate(attempts, response);
           }

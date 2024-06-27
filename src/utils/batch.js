@@ -89,7 +89,6 @@ export const batchWithSize = (opt) => {
 };
 
 const logMetrics = (batch, sizes, opt) => {
-  // TODO ??? opt.metricsEnabled === 'details'
   batch[0].metrics?.gauge('publish|stream.pipeline.batchSize.count', batch.length);
   batch[0].metrics?.gauge('publish|stream.pipeline.eventSize.bytes', sizes);
 };
