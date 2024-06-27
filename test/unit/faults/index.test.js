@@ -139,6 +139,7 @@ describe('faults/index.js', () => {
       },
       {
         type: 'f2',
+        body: '123456789012345678901234567890',
       },
     ];
     const records = toKinesisRecords(events);
@@ -159,7 +160,15 @@ describe('faults/index.js', () => {
     }, opt), compress(opt)))).to.deep.equal({
       type: 'fault',
       uow: {
-        record: records.Records[0],
+        record: { // records.Records[0]
+          awsRegion: 'us-west-2',
+          eventID: 'shardId-000000000000:0',
+          eventSource: 'aws:kinesis',
+          kinesis: {
+            data: 'eyJ0eXBlIjoiZjEiLCJib2R5IjoiMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwIn0=',
+            sequenceNumber: '0',
+          },
+        },
         // event removed
       },
     });
@@ -183,11 +192,27 @@ describe('faults/index.js', () => {
       uow: {
         batch: [
           {
-            record: records.Records[0],
+            record: { // records.Records[0]
+              awsRegion: 'us-west-2',
+              eventID: 'shardId-000000000000:0',
+              eventSource: 'aws:kinesis',
+              kinesis: {
+                data: 'eyJ0eXBlIjoiZjEiLCJib2R5IjoiMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwIn0=',
+                sequenceNumber: '0',
+              },
+            },
             // event removed
           },
           {
-            record: records.Records[1],
+            record: { // records.Records[1]
+              awsRegion: 'us-west-2',
+              eventID: 'shardId-000000000000:1',
+              eventSource: 'aws:kinesis',
+              kinesis: {
+                data: 'eyJ0eXBlIjoiZjIiLCJib2R5IjoiMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwIn0=',
+                sequenceNumber: '1',
+              },
+            },
             // event removed
           },
         ],
