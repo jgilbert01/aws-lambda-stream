@@ -1,5 +1,7 @@
 import _ from 'highland';
-import { now, trimAndRedact, uuid } from '../utils';
+import {
+  now, trimAndRedact, uuid, compress, FAULT_COMPRESSION_IGNORE,
+} from '../utils';
 
 export const FAULT_EVENT_TYPE = 'fault';
 
@@ -42,7 +44,7 @@ export const flushFaults = (opt) => (s) => {
     const s2 = _((push, next) => {
       const f = theFaults.shift();
       if (f) {
-        push(null, f);
+        push(null, limitFaultSize(f, opt));
         next();
       } else {
         push(null, _.nil);
@@ -93,5 +95,28 @@ const logErr = (err) => {
     } else {
       console.error(err);
     }
+  }
+};
+
+export const limitFaultSize = (fault, opt) => {
+  const str = JSON.stringify(fault, compress({ ...opt, compressionIgnore: FAULT_COMPRESSION_IGNORE }));
+  const size = Buffer.byteLength(str);
+  if (size > opt.maxRequestSize) {
+    // just include what is essential to resubmit faults
+    return {
+      ...fault,
+      uow: fault.uow.batch ? {
+        batch: fault.uow.batch.map(({ record }) => ({ record })),
+      } : {
+        record: fault.uow.record,
+      },
+    };
+  } else {
+    // if it is still too big there is not a lot we can do
+    // it will error out and start the retry cycle
+    // maybe reduce the batch size
+    // maybe the original event is too big with unnecessary data
+    // TODO add-source-side-claim-check-support - https://github.com/jgilbert01/aws-lambda-stream/issues/355
+    return fault;
   }
 };

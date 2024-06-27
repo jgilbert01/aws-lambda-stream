@@ -6,10 +6,12 @@ import Connector from '../../../src/connectors/eventbridge';
 
 import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import {
-  faults, flushFaults, FAULT_EVENT_TYPE,
+  faults, flushFaults, FAULT_EVENT_TYPE, limitFaultSize,
 } from '../../../src/faults';
+import { FAULT_COMPRESSION_IGNORE } from '../../../src/utils/faults';
 
 import { defaultOptions } from '../../../src/utils/opt';
+import { compress } from '../../../src/utils/compression';
 
 let publishStub;
 
@@ -127,5 +129,69 @@ describe('faults/index.js', () => {
         expect(collected.length).to.equal(0);
       })
       .done(done);
+  });
+
+  it('should check fault size', () => {
+    const events = [
+      {
+        type: 'f1',
+        body: '123456789012345678901234567890',
+      },
+      {
+        type: 'f2',
+      },
+    ];
+    const records = toKinesisRecords(events);
+
+    const opt = {
+      ...defaultOptions,
+      compressionThreshold: 40,
+      maxRequestSize: 300,
+      compressionIgnore: FAULT_COMPRESSION_IGNORE,
+    };
+
+    expect(JSON.parse(JSON.stringify(limitFaultSize({
+      type: 'fault',
+      uow: {
+        record: records.Records[0],
+        event: events[0],
+      },
+    }, opt), compress(opt)))).to.deep.equal({
+      type: 'fault',
+      uow: {
+        record: records.Records[0],
+        // event removed
+      },
+    });
+
+    expect(JSON.parse(JSON.stringify(limitFaultSize({
+      type: 'fault',
+      uow: {
+        batch: [
+          {
+            record: records.Records[0],
+            event: events[0],
+          },
+          {
+            record: records.Records[1],
+            event: events[1],
+          },
+        ],
+      },
+    }, opt), compress(opt)))).to.deep.equal({
+      type: 'fault',
+      uow: {
+        batch: [
+          {
+            record: records.Records[0],
+            // event removed
+          },
+          {
+            record: records.Records[1],
+            // event removed
+          },
+        ],
+      },
+    });
   });
 });

@@ -1,6 +1,9 @@
 import _ from 'highland';
 import Promise from 'bluebird';
 
+// the kinesis base64 data field isn't compressable
+export const FAULT_COMPRESSION_IGNORE = ['uow', 'batch', 'record', 'kinesis', 'data'];
+
 export const throwFault = (uow, ignore = false) => (err) => {
   /* istanbul ignore else */
   if (!ignore) {
