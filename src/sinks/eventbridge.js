@@ -3,7 +3,7 @@ import _ from 'highland';
 import Connector from '../connectors/eventbridge';
 
 import { toBatchUow, unBatchUow, batchWithSize } from '../utils/batch';
-import { rejectWithFault } from '../utils/faults';
+import { rejectWithFault, FAULT_COMPRESSION_IGNORE } from '../utils/faults';
 import { debug as d } from '../utils/print';
 import { adornStandardTags } from '../utils/tags';
 import { compress } from '../utils/compression';
@@ -32,7 +32,8 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
       EventBusName: busName,
       Source: source,
       DetailType: uow[eventField].type,
-      Detail: JSON.stringify(uow[eventField], compress(opt)),
+      Detail: JSON.stringify(uow[eventField],
+        compress(uow[eventField].type !== 'fault' ? opt : { ...opt, compressionIgnore: FAULT_COMPRESSION_IGNORE })),
     } : undefined,
   });
 
