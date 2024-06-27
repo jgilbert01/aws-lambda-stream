@@ -10,6 +10,7 @@ import { compress } from '../utils/compression';
 import { ratelimit } from '../utils/ratelimit';
 
 export const publishToEventBridge = ({ // eslint-disable-line import/prefer-default-export
+  id: pipelineId,
   debug = d('eventbridge'),
   busName = process.env.BUS_NAME || 'undefined',
   source = process.env.BUS_SRC || 'custom', // could change this to internal vs external/ingress/egress
@@ -23,7 +24,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   retryConfig,
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, retryConfig });
+  const connector = new Connector({ pipelineId, debug, retryConfig });
 
   const toPublishRequestEntry = (uow) => ({
     ...uow,

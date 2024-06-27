@@ -7,6 +7,7 @@ import { rejectWithFault } from '../utils/faults';
 import { debug as d } from '../utils/print';
 
 export const batchGetDynamoDB = ({
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME,
   batchGetRequestField = 'batchGetRequest',
@@ -15,7 +16,9 @@ export const batchGetDynamoDB = ({
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
 } = {}) => {
-  const connector = new Connector({ debug, tableName, timeout });
+  const connector = new Connector({
+    pipelineId, debug, tableName, timeout,
+  });
 
   const invoke = (uow) => {
     if (!uow[batchGetRequestField]) return _(Promise.resolve(uow));
@@ -53,6 +56,7 @@ export const batchGetDynamoDB = ({
 };
 
 export const queryAllDynamoDB = (/* istanbul ignore next */{
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME,
   queryRequestField = 'queryRequest',
@@ -61,7 +65,9 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
 } = {}) => {
-  const connector = new Connector({ debug, tableName, timeout });
+  const connector = new Connector({
+    pipelineId, debug, tableName, timeout,
+  });
 
   const invoke = (uow) => {
     if (!uow[queryRequestField]) return _(Promise.resolve(uow));
@@ -140,6 +146,7 @@ export const toGetRequest = (uow, rule) => {
 };
 
 export const scanSplitDynamoDB = ({
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME || process.env.TABLE_NAME,
   scanRequestField = 'scanRequest',
@@ -148,7 +155,9 @@ export const scanSplitDynamoDB = ({
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
 } = {}) => {
-  const connector = new Connector({ debug, tableName, timeout });
+  const connector = new Connector({
+    pipelineId, debug, tableName, timeout,
+  });
 
   const scan = (uow) => {
     if (!uow[scanRequestField]) return _(Promise.resolve(uow));
@@ -206,6 +215,7 @@ export const scanSplitDynamoDB = ({
 };
 
 export const querySplitDynamoDB = ({
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME || process.env.TABLE_NAME,
   querySplitRequestField = 'querySplitRequest',
@@ -214,7 +224,9 @@ export const querySplitDynamoDB = ({
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
 } = {}) => {
-  const connector = new Connector({ debug, tableName, timeout });
+  const connector = new Connector({
+    pipelineId, debug, tableName, timeout,
+  });
 
   const invoke = (uow) => {
     if (!uow[querySplitRequestField]) return _(Promise.resolve(uow));
