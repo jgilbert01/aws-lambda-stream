@@ -14,7 +14,9 @@ export const publishToSns = ({ // eslint-disable-line import/prefer-default-expo
   parallel = Number(process.env.SNS_PARALLEL) || Number(process.env.PARALLEL) || 8,
   ...opt
 } = {}) => {
-  const connector = new Connector({ pipelineId, debug, topicArn, ...opt });
+  const connector = new Connector({
+    pipelineId, debug, topicArn, ...opt,
+  });
 
   const publish = (uow) => {
     const p = connector.publish(uow[messageField])

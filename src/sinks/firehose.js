@@ -17,7 +17,9 @@ export const sendToFirehose = ({
   handleErrors = true,
   ...opt
 } = {}) => {
-  const connector = new Connector({ pipelineId, debug, deliveryStreamName, ...opt });
+  const connector = new Connector({
+    pipelineId, debug, deliveryStreamName, ...opt,
+  });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,

@@ -19,7 +19,9 @@ export const publishToKinesis = ({
   handleErrors = true,
   ...opt
 } = {}) => {
-  const connector = new Publisher({ pipelineId, debug, streamName, ...opt });
+  const connector = new Publisher({
+    pipelineId, debug, streamName, ...opt,
+  });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,

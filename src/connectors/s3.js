@@ -18,7 +18,7 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.bucketName = bucketName || 'undefined';
-    
+
     this.bucket = Connector.getClient(pipelineId, debug, timeout);
     if (xrayEnabled) this.bucket = require('../utils/xray').captureSdkClientTraces(this.bucket);
   }

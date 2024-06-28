@@ -62,7 +62,7 @@ export const updateDynamoDB = ({
   ...opt
 } = {}) => {
   const connector = new Connector({
-    pipelineId, debug, tableName, timeout, removeUndefinedValues, ...opt
+    pipelineId, debug, tableName, timeout, removeUndefinedValues, ...opt,
   });
 
   const invoke = (uow) => {
@@ -91,7 +91,7 @@ export const putDynamoDB = ({
   ...opt
 } = {}) => {
   const connector = new Connector({
-    pipelineId, debug, tableName, timeout, ...opt
+    pipelineId, debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {

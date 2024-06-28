@@ -30,7 +30,9 @@ export const getObjectFromS3 = ({
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
   ...opt
 } = {}) => {
-  const connector = new Connector({ pipelineId, debug, bucketName, ...opt });
+  const connector = new Connector({
+    pipelineId, debug, bucketName, ...opt,
+  });
 
   const getObject = (uow) => {
     if (!uow[getRequestField]) return _(Promise.resolve(uow));
@@ -57,7 +59,9 @@ export const getObjectFromS3AsStream = ({
   splitFilter = () => true,
   ...opt
 } = {}) => {
-  const connector = new Connector({ pipelineId, debug, bucketName, ...opt });
+  const connector = new Connector({
+    pipelineId, debug, bucketName, ...opt,
+  });
 
   const getObject = (uow) => {
     if (!uow[getRequestField]) return _(Promise.resolve(uow));
@@ -103,7 +107,9 @@ export const listObjectsFromS3 = ({
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
   ...opt
 } = {}) => {
-  const connector = new Connector({ pipelineId, debug, bucketName, ...opt });
+  const connector = new Connector({
+    pipelineId, debug, bucketName, ...opt,
+  });
 
   const listObjects = (uow) => {
     /* istanbul ignore if */
@@ -129,7 +135,9 @@ export const pageObjectsFromS3 = ({
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
   ...opt
 } = {}) => {
-  const connector = new Connector({ pipelineId, debug, bucketName, ...opt });
+  const connector = new Connector({
+    pipelineId, debug, bucketName, ...opt,
+  });
 
   const listObjects = (uow) => {
     let { ContinuationToken } = uow[listRequestField];

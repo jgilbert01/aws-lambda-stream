@@ -12,7 +12,7 @@ class Connector {
     xrayEnabled = false,
   }) {
     this.debug = (msg) => debug('%j', msg);
-    
+
     this.lambda = Connector.getClient(pipelineId, debug, timeout);
     if (xrayEnabled) this.lambda = require('../utils/xray').captureSdkClientTraces(this.lambda);
   }

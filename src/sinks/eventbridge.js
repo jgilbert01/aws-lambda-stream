@@ -24,7 +24,9 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   retryConfig,
   ...opt
 } = {}) => {
-  const connector = new Connector({ pipelineId, debug, retryConfig, ...opt });
+  const connector = new Connector({
+    pipelineId, debug, retryConfig, ...opt,
+  });
 
   const toPublishRequestEntry = (uow) => ({
     ...uow,

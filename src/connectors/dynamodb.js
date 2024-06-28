@@ -31,7 +31,7 @@ class Connector {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
     this.retryConfig = retryConfig;
-    
+
     this.db = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout);
     if (xrayEnabled) this.db = require('../utils/xray').captureSdkClientTraces(this.db, true);
   }

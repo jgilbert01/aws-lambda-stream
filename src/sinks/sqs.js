@@ -16,7 +16,9 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
   ...opt
 } = {}) => {
-  const connector = new Connector({ pipelineId, debug, queueUrl, ...opt });
+  const connector = new Connector({
+    pipelineId, debug, queueUrl, ...opt,
+  });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,

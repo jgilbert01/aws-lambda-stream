@@ -19,7 +19,7 @@ class Connector {
   }) {
     this.debug = /* istanbul ignore next */ (msg) => debug('%j', msg);
     this.secretId = secretId;
-    
+
     this.sm = Connector.getClient(pipelineId, debug, timeout);
     if (xrayEnabled) this.sm = require('../utils/xray').captureSdkClientTraces(this.sm);
   }
