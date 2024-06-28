@@ -60,13 +60,13 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  update(inputParams) {
+  update(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new UpdateCommand(params))
+    return this._executeCommand(new UpdateCommand(params), ctx)
       .catch((err) => {
         /* istanbul ignore else */
         if (err.name === 'ConditionalCheckFailedException') {
@@ -77,28 +77,28 @@ class Connector {
       });
   }
 
-  put(inputParams) {
+  put(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new PutCommand(params));
+    return this._executeCommand(new PutCommand(params), ctx);
   }
 
-  batchGet(inputParams) {
+  batchGet(inputParams, ctx) {
     const params = {
       ...inputParams,
     };
 
-    return this._batchGet(params, []);
+    return this._batchGet(params, [], ctx);
   }
 
-  query(inputParams) {
-    return this.queryAll(inputParams);
+  query(inputParams, ctx) {
+    return this.queryAll(inputParams, ctx);
   }
 
-  queryAll(inputParams) {
+  queryAll(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
@@ -109,7 +109,7 @@ class Connector {
 
     return _((push, next) => {
       params.ExclusiveStartKey = cursor;
-      return this._executeCommand(new QueryCommand(params))
+      return this._executeCommand(new QueryCommand(params), ctx)
         .then((data) => {
           itemsCount += data.Items.length;
 
@@ -138,36 +138,36 @@ class Connector {
       .toPromise(Promise);
   }
 
-  queryPage(inputParams) {
+  queryPage(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new QueryCommand(params));
+    return this._executeCommand(new QueryCommand(params), ctx);
   }
 
-  scan(inputParams) {
+  scan(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new ScanCommand(params));
+    return this._executeCommand(new ScanCommand(params), ctx);
   }
 
-  _batchGet(params, attempts) {
+  _batchGet(params, attempts, ctx) {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._executeCommand(new BatchGetCommand(params))
+      .then(() => this._executeCommand(new BatchGetCommand(params), ctx)
         .then((resp) => {
           const response = {
             Responses: {},
             ...resp,
           };
           if (Object.keys(response.UnprocessedKeys || /* istanbul ignore next */ {}).length > 0) {
-            return this._batchGet(unprocessed(params, response), [...attempts, response]);
+            return this._batchGet(unprocessed(params, response), [...attempts, response], ctx);
           } else {
             return accumlate(attempts, response);
           }

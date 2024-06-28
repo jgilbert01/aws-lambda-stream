@@ -50,7 +50,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._sendMessageBatch(params, []);
+    return this._sendMessageBatch(params, [], ctx);
   }
 
   _sendMessageBatch(params, attempts, ctx) {

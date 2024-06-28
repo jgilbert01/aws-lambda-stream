@@ -20,8 +20,8 @@ class Connector {
     this.debug = /* istanbul ignore next */ (msg) => debug('%j', msg);
     this.secretId = secretId;
 
-    this.sm = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.sm = require('../utils/xray').captureSdkClientTraces(this.sm);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
+    if (xrayEnabled) this.client = require('../utils/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};
@@ -45,7 +45,7 @@ class Connector {
         SecretId: this.secretId,
       };
 
-      this.secrets = await Promise.resolve(this.sm.send(new GetSecretValueCommand(params)))
+      this.secrets = await Promise.resolve(this.client.send(new GetSecretValueCommand(params)))
         .tapCatch(this.debug)
         .then((data) => Buffer.from(data.SecretString, 'base64').toString())
         .then((data) => JSON.parse(data));
