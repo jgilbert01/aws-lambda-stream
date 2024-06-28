@@ -73,28 +73,23 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
       const os = head.observe();
 
       lines[i] = os
-        // shallow clone of data per pipeline
-        .map((uow) => ({
-          pipeline: p.id,
-          ...uow,
-          ...addDebug(p.id),
-        }))
+        .map(initPipeline(p.id))
+        .map(startPipeline)
         .map(startSegment(xrayEnabled, p.id))
         .through(p)
-        .through(endSegment(xrayEnabled, p.id));
+        .through(endSegment(xrayEnabled, p.id))
+        .through(endPipeline(opt, p.id));
     });
 
     debug('FORK: %s', lines[last].id);
     const p = lines[last];
     lines[last] = head
-      .map((uow) => ({
-        pipeline: p.id,
-        ...uow,
-        ...addDebug(p.id),
-      }))
+      .map(initPipeline(p.id))
+      .map(startPipeline)
       .map(startSegment(xrayEnabled, p.id))
       .through(lines[last])
-      .through(endSegment(xrayEnabled, p.id));
+      .through(endSegment(xrayEnabled, p.id))
+      .through(endPipeline(opt, p.id));
   }
 
   let s = _(lines).merge();
@@ -119,6 +114,21 @@ const startSegment = (xrayEnabled, pipelineId) =>
 
 const endSegment = (xrayEnabled, pipelineId) => (s) =>
   (xrayEnabled ? s.through(require('../utils/xray').terminateSegment(pipelineId)) : s);
+
+const initPipeline = (pipeline) => (uow) => ({
+  // shallow clone of data per pipeline
+  pipeline,
+  ...uow,
+  ...addDebug(pipeline),
+});
+
+const startPipeline = (uow) => ({
+  ...uow,
+  metrics: uow.metrics?.startPipeline(uow),
+});
+
+const endPipeline = (opt, pipelineId) => (s) =>
+  (opt.metrics ? opt.metrics.endPipeline(s, pipelineId) : s);
 
 const addEncryptors = (opt) => ({
   encrypt: encryptData(opt),

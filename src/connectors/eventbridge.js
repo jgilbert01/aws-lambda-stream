@@ -15,12 +15,14 @@ class Connector {
     timeout = Number(process.env.BUS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
     xrayEnabled = false,
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.retryConfig = retryConfig;
+    this.opt = opt;
 
-    this.bus = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.bus = require('../utils/xray').captureSdkClientTraces(this.bus);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
+    if (xrayEnabled) this.client = require('../utils/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};
@@ -39,24 +41,29 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  putEvents(params) {
-    return this._putEvents(params, []);
+  putEvents(params, ctx) {
+    return this._putEvents(params, [], ctx);
   }
 
-  _putEvents(params, attempts) {
+  _putEvents(params, attempts, ctx) {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => Promise.resolve(this.bus.send(new PutEventsCommand(params)))
-        .tap(this.debug)
-        .tapCatch(this.debug)
+      .then(() => this._sendCommand(new PutEventsCommand(params), ctx)
         .then((resp) => {
           if (resp.FailedEntryCount > 0) {
-            return this._putEvents(unprocessed(params, resp), [...attempts, resp]);
+            return this._putEvents(unprocessed(params, resp), [...attempts, resp], ctx);
           } else {
             return accumlate(attempts, resp);
           }
         }));
+  }
+
+  _sendCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'eventbridge', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
+      .tap(this.debug)
+      .tapCatch(this.debug);
   }
 }
 

@@ -37,6 +37,7 @@ export const compact = (rule) => {
         return {
           ...last,
           batch,
+          metrics: last.metrics?.guage('stream.pipeline.compact.count', batch.length),
         };
       })));
 };
@@ -88,30 +89,7 @@ export const batchWithSize = (opt) => {
 };
 
 const logMetrics = (batch, sizes, opt) => {
-  if (opt.metricsEnabled) {
-    opt.debug('%j', {
-      metrics: {
-        [opt.requestField]: {
-          count: sizes.length,
-          ...sizes.reduce((a, size, i) => ({
-            ...a,
-            average: (a.sum + size) / (i + 1),
-            min: a.min < size ? a.min : size,
-            max: a.max > size ? a.max : size,
-            sum: a.sum + size,
-            types: {
-              ...a.types,
-              [batch[i][opt.requestEntryField].DetailType]: [...(a.types[batch[i][opt.requestEntryField].DetailType] || []), size],
-            },
-          }), {
-            average: 0,
-            min: undefined,
-            max: undefined,
-            sum: 0,
-            types: {},
-          }),
-        },
-      },
-    });
-  }
+  // TODO ??? opt.metricsEnabled === 'details'
+  batch[0].metrics?.gauge('publish|stream.pipeline.batchSize.count', batch.length);
+  batch[0].metrics?.gauge('publish|stream.pipeline.eventSize.bytes', sizes);
 };

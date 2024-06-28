@@ -35,11 +35,11 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
       return _(Promise.resolve(batchUow));
     }
 
-    const p = connector.sendMessageBatch(batchUow.inputParams)
+    const p = connector.sendMessageBatch(batchUow.inputParams, batchUow)
       .then((sendMessageBatchResponse) => ({ ...batchUow, sendMessageBatchResponse }))
       .catch(rejectWithFault(batchUow));
 
-    return _(p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, 'send') || p); // wrap promise in a stream
   };
 
   return (s) => s

@@ -5,6 +5,8 @@ import {
 } from '../utils';
 import { outSkip } from '../filters';
 
+import * as metrics from '../metrics';
+
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events
 
@@ -15,6 +17,7 @@ export const fromSqs = (event) =>
       // so we can correlate related work for error handling
       ({
         record,
+        metrics: metrics.startUow(record.attributes.SentTimestamp, event.Records.length),
       }));
 
 export const fromSqsEvent = (event) => _(event.Records)
@@ -26,6 +29,7 @@ export const fromSqsEvent = (event) => _(event.Records)
       id: record.messageId,
       ...JSON.parse(record.body, decompress),
     },
+    metrics: metrics.startUow(record.attributes.SentTimestamp, event.Records.length),
   })))
   .filter(outSkip)
   .through(claimcheck());

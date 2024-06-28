@@ -37,11 +37,11 @@ export const getObjectFromS3 = ({
   const getObject = (uow) => {
     if (!uow[getRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.getObject(uow[getRequestField])
-      .then((getResponse) => ({ ...uow, [getResponseField]: getResponse }))
+    const p = connector.getObject(uow[getRequestField], uow)
+      .then((getResponse) => ({ ...uow, [getResponseField]: getResponse })) // TODO decompress
       .catch(rejectWithFault(uow));
 
-    return _(p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, 'get') || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -66,9 +66,8 @@ export const getObjectFromS3AsStream = ({
   const getObject = (uow) => {
     if (!uow[getRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.getObjectStream(uow[getRequestField]);
-
-    return _(p) // wrap promise in a stream
+    const p = connector.getObjectStream(uow[getRequestField], uow);
+    return _(uow.metrics?.w(p, 'get') || p) // wrap promise in a stream
       .flatMap((readable) => _(readable)) // wrap stream in a stream
       .splitBy(delimiter)
       .filter(splitFilter)
@@ -115,11 +114,11 @@ export const listObjectsFromS3 = ({
     /* istanbul ignore if */
     if (!uow[listRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.listObjects(uow[listRequestField])
+    const p = connector.listObjects(uow[listRequestField], uow)
       .then((listResponse) => ({ ...uow, [listResponseField]: listResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, 'list') || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -148,7 +147,8 @@ export const pageObjectsFromS3 = ({
         ContinuationToken,
       };
 
-      connector.listObjects(params)
+      const p = connector.listObjects(params, uow);
+      (uow.metrics?.w(p, 'list') || p)
         .then((data) => {
           const { Contents, ...rest } = data;
 

@@ -27,13 +27,15 @@ class Connector {
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
     xrayEnabled = false,
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
     this.retryConfig = retryConfig;
+    this.opt = opt;
 
-    this.db = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout);
-    if (xrayEnabled) this.db = require('../utils/xray').captureSdkClientTraces(this.db, true);
+    this.client = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout);
+    if (xrayEnabled) this.client = require('../utils/xray').captureSdkClientTraces(this.client, true);
   }
 
   static clients = {};
@@ -172,8 +174,9 @@ class Connector {
         }));
   }
 
-  _executeCommand(command) {
-    return Promise.resolve(this.db.send(command))
+  _executeCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'dynamodb', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

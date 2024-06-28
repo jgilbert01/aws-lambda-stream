@@ -52,11 +52,11 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
     if (!batchUow[publishRequestField].Entries.length) {
       return _(Promise.resolve(batchUow));
     }
-    const p = connector.putEvents(batchUow[publishRequestField])
+    const p = connector.putEvents(batchUow[publishRequestField], batchUow)
       .catch(rejectWithFault(batchUow, !handleErrors))
       .then((publishResponse) => ({ ...batchUow, publishResponse }));
 
-    return _(p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, 'publish') || p); // wrap promise in a stream
   };
 
   return (s) => s

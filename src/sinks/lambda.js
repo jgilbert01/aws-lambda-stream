@@ -16,11 +16,11 @@ export const invokeLambda = ({ // eslint-disable-line import/prefer-default-expo
   const connector = new Connector({ pipelineId, debug, ...opt });
 
   const invoke = (uow) => {
-    const p = connector.invoke(uow[invokeField])
+    const p = connector.invoke(uow[invokeField], uow)
       .then((invokeResponse) => ({ ...uow, invokeResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, 'invoke') || p); // wrap promise in a stream
   };
 
   return (s) => s

@@ -5,6 +5,8 @@ import {
 } from '../utils';
 import { outSkip } from '../filters';
 
+import * as metrics from '../metrics';
+
 export const fromKinesis = (event) =>
 
   _(event.Records)
@@ -15,6 +17,7 @@ export const fromKinesis = (event) =>
       ({
         record,
         event: Buffer.from(record.kinesis.data, 'base64').toString('utf8'),
+        metrics: metrics.startUow(metrics.convertKinesisTs(record.kinesis.approximateArrivalTimestamp), event.Records.length),
       }))
 
     .map(faulty((uow) => ({
@@ -28,7 +31,7 @@ export const fromKinesis = (event) =>
     .through(claimcheck());
 
 // test helper
-export const toKinesisRecords = (events) => ({
+export const toKinesisRecords = (events, approximateArrivalTimestamp) => ({
   Records: events.map((e, i) =>
     ({
       eventSource: 'aws:kinesis',
@@ -43,7 +46,7 @@ export const toKinesisRecords = (events) => ({
         // partitionKey: e.partitionKey,
         sequenceNumber: `${i}`,
         data: Buffer.from(JSON.stringify(e, compress())).toString('base64'),
-        // approximateArrivalTimestamp: 1545084650.987,
+        approximateArrivalTimestamp, // format: 1545084650.987
       },
     })),
 });

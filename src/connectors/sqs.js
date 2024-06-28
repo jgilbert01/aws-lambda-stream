@@ -17,13 +17,15 @@ class Connector {
     timeout = Number(process.env.SQS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
     xrayEnabled = false,
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.queueUrl = queueUrl || 'undefined';
     this.retryConfig = retryConfig;
+    this.opt = opt;
 
-    this.queue = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.queue = require('../utils/xray').captureSdkClientTraces(this.queue);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
+    if (xrayEnabled) this.client = require('../utils/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};
@@ -42,7 +44,7 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  sendMessageBatch(inputParams) {
+  sendMessageBatch(inputParams, ctx) {
     const params = {
       QueueUrl: this.queueUrl,
       ...inputParams,
@@ -51,11 +53,11 @@ class Connector {
     return this._sendMessageBatch(params, []);
   }
 
-  _sendMessageBatch(params, attempts) {
+  _sendMessageBatch(params, attempts, ctx) {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => Promise.resolve(this.queue.send(new SendMessageBatchCommand(params)))
+      .then(() => this._sendCommand(new SendMessageBatchCommand(params), ctx)
         .tap(this.debug)
         .tapCatch(this.debug)
         .then((resp) => {
@@ -65,6 +67,13 @@ class Connector {
             return accumlate(attempts, resp);
           }
         }));
+  }
+
+  _sendCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'sqs', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
+      .tap(this.debug)
+      .tapCatch(this.debug);
   }
 }
 

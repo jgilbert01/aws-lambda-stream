@@ -13,8 +13,8 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
 
-    this.cw = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.cw = require('../utils/xray').captureSdkClientTraces(this.cw);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
+    if (xrayEnabled) this.client = require('../utils/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};
@@ -39,7 +39,7 @@ class Connector {
     };
 
     const command = new PutMetricDataCommand(params);
-    return Promise.resolve(this.cw.send(command))
+    return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

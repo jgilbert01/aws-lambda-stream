@@ -4,6 +4,8 @@ import _ from 'highland';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import { faulty } from '../utils';
 
+import * as metrics from '../metrics';
+
 export const fromDynamodb = (event, {
   pkFn = 'pk',
   skFn = 'sk',
@@ -46,6 +48,7 @@ export const fromDynamodb = (event, {
               : undefined,
           },
         },
+        metrics: metrics.startUow(record.dynamodb.ApproximateCreationDateTime * 1000, event.Records.length),
       })));
 
 // https://www.trek10.com/blog/dynamodb-single-table-relational-modeling

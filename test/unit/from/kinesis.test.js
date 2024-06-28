@@ -25,21 +25,20 @@ describe('from/kinesis.js', () => {
         // console.log(JSON.stringify(collected, null, 2));
 
         expect(collected.length).to.equal(1);
-        expect(collected[0]).to.deep.equal({
-          record: {
-            eventSource: 'aws:kinesis',
-            awsRegion: 'us-west-2',
-            eventID: 'shardId-000000000000:0',
-            kinesis: {
-              sequenceNumber: '0',
-              data: 'eyJ0eXBlIjoidDEiLCJwYXJ0aXRpb25LZXkiOiIxIn0=',
-            },
+        expect(collected[0].record).to.deep.equal({
+          eventSource: 'aws:kinesis',
+          awsRegion: 'us-west-2',
+          eventID: 'shardId-000000000000:0',
+          kinesis: {
+            sequenceNumber: '0',
+            approximateArrivalTimestamp: undefined,
+            data: 'eyJ0eXBlIjoidDEiLCJwYXJ0aXRpb25LZXkiOiIxIn0=',
           },
-          event: {
-            id: 'shardId-000000000000:0',
-            type: 't1',
-            partitionKey: '1',
-          },
+        });
+        expect(collected[0].event).to.deep.equal({
+          id: 'shardId-000000000000:0',
+          type: 't1',
+          partitionKey: '1',
         });
       })
       .done(done);
