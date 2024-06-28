@@ -3,7 +3,7 @@ import debug from 'debug';
 import _ from 'highland';
 
 const log = debug('xray');
-const DDB_MIDDLEWARE_NAME = 'DynamoDBQueryCapture';
+const INPUT_CAPTURE_MIDDLEWARE_NAME = 'XraySDKClientInputCapture';
 
 log('Initializing xray trace capture.');
 AWSXray.capturePromise();
@@ -12,17 +12,17 @@ AWSXray.captureHTTPsGlobal(require('https'));
 let pipelineSegments = {};
 
 /**
- * Passing in useDdbMiddleware = true injects this sdk client with
+ * Captures and SDK client via xray segment. Injects this sdk client with
  * additional middleware that appends the command input as metadata
- * on the xray trace.
+ * on the subsegment.
  */
-export const captureSdkClientTraces = (sdkClient, useDdbMiddleware = false) => {
+export const captureSdkClientTraces = (sdkClient) => {
   const capturedClient = AWSXray.captureAWSv3Client(sdkClient);
-  if (useDdbMiddleware) applyDdbMiddleware(capturedClient);
+  applyInputCaptureMiddleware(capturedClient);
   return capturedClient;
 };
 
-const ddbMiddleware = (next, context) => async (args) => {
+const inputCaptureMiddleware = (next, context) => async (args) => {
   const segment = AWSXray.getSegment()?.subsegments.find((subsegment) =>
     // Find by trace id header. Parent is the subsegment id.
     subsegment.id === extractParentIdFromTraceHeader(args.request?.headers['X-Amzn-Trace-Id']));
@@ -39,11 +39,11 @@ const extractParentIdFromTraceHeader = (traceHeader) => {
   return match?.[1].split('=')[1];
 };
 
-const applyDdbMiddleware = (capturedClient) => {
-  capturedClient.middlewareStack.remove(DDB_MIDDLEWARE_NAME);
+const applyInputCaptureMiddleware = (capturedClient) => {
+  capturedClient.middlewareStack.remove(INPUT_CAPTURE_MIDDLEWARE_NAME);
   capturedClient.middlewareStack.use({
-    applyToStack: (stack) => stack.addRelativeTo(ddbMiddleware, {
-      name: DDB_MIDDLEWARE_NAME,
+    applyToStack: (stack) => stack.addRelativeTo(inputCaptureMiddleware, {
+      name: INPUT_CAPTURE_MIDDLEWARE_NAME,
       relation: 'after',
       toMiddleware: 'XRaySDKInstrumentation',
     }),
@@ -61,36 +61,19 @@ export const getPipelineSegments = () => pipelineSegments;
 
 /**
  * Starts a segment for a particular pipeline by id. Only start 1 segment
- * per pipeline id. Append to uow.
+ * per pipeline id. Return segment.
  */
-export const startPipelineSegment = (pipelineId) => (uow) => {
+export const startPipelineSegment = (pipelineId) => {
   if (!pipelineSegments[pipelineId]) {
     const segment = AWSXray.getSegment().addNewSubsegment(pipelineId);
     pipelineSegments[pipelineId] = segment;
   }
-  return {
-    traceContext: {
-      xraySegment: pipelineSegments[pipelineId],
-    },
-    ...uow,
-  };
+  return pipelineSegments[pipelineId];
 };
 
 /**
  * Through stream to manage terminating the segment when the pipeline terminates.
  */
-export const terminateSegment = (pipelineId) => (s) =>
-  s.consume((err, x, push, next) => {
-    // Normal operations unless we're at the end of the stream
-    if (err) {
-      push(err);
-      next();
-    } else if (x === _.nil) {
-      // Terminate segment and continue.
-      pipelineSegments[pipelineId]?.close();
-      push(null, x);
-    } else {
-      push(null, x);
-      next();
-    }
-  });
+export const terminateSegment = (pipelineId) => {
+  pipelineSegments[pipelineId]?.close();
+};

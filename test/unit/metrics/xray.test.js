@@ -5,6 +5,8 @@ import AWSXray from 'aws-xray-sdk-core';
 import _ from 'highland';
 import debug from 'debug';
 import nock from 'nock';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { throwFault, toPromise } from '../../../src/utils';
 import { initialize, initializeFrom } from '../../../src/pipelines';
 
@@ -18,6 +20,7 @@ import SecretsMgrConnector from '../../../src/connectors/secretsmgr';
 import SnsConnector from '../../../src/connectors/sns';
 import SqsConnector from '../../../src/connectors/sqs';
 import DynamoConnector from '../../../src/connectors/dynamodb';
+import * as metrics from '../../../src/metrics';
 
 const TEST_ROOT_SEGMENT = {
   id: 'test_root_segment',
@@ -41,7 +44,9 @@ const TEST_SUBSEGMENT = {
   trace_id: '1-6679bdf7-f8a4fdf87d3277cb7f67c290',
   parent_id: 'test_root_segment',
 
-  close: () => {},
+  close() {
+    this.in_progress = false;
+  },
 };
 
 describe('utils/xray.js', () => {
@@ -58,31 +63,37 @@ describe('utils/xray.js', () => {
   });
 
   it('should capture sdk client', () => {
-    const stub = sinon.stub(AWSXray, 'captureAWSv3Client');
+    const spy = sinon.spy(AWSXray, 'captureAWSv3Client');
     const { captureSdkClientTraces } = require('../../../src/metrics/xray');
-    const testClientObj = {};
+    const ddbBase = new DynamoDBClient({});
+    const ddbDocClient = DynamoDBDocumentClient.from(ddbBase);
 
-    captureSdkClientTraces(testClientObj);
+    captureSdkClientTraces(ddbDocClient);
 
-    expect(stub).to.have.been.calledOnceWith(testClientObj);
+    expect(spy).to.have.been.calledOnceWith(ddbDocClient);
   });
 
-  it('should start a segment when receiving a uow', () => {
-    sinon.stub(AWSXray, 'capturePromise');
-    sinon.stub(AWSXray, 'captureHTTPsGlobal');
+  it('should start a segment', () => {
     sinon.stub(AWSXray, 'getSegment').returns(TEST_ROOT_SEGMENT);
     sinon.stub(TEST_ROOT_SEGMENT, 'addNewSubsegment').returns(TEST_SUBSEGMENT);
 
     const { startPipelineSegment, getPipelineSegments } = require('../../../src/metrics/xray');
-    const mappedUow = startPipelineSegment('test_subsegment')({ existingUow: true });
+    startPipelineSegment('test_subsegment');
 
     expect(getPipelineSegments().test_subsegment).to.deep.eq(TEST_SUBSEGMENT);
-    expect(mappedUow).to.deep.eq({
-      traceContext: {
-        xraySegment: TEST_SUBSEGMENT,
-      },
-      existingUow: true,
-    });
+  });
+
+  it('should terminate a segment', () => {
+    sinon.stub(AWSXray, 'getSegment').returns(TEST_ROOT_SEGMENT);
+    sinon.stub(TEST_ROOT_SEGMENT, 'addNewSubsegment').returns({ ...TEST_SUBSEGMENT });
+
+    const { startPipelineSegment, getPipelineSegments, terminateSegment } = require('../../../src/metrics/xray');
+
+    startPipelineSegment('test_subsegment');
+    expect(getPipelineSegments().test_subsegment.in_progress).to.be.true;
+
+    terminateSegment('test_subsegment');
+    expect(getPipelineSegments().test_subsegment.in_progress).to.be.false;
   });
 
   it('should clear segments', () => {
@@ -92,73 +103,13 @@ describe('utils/xray.js', () => {
     sinon.stub(TEST_ROOT_SEGMENT, 'addNewSubsegment').returns(TEST_SUBSEGMENT);
 
     const { startPipelineSegment, getPipelineSegments, clearPipelineSegments } = require('../../../src/metrics/xray');
-    startPipelineSegment('test_clear_subsegment')({ existingUow: true });
+    startPipelineSegment('test_clear_subsegment');
 
     expect(getPipelineSegments().test_clear_subsegment).to.deep.eq(TEST_SUBSEGMENT);
 
     clearPipelineSegments();
 
     expect(getPipelineSegments()).to.deep.eq({});
-  });
-
-  it('should terminate a segment at the end of the pipeline', async () => {
-    sinon.stub(AWSXray, 'capturePromise');
-    sinon.stub(AWSXray, 'captureHTTPsGlobal');
-    sinon.stub(AWSXray, 'getSegment').returns(TEST_ROOT_SEGMENT);
-    const subSegment = {
-      ...TEST_SUBSEGMENT,
-      close() {
-        this.in_progress = false;
-      },
-    };
-    sinon.stub(TEST_ROOT_SEGMENT, 'addNewSubsegment').returns(subSegment);
-
-    const { startPipelineSegment, terminateSegment } = require('../../../src/metrics/xray');
-
-    await _([{ val: 1 }, { val: 2 }, { val: 3 }])
-      .map(startPipelineSegment('test_terminate_segment'))
-      // Should still be in progress for all processing between starting and finishing.
-      .tap(() => expect(subSegment.in_progress).to.be.true)
-      .through(terminateSegment('test_terminate_segment'))
-      .collect()
-      .toPromise(Promise);
-
-    // Closed after terminate receives nil
-    expect(subSegment.in_progress).to.be.false;
-  });
-
-  it('should handle error propagation in segment termination', async () => {
-    sinon.stub(AWSXray, 'capturePromise');
-    sinon.stub(AWSXray, 'captureHTTPsGlobal');
-    sinon.stub(AWSXray, 'getSegment').returns(TEST_ROOT_SEGMENT);
-    const subSegment = {
-      ...TEST_SUBSEGMENT,
-      close() {
-        this.in_progress = false;
-      },
-    };
-    sinon.stub(TEST_ROOT_SEGMENT, 'addNewSubsegment').returns(subSegment);
-
-    const { startPipelineSegment, terminateSegment } = require('../../../src/metrics/xray');
-
-    await _([{ val: 1 }, { val: 2 }, { val: 3 }])
-      .map(startPipelineSegment('test_segment_err_prop'))
-      .map((uow) => {
-        if (uow.val === 2) throwFault(uow)(new Error('Forced error'));
-        return uow;
-      })
-      // Should still be in progress for all processing between starting and finishing.
-      .tap(() => expect(subSegment.in_progress).to.be.true)
-
-      .through(terminateSegment('test_segment_err_prop'))
-      .collect()
-      .errors((err) => {
-        expect(err.message).to.eq('Forced error');
-      })
-      .toPromise(Promise);
-
-    // Closed after terminate receives nil
-    expect(subSegment.in_progress).to.be.false;
   });
 
   describe('pipeline integration', () => {
@@ -187,19 +138,23 @@ describe('utils/xray.js', () => {
     it('issues calls to integration if enabled', async () => {
       const xrayIntegration = require('../../../src/metrics/xray');
       const startStub = sinon.stub(xrayIntegration, 'startPipelineSegment').returns((uow) => uow);
-      const endStub = sinon.stub(xrayIntegration, 'terminateSegment').returns((s) => s);
+      const endStub = sinon.stub(xrayIntegration, 'terminateSegment');
       const clearStub = sinon.spy(xrayIntegration, 'clearPipelineSegments');
+
+      const opt = { xrayEnabled: true, publish: (s) => s, metrics };
 
       const pipeline = initialize(initializeFrom([{
         id: 'TestPipeline',
-        flavor: (opt) => (s) =>
+        flavor: () => (s) =>
           s.map((uow) => ({ ...uow, val: uow.val * 2 })),
-      }]), {
-        xrayEnabled: true,
-        publish: (s) => s,
-      }).assemble(_([{ val: 1 }]), false);
+      }]), opt).assemble(_([
+        {
+          val: 1,
+          metrics: metrics.startUow(Date.now(), 1),
+        },
+      ]), false);
 
-      await pipeline.through(toPromise);
+      await pipeline.through(metrics.toPromiseWithMetrics(opt));
 
       expect(startStub).to.have.been.calledWith('TestPipeline');
       expect(endStub).to.have.been.calledWith('TestPipeline');

@@ -127,7 +127,7 @@ describe('utils/metrics.js', () => {
       ...initializeFrom(rules),
     }, defaultOptions)
       .assemble(fromKinesis(events), false)
-      .through(toPromiseWithMetrics)
+      .through(toPromiseWithMetrics({}))
       .tap((metrics) => {
         console.log('metrics: ');
         console.log(JSON.stringify(metrics, null, 2));

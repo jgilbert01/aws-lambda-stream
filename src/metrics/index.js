@@ -6,9 +6,11 @@ import Timer from './timer';
 
 let functionMetrics = {};
 
-export const clear = () => {
+export const clear = (opt) => {
   functionMetrics = {};
-  // TODO conditional xray
+  if (opt.xrayEnabled) {
+    require('./xray').clearPipelineSegments();
+  }
 };
 
 export const convertKinesisTs = (ts) => {
@@ -49,7 +51,7 @@ export class PipelineMetrics {
     return this;
   }
 
-  startPipeline({ pipeline }, pipelineCount) {
+  startPipeline({ pipeline }, pipelineCount, opt) {
     const clone = new PipelineMetrics({
       pipeline,
       timer: this.timer,
@@ -62,7 +64,11 @@ export class PipelineMetrics {
       functionMetrics['stream.pipeline.count'] = pipelineCount;
     }
 
-    // TODO conditional xray
+    // Initialize an xray segment if enabled
+    if (opt.xrayEnabled) {
+      clone.xraySegment = require('./xray').startPipelineSegment(pipeline);
+    }
+
     return clone;
   }
 
@@ -95,13 +101,15 @@ export class PipelineMetrics {
   }
 }
 
-export const endPipeline = (s, pipelineId) =>
+export const endPipeline = (s, pipelineId, opt) =>
   s.consume((err, x, push, next) => {
     if (err) {
       push(err);
       next();
     } else if (x === _.nil) {
-      // TODO conditional xray
+      if (opt.xrayEnabled) {
+        require('./xray').terminateSegment(pipelineId);
+      }
       push(null, x);
     } else {
       // per uow
@@ -185,9 +193,9 @@ const calculateMetrics = (collected) => {
   };
 };
 
-export const toPromiseWithMetrics = (s) =>
+export const toPromiseWithMetrics = (opt) => (s) =>
   new Promise((resolve, reject) => {
-    clear();
+    clear(opt);
     const collected = [];
     s.consume((err, x, push, next) => {
       if (err) {
@@ -204,8 +212,12 @@ export const toPromiseWithMetrics = (s) =>
       .resume();
   });
 
-export const capture = (client, command, step, opt, ctx) =>
+export const capture = (client, command, step, opt, ctx) => {
   // console.log('capture: ', step, opt, ctx);
   // addMiddleware(client, command, step, opt, ctx);
-  // TODO conditional xray
-  client || command;
+  if (opt.xrayEnabled) {
+    // Wraps client with xray middlware.
+    require('./xray').captureSdkClientTraces(client);
+  }
+  return client || command;
+};

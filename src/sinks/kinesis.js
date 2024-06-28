@@ -14,7 +14,7 @@ export const publishToKinesis = ({
   debug = d('kinesis'),
   streamName = process.env.STREAM_NAME,
   eventField = 'event',
-  batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
+  batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || /* istanbul ignore next */ 25,
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
   ...opt

@@ -46,8 +46,6 @@ export const initializeFrom = (rules) => rules.reduce(
 );
 
 const assemble = (opt) => (head, includeFaultHandler = true) => {
-  const xrayEnabled = Boolean(opt.xrayEnabled);
-  if (xrayEnabled) require('../metrics/xray').clearPipelineSegments();
   const keys = Object.keys(thePipelines);
 
   debug('assemble: %j', keys);
@@ -74,10 +72,8 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
 
       lines[i] = os
         .map(initPipeline(p.id))
-        .map(startPipeline)
-        .map(startSegment(xrayEnabled, p.id))
+        .map(startPipeline(opt))
         .through(p)
-        .through(endSegment(xrayEnabled, p.id))
         .through(endPipeline(opt, p.id));
     });
 
@@ -85,10 +81,8 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
     const p = lines[last];
     lines[last] = head
       .map(initPipeline(p.id))
-      .map(startPipeline)
-      .map(startSegment(xrayEnabled, p.id))
+      .map(startPipeline(opt))
       .through(lines[last])
-      .through(endSegment(xrayEnabled, p.id))
       .through(endPipeline(opt, p.id));
   }
 
@@ -96,24 +90,16 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
 
   if (includeFaultHandler) {
     s = s.errors(faults)
-      .map(startSegment(xrayEnabled, 'FlushFaults'))
       .through(flushFaults({
         ...opt,
         ...addDebug('fault'),
-      }))
-      .through(endSegment(xrayEnabled, 'FlushFaults'));
+      }));
   }
 
   return s;
 };
 
 const addDebug = (id) => ({ debug: d(`pl:${id}`) });
-
-const startSegment = (xrayEnabled, pipelineId) =>
-  (xrayEnabled ? require('../metrics/xray').startPipelineSegment(pipelineId) : (uow) => uow);
-
-const endSegment = (xrayEnabled, pipelineId) => (s) =>
-  (xrayEnabled ? s.through(require('../metrics/xray').terminateSegment(pipelineId)) : s);
 
 const initPipeline = (pipeline) => (uow) => ({
   // shallow clone of data per pipeline
@@ -122,13 +108,13 @@ const initPipeline = (pipeline) => (uow) => ({
   ...addDebug(pipeline),
 });
 
-const startPipeline = (uow) => ({
+const startPipeline = (opt) => (uow) => ({
   ...uow,
-  metrics: uow.metrics?.startPipeline(uow),
+  metrics: uow.metrics?.startPipeline(uow, null, opt),
 });
 
 const endPipeline = (opt, pipelineId) => (s) =>
-  (opt.metrics ? opt.metrics.endPipeline(s, pipelineId) : s);
+  (opt.metrics ? opt.metrics.endPipeline(s, pipelineId, opt) : s);
 
 const addEncryptors = (opt) => ({
   encrypt: encryptData(opt),

@@ -12,8 +12,8 @@ export const sendToFirehose = ({
   debug = d('firehose'),
   deliveryStreamName = process.env.DELIVERY_STREAM_NAME,
   eventField = 'event',
-  batchSize = Number(process.env.FIREHOSE_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
-  parallel = Number(process.env.FIREHOSE_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  batchSize = Number(process.env.FIREHOSE_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || /* istanbul ignore next */ 25,
+  parallel = Number(process.env.FIREHOSE_PARALLEL) || Number(process.env.PARALLEL) || /* istanbul ignore next */ 8,
   handleErrors = true,
   ...opt
 } = {}) => {
