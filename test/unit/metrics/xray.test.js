@@ -7,7 +7,7 @@ import debug from 'debug';
 import nock from 'nock';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
-import { throwFault, toPromise } from '../../../src/utils';
+import { toPromise } from '../../../src/utils';
 import { initialize, initializeFrom } from '../../../src/pipelines';
 
 import CloudwatchConnector from '../../../src/connectors/cloudwatch';
@@ -163,11 +163,13 @@ describe('utils/xray.js', () => {
   });
 
   describe('connector integration', () => {
-    const validateConnector = (klass, called) => {
+    const validateConnector = async (klass, called, sendResponse = {}) => {
       const xrayIntegration = require('../../../src/metrics/xray');
       const captureStub = sinon.stub(xrayIntegration, 'captureSdkClientTraces');
 
-      const connector = new klass({ debug: debug('test'), xrayEnabled: called });
+      const connector = new klass({ debug: debug('test'), xrayEnabled: called, metrics });
+      sinon.stub(connector.client, 'send');
+      await connector._executeCommand({});
 
       if (called) {
         expect(captureStub).to.have.been.called;
@@ -177,104 +179,104 @@ describe('utils/xray.js', () => {
     };
 
     describe('cloudwatch', () => {
-      it('integrates with connector if enabled', () => {
-        validateConnector(CloudwatchConnector, true);
+      it('integrates with connector if enabled', async () => {
+        await validateConnector(CloudwatchConnector, true);
       });
 
-      it('does not integrate with connector if not enabled', () => {
-        validateConnector(CloudwatchConnector, false);
+      it('does not integrate with connector if not enabled', async () => {
+        await validateConnector(CloudwatchConnector, false);
       });
     });
 
     describe('eventbridge', () => {
-      it('integrates with connector if enabled', () => {
-        validateConnector(EventBridgeConnector, true);
+      it('integrates with connector if enabled', async () => {
+        await validateConnector(EventBridgeConnector, true);
       });
 
-      it('does not integrate with connector if not enabled', () => {
-        validateConnector(EventBridgeConnector, false);
+      it('does not integrate with connector if not enabled', async () => {
+        await validateConnector(EventBridgeConnector, false);
       });
     });
 
     describe('firehose', () => {
-      it('integrates with connector if enabled', () => {
-        validateConnector(FirehoseConnector, true);
+      it('integrates with connector if enabled', async () => {
+        await validateConnector(FirehoseConnector, true);
       });
 
-      it('does not integrate with connector if not enabled', () => {
-        validateConnector(FirehoseConnector, false);
+      it('does not integrate with connector if not enabled', async () => {
+        await validateConnector(FirehoseConnector, false);
       });
     });
 
     describe('kinesis', () => {
-      it('integrates with connector if enabled', () => {
-        validateConnector(KinesisConnector, true);
+      it('integrates with connector if enabled', async () => {
+        await validateConnector(KinesisConnector, true);
       });
 
-      it('does not integrate with connector if not enabled', () => {
-        validateConnector(KinesisConnector, false);
+      it('does not integrate with connector if not enabled', async () => {
+        await validateConnector(KinesisConnector, false);
       });
     });
 
     describe('lambda', () => {
-      it('integrates with connector if enabled', () => {
-        validateConnector(LambdaConnector, true);
+      it('integrates with connector if enabled', async () => {
+        await validateConnector(LambdaConnector, true);
       });
 
-      it('does not integrate with connector if not enabled', () => {
-        validateConnector(LambdaConnector, false);
+      it('does not integrate with connector if not enabled', async () => {
+        await validateConnector(LambdaConnector, false);
       });
     });
 
     describe('s3', () => {
-      it('integrates with connector if enabled', () => {
-        validateConnector(S3Connector, true);
+      it('integrates with connector if enabled', async () => {
+        await validateConnector(S3Connector, true);
       });
 
-      it('does not integrate with connector if not enabled', () => {
-        validateConnector(S3Connector, false);
+      it('does not integrate with connector if not enabled', async () => {
+        await validateConnector(S3Connector, false);
       });
     });
 
     describe('secretsmgr', () => {
-      it('integrates with connector if enabled', () => {
-        validateConnector(SecretsMgrConnector, true);
+      it('integrates with connector if enabled', async () => {
+        await validateConnector(SecretsMgrConnector, true);
       });
 
-      it('does not integrate with connector if not enabled', () => {
-        validateConnector(SecretsMgrConnector, false);
+      it('does not integrate with connector if not enabled', async () => {
+        await validateConnector(SecretsMgrConnector, false);
       });
     });
 
     describe('sns', () => {
-      it('integrates with connector if enabled', () => {
-        validateConnector(SnsConnector, true);
+      it('integrates with connector if enabled', async () => {
+        await validateConnector(SnsConnector, true);
       });
 
-      it('does not integrate with connector if not enabled', () => {
-        validateConnector(SnsConnector, false);
+      it('does not integrate with connector if not enabled', async () => {
+        await validateConnector(SnsConnector, false);
       });
     });
 
     describe('sqs', () => {
-      it('integrates with connector if enabled', () => {
-        validateConnector(SqsConnector, true);
+      it('integrates with connector if enabled', async () => {
+        await validateConnector(SqsConnector, true);
       });
 
-      it('does not integrate with connector if not enabled', () => {
-        validateConnector(SqsConnector, false);
+      it('does not integrate with connector if not enabled', async () => {
+        await validateConnector(SqsConnector, false);
       });
     });
 
     describe('dynamodb', () => {
       // afterEach(nock.restore);
 
-      it('integrates with connector if enabled', () => {
-        validateConnector(DynamoConnector, true);
+      it('integrates with connector if enabled', async () => {
+        await validateConnector(DynamoConnector, true);
       });
 
-      it('does not integrate with connector if not enabled', () => {
-        validateConnector(DynamoConnector, false);
+      it('does not integrate with connector if not enabled', async () => {
+        await validateConnector(DynamoConnector, false);
       });
 
       it('injects middleware to capture input', async () => {
@@ -287,7 +289,9 @@ describe('utils/xray.js', () => {
         namespace.enter(namespace.createContext());
         AWSXray.setSegment(new AWSXray.Segment('Root'));
 
-        const connector = new DynamoConnector({ debug: debug('test'), xrayEnabled: true, tableName: 'test-table' });
+        const connector = new DynamoConnector({
+          debug: debug('test'), xrayEnabled: true, tableName: 'test-table', metrics,
+        });
         await connector.batchGet({
           RequestItems: {
             'test-table': {

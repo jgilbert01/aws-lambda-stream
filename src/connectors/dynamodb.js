@@ -26,7 +26,6 @@ class Connector {
     removeUndefinedValues = true,
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
-    xrayEnabled = false,
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
@@ -35,7 +34,6 @@ class Connector {
     this.opt = opt;
 
     this.client = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout);
-    if (xrayEnabled) this.client = require('../metrics/xray').captureSdkClientTraces(this.client, true);
   }
 
   static clients = {};

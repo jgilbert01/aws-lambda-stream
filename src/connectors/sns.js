@@ -17,7 +17,6 @@ class Connector {
     topicArn = process.env.TOPIC_ARN,
     timeout = Number(process.env.SNS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
-    xrayEnabled = false,
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
@@ -26,7 +25,6 @@ class Connector {
     this.opt = opt;
 
     this.client = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.client = require('../metrics/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};
@@ -51,7 +49,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._sendCommand(new PublishCommand(params), ctx);
+    return this._executeCommand(new PublishCommand(params), ctx);
   }
 
   publishBatch(inputParams, ctx) {
@@ -67,7 +65,7 @@ class Connector {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._sendCommand(new PublishBatchCommand(params), ctx)
+      .then(() => this._executeCommand(new PublishBatchCommand(params), ctx)
         .then((resp) => {
           if (resp.Failed?.length > 0) {
             return this._publishBatch(unprocessed(params, resp), [...attempts, resp]);
@@ -77,7 +75,7 @@ class Connector {
         }));
   }
 
-  _sendCommand(command, ctx) {
+  _executeCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 'sns', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

@@ -16,7 +16,6 @@ class Connector {
     streamName = process.env.STREAM_NAME,
     timeout = Number(process.env.KINESIS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
-    xrayEnabled = false,
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
@@ -25,7 +24,6 @@ class Connector {
     this.opt = opt;
 
     this.client = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.client = require('../metrics/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};
@@ -57,7 +55,7 @@ class Connector {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._sendCommand(new PutRecordsCommand(params))
+      .then(() => this._executeCommand(new PutRecordsCommand(params))
         .tap(this.debug)
         .tapCatch(this.debug)
         .then((resp) => {
@@ -69,7 +67,7 @@ class Connector {
         }));
   }
 
-  _sendCommand(command, ctx) {
+  _executeCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 'kinesis', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

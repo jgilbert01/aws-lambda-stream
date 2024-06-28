@@ -14,7 +14,6 @@ class Connector {
     pipelineId,
     bucketName = process.env.BUCKET_NAME,
     timeout = Number(process.env.S3_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    xrayEnabled = false,
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
@@ -22,7 +21,6 @@ class Connector {
     this.opt = opt;
 
     this.client = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.client = require('../metrics/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};
@@ -46,7 +44,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._sendCommand(new PutObjectCommand(params), ctx);
+    return this._executeCommand(new PutObjectCommand(params), ctx);
   }
 
   deleteObject(inputParams, ctx) {
@@ -55,7 +53,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._sendCommand(new DeleteObjectCommand(params), ctx);
+    return this._executeCommand(new DeleteObjectCommand(params), ctx);
   }
 
   getObject(inputParams, ctx) {
@@ -64,7 +62,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._sendCommand(new GetObjectCommand(params), ctx)
+    return this._executeCommand(new GetObjectCommand(params), ctx)
       .then(async (response) => ({ ...response, Body: await response.Body.transformToString() }));
   }
 
@@ -74,7 +72,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._sendCommand(new GetObjectCommand(params), ctx)
+    return this._executeCommand(new GetObjectCommand(params), ctx)
       .then((response) => Readable.from(response.Body));
   }
 
@@ -84,10 +82,10 @@ class Connector {
       ...inputParams,
     };
 
-    return this._sendCommand(new ListObjectsV2Command(params), ctx);
+    return this._executeCommand(new ListObjectsV2Command(params), ctx);
   }
 
-  _sendCommand(command, ctx) {
+  _executeCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 's3', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

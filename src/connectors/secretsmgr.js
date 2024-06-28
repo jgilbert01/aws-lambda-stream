@@ -15,13 +15,13 @@ class Connector {
     pipelineId,
     secretId,
     timeout = Number(process.env.SECRETSMGR_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    xrayEnabled = false,
+    ...opt
   }) {
     this.debug = /* istanbul ignore next */ (msg) => debug('%j', msg);
     this.secretId = secretId;
+    this.opt = opt;
 
     this.client = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.client = require('../metrics/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};
@@ -39,19 +39,25 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  async get() {
+  async get(ctx) {
     if (!this.secrets) {
       const params = {
         SecretId: this.secretId,
       };
 
-      this.secrets = await Promise.resolve(this.client.send(new GetSecretValueCommand(params)))
-        .tapCatch(this.debug)
+      this.secrets = this._executeCommand(new GetSecretValueCommand(params), ctx)
         .then((data) => Buffer.from(data.SecretString, 'base64').toString())
         .then((data) => JSON.parse(data));
     }
 
     return this.secrets;
+  }
+
+  _executeCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'secretsmgr', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
+      .tap(this.debug)
+      .tapCatch(this.debug);
   }
 }
 

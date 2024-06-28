@@ -9,14 +9,12 @@ class Connector {
     debug,
     pipelineId,
     timeout = Number(process.env.LAMBDA_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    xrayEnabled = false,
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.opt = opt;
 
     this.client = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.client = require('../metrics/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};
@@ -35,10 +33,10 @@ class Connector {
   }
 
   invoke(params, ctx) {
-    return this._sendCommand(new InvokeCommand(params), ctx);
+    return this._executeCommand(new InvokeCommand(params), ctx);
   }
 
-  _sendCommand(command, ctx) {
+  _executeCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 'lambda', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

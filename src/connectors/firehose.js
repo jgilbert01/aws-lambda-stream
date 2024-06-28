@@ -10,7 +10,6 @@ class Connector {
     pipelineId,
     deliveryStreamName = process.env.DELIVERY_STREAM_NAME,
     timeout = Number(process.env.FIREHOSE_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    xrayEnabled = false,
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
@@ -18,7 +17,6 @@ class Connector {
     this.opt = opt;
 
     this.client = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.client = require('../metrics/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};
@@ -42,10 +40,10 @@ class Connector {
       ...inputParams,
     };
 
-    return this._sendCommand(new PutRecordBatchCommand(params), ctx);
+    return this._executeCommand(new PutRecordBatchCommand(params), ctx);
   }
 
-  _sendCommand(command, ctx) {
+  _executeCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 'firehose', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)
