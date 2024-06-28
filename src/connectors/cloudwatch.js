@@ -14,7 +14,7 @@ class Connector {
     this.debug = (msg) => debug('%j', msg);
 
     this.client = Connector.getClient(pipelineId, debug, timeout);
-    if (xrayEnabled) this.client = require('../utils/xray').captureSdkClientTraces(this.client);
+    if (xrayEnabled) this.client = require('../metrics/xray').captureSdkClientTraces(this.client);
   }
 
   static clients = {};

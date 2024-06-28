@@ -47,7 +47,7 @@ export const initializeFrom = (rules) => rules.reduce(
 
 const assemble = (opt) => (head, includeFaultHandler = true) => {
   const xrayEnabled = Boolean(opt.xrayEnabled);
-  if (xrayEnabled) require('../utils/xray').clearPipelineSegments();
+  if (xrayEnabled) require('../metrics/xray').clearPipelineSegments();
   const keys = Object.keys(thePipelines);
 
   debug('assemble: %j', keys);
@@ -110,10 +110,10 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
 const addDebug = (id) => ({ debug: d(`pl:${id}`) });
 
 const startSegment = (xrayEnabled, pipelineId) =>
-  (xrayEnabled ? require('../utils/xray').startPipelineSegment(pipelineId) : (uow) => uow);
+  (xrayEnabled ? require('../metrics/xray').startPipelineSegment(pipelineId) : (uow) => uow);
 
 const endSegment = (xrayEnabled, pipelineId) => (s) =>
-  (xrayEnabled ? s.through(require('../utils/xray').terminateSegment(pipelineId)) : s);
+  (xrayEnabled ? s.through(require('../metrics/xray').terminateSegment(pipelineId)) : s);
 
 const initPipeline = (pipeline) => (uow) => ({
   // shallow clone of data per pipeline

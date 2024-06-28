@@ -51,7 +51,7 @@ describe('utils/xray.js', () => {
     const promiseStub = sinon.stub(AWSXray, 'capturePromise').returns();
     const httpsStub = sinon.stub(AWSXray, 'captureHTTPsGlobal').returns();
 
-    require('../../../src/utils/xray');
+    require('../../../src/metrics/xray');
 
     expect(promiseStub).to.have.been.calledOnce;
     expect(httpsStub).to.have.been.calledOnce;
@@ -59,7 +59,7 @@ describe('utils/xray.js', () => {
 
   it('should capture sdk client', () => {
     const stub = sinon.stub(AWSXray, 'captureAWSv3Client');
-    const { captureSdkClientTraces } = require('../../../src/utils/xray');
+    const { captureSdkClientTraces } = require('../../../src/metrics/xray');
     const testClientObj = {};
 
     captureSdkClientTraces(testClientObj);
@@ -73,7 +73,7 @@ describe('utils/xray.js', () => {
     sinon.stub(AWSXray, 'getSegment').returns(TEST_ROOT_SEGMENT);
     sinon.stub(TEST_ROOT_SEGMENT, 'addNewSubsegment').returns(TEST_SUBSEGMENT);
 
-    const { startPipelineSegment, getPipelineSegments } = require('../../../src/utils/xray');
+    const { startPipelineSegment, getPipelineSegments } = require('../../../src/metrics/xray');
     const mappedUow = startPipelineSegment('test_subsegment')({ existingUow: true });
 
     expect(getPipelineSegments().test_subsegment).to.deep.eq(TEST_SUBSEGMENT);
@@ -91,7 +91,7 @@ describe('utils/xray.js', () => {
     sinon.stub(AWSXray, 'getSegment').returns(TEST_ROOT_SEGMENT);
     sinon.stub(TEST_ROOT_SEGMENT, 'addNewSubsegment').returns(TEST_SUBSEGMENT);
 
-    const { startPipelineSegment, getPipelineSegments, clearPipelineSegments } = require('../../../src/utils/xray');
+    const { startPipelineSegment, getPipelineSegments, clearPipelineSegments } = require('../../../src/metrics/xray');
     startPipelineSegment('test_clear_subsegment')({ existingUow: true });
 
     expect(getPipelineSegments().test_clear_subsegment).to.deep.eq(TEST_SUBSEGMENT);
@@ -113,7 +113,7 @@ describe('utils/xray.js', () => {
     };
     sinon.stub(TEST_ROOT_SEGMENT, 'addNewSubsegment').returns(subSegment);
 
-    const { startPipelineSegment, terminateSegment } = require('../../../src/utils/xray');
+    const { startPipelineSegment, terminateSegment } = require('../../../src/metrics/xray');
 
     await _([{ val: 1 }, { val: 2 }, { val: 3 }])
       .map(startPipelineSegment('test_terminate_segment'))
@@ -139,7 +139,7 @@ describe('utils/xray.js', () => {
     };
     sinon.stub(TEST_ROOT_SEGMENT, 'addNewSubsegment').returns(subSegment);
 
-    const { startPipelineSegment, terminateSegment } = require('../../../src/utils/xray');
+    const { startPipelineSegment, terminateSegment } = require('../../../src/metrics/xray');
 
     await _([{ val: 1 }, { val: 2 }, { val: 3 }])
       .map(startPipelineSegment('test_segment_err_prop'))
@@ -163,7 +163,7 @@ describe('utils/xray.js', () => {
 
   describe('pipeline integration', () => {
     it('bypasses xray if not enabled', async () => {
-      const xrayIntegration = require('../../../src/utils/xray');
+      const xrayIntegration = require('../../../src/metrics/xray');
       const startStub = sinon.stub(xrayIntegration, 'startPipelineSegment');
       const endStub = sinon.stub(xrayIntegration, 'terminateSegment');
       const clearStub = sinon.stub(xrayIntegration, 'clearPipelineSegments');
@@ -185,7 +185,7 @@ describe('utils/xray.js', () => {
     });
 
     it('issues calls to integration if enabled', async () => {
-      const xrayIntegration = require('../../../src/utils/xray');
+      const xrayIntegration = require('../../../src/metrics/xray');
       const startStub = sinon.stub(xrayIntegration, 'startPipelineSegment').returns((uow) => uow);
       const endStub = sinon.stub(xrayIntegration, 'terminateSegment').returns((s) => s);
       const clearStub = sinon.spy(xrayIntegration, 'clearPipelineSegments');
@@ -209,7 +209,7 @@ describe('utils/xray.js', () => {
 
   describe('connector integration', () => {
     const validateConnector = (klass, called) => {
-      const xrayIntegration = require('../../../src/utils/xray');
+      const xrayIntegration = require('../../../src/metrics/xray');
       const captureStub = sinon.stub(xrayIntegration, 'captureSdkClientTraces');
 
       const connector = new klass({ debug: debug('test'), xrayEnabled: called });

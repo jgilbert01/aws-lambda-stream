@@ -35,7 +35,7 @@ class Connector {
     this.opt = opt;
 
     this.client = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout);
-    if (xrayEnabled) this.client = require('../utils/xray').captureSdkClientTraces(this.client, true);
+    if (xrayEnabled) this.client = require('../metrics/xray').captureSdkClientTraces(this.client, true);
   }
 
   static clients = {};
