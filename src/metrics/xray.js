@@ -72,7 +72,7 @@ export const startPipelineSegment = (pipelineId) => {
 };
 
 /**
- * Through stream to manage terminating the segment when the pipeline terminates.
+ * Terminate a segment.
  */
 export const terminateSegment = (pipelineId) => {
   pipelineSegments[pipelineId]?.close();
