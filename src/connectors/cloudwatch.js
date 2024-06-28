@@ -7,18 +7,29 @@ import { defaultDebugLogger } from '../utils/log';
 class Connector {
   constructor({
     debug,
+    pipelineId,
     timeout = Number(process.env.CW_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     xrayEnabled = false,
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.cw = new CloudWatchClient({
-      requestHandler: new NodeHttpHandler({
-        requestTimeout: timeout,
-        connectionTimeout: timeout,
-      }),
-      logger: defaultDebugLogger(debug),
-    });
+    
+    this.cw = Connector.getClient(pipelineId, debug, timeout);
     if (xrayEnabled) this.cw = require('../utils/xray').captureSdkClientTraces(this.cw);
+  }
+
+  static clients = {};
+
+  static getClient(pipelineId, debug, timeout) {
+    if (!this.clients[pipelineId]) {
+      this.clients[pipelineId] = new CloudWatchClient({
+        requestHandler: new NodeHttpHandler({
+          requestTimeout: timeout,
+          connectionTimeout: timeout,
+        }),
+        logger: defaultDebugLogger(debug),
+      });
+    }
+    return this.clients[pipelineId];
   }
 
   put({ Namespace, MetricData }) {

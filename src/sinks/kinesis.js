@@ -10,6 +10,7 @@ import { compress } from '../utils/compression';
 import { ratelimit } from '../utils/ratelimit';
 
 export const publishToKinesis = ({
+  id: pipelineId,
   debug = d('kinesis'),
   streamName = process.env.STREAM_NAME,
   eventField = 'event',
@@ -18,7 +19,7 @@ export const publishToKinesis = ({
   handleErrors = true,
   ...opt
 } = {}) => {
-  const connector = new Publisher({ debug, streamName, ...opt });
+  const connector = new Publisher({ pipelineId, debug, streamName, ...opt });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,

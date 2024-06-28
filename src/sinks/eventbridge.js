@@ -3,13 +3,14 @@ import _ from 'highland';
 import Connector from '../connectors/eventbridge';
 
 import { toBatchUow, unBatchUow, batchWithSize } from '../utils/batch';
-import { rejectWithFault } from '../utils/faults';
+import { rejectWithFault, FAULT_COMPRESSION_IGNORE } from '../utils/faults';
 import { debug as d } from '../utils/print';
 import { adornStandardTags } from '../utils/tags';
 import { compress } from '../utils/compression';
 import { ratelimit } from '../utils/ratelimit';
 
 export const publishToEventBridge = ({ // eslint-disable-line import/prefer-default-export
+  id: pipelineId,
   debug = d('eventbridge'),
   busName = process.env.BUS_NAME || 'undefined',
   source = process.env.BUS_SRC || 'custom', // could change this to internal vs external/ingress/egress
@@ -23,7 +24,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   retryConfig,
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, retryConfig, ...opt });
+  const connector = new Connector({ pipelineId, debug, retryConfig, ...opt });
 
   const toPublishRequestEntry = (uow) => ({
     ...uow,
@@ -31,7 +32,8 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
       EventBusName: busName,
       Source: source,
       DetailType: uow[eventField].type,
-      Detail: JSON.stringify(uow[eventField], compress(opt)),
+      Detail: JSON.stringify(uow[eventField],
+        compress(uow[eventField].type !== 'fault' ? opt : { ...opt, compressionIgnore: FAULT_COMPRESSION_IGNORE })),
     } : undefined,
   });
 

@@ -7,12 +7,13 @@ import { debug as d } from '../utils/print';
 import { ratelimit } from '../utils/ratelimit';
 
 export const invokeLambda = ({ // eslint-disable-line import/prefer-default-export
+  id: pipelineId,
   debug = d('lambda'),
   invokeField = 'invokeRequest',
   parallel = Number(process.env.LAMBDA_PARALLEL) || Number(process.env.PARALLEL) || 8,
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, ...opt });
+  const connector = new Connector({ pipelineId, debug, ...opt });
 
   const invoke = (uow) => {
     const p = connector.invoke(uow[invokeField])

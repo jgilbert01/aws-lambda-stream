@@ -11,20 +11,31 @@ import { defaultDebugLogger } from '../utils/log';
 class Connector {
   constructor({
     debug,
+    pipelineId,
     bucketName = process.env.BUCKET_NAME,
     timeout = Number(process.env.S3_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     xrayEnabled = false,
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.bucketName = bucketName || 'undefined';
-    this.bucket = new S3Client({
-      requestHandler: new NodeHttpHandler({
-        requestTimeout: timeout,
-        connectionTimeout: timeout,
-      }),
-      logger: defaultDebugLogger(debug),
-    });
+    
+    this.bucket = Connector.getClient(pipelineId, debug, timeout);
     if (xrayEnabled) this.bucket = require('../utils/xray').captureSdkClientTraces(this.bucket);
+  }
+
+  static clients = {};
+
+  static getClient(pipelineId, debug, timeout) {
+    if (!this.clients[pipelineId]) {
+      this.clients[pipelineId] = new S3Client({
+        requestHandler: new NodeHttpHandler({
+          requestTimeout: timeout,
+          connectionTimeout: timeout,
+        }),
+        logger: defaultDebugLogger(debug),
+      });
+    }
+    return this.clients[pipelineId];
   }
 
   putObject(inputParams) {

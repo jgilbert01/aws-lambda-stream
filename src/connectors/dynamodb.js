@@ -22,6 +22,7 @@ class Connector {
     debug,
     tableName,
     convertEmptyValues,
+    pipelineId,
     removeUndefinedValues = true,
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
@@ -29,23 +30,32 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
-    const dynamoClient = new DynamoDBClient({
-      requestHandler: new NodeHttpHandler({
-        requestTimeout: timeout,
-        connectionTimeout: timeout,
-      }),
-      retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
-      logger: defaultDebugLogger(debug),
-    });
-    this.db = DynamoDBDocumentClient.from(dynamoClient, {
-      marshallOptions: {
-        convertEmptyValues,
-        removeUndefinedValues,
-      },
-    });
-    if (xrayEnabled) this.db = require('../utils/xray').captureSdkClientTraces(this.db, true);
-
     this.retryConfig = retryConfig;
+    
+    this.db = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout);
+    if (xrayEnabled) this.db = require('../utils/xray').captureSdkClientTraces(this.db, true);
+  }
+
+  static clients = {};
+
+  static getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout) {
+    if (!this.clients[pipelineId]) {
+      const dynamoClient = new DynamoDBClient({
+        requestHandler: new NodeHttpHandler({
+          requestTimeout: timeout,
+          connectionTimeout: timeout,
+        }),
+        retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
+        logger: defaultDebugLogger(debug),
+      });
+      this.clients[pipelineId] = DynamoDBDocumentClient.from(dynamoClient, {
+        marshallOptions: {
+          convertEmptyValues,
+          removeUndefinedValues,
+        },
+      });
+    }
+    return this.clients[pipelineId];
   }
 
   update(inputParams) {

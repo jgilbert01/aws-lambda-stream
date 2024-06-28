@@ -8,6 +8,7 @@ import { rejectWithFault } from '../utils/faults';
 import { debug as d } from '../utils/print';
 
 export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
+  id: pipelineId,
   debug = d('sqs'),
   queueUrl = process.env.QUEUE_URL,
   messageField = 'message',
@@ -15,7 +16,7 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, queueUrl, ...opt });
+  const connector = new Connector({ pipelineId, debug, queueUrl, ...opt });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,

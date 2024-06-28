@@ -24,6 +24,15 @@ describe('connectors/s3.js', () => {
     mockS3.restore();
   });
 
+  it('should reuse client per pipeline', () => {
+    const client1 = Connector.getClient('test1', debug('test'));
+    const client2 = Connector.getClient('test1', debug('test'));
+    const client3 = Connector.getClient('test2', debug('test'));
+
+    expect(client1).to.eq(client2);
+    expect(client2).to.not.eq(client3);
+  });
+
   it('should put object', async () => {
     const spy = sinon.spy(() => ({}));
     mockS3.on(PutObjectCommand).callsFake(spy);

@@ -51,6 +51,7 @@ export const pkCondition = (fieldName = 'pk') => ({
 });
 
 export const updateDynamoDB = ({
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.ENTITY_TABLE_NAME || process.env.EVENT_TABLE_NAME,
   updateRequestField = 'updateRequest',
@@ -61,7 +62,7 @@ export const updateDynamoDB = ({
   ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, removeUndefinedValues, ...opt,
+    pipelineId, debug, tableName, timeout, removeUndefinedValues, ...opt
   });
 
   const invoke = (uow) => {
@@ -81,6 +82,7 @@ export const updateDynamoDB = ({
 };
 
 export const putDynamoDB = ({
+  id: pipelineId,
   debug = d('dynamodb'),
   tableName = process.env.EVENT_TABLE_NAME || process.env.ENTITY_TABLE_NAME,
   putRequestField = 'putRequest',
@@ -89,7 +91,7 @@ export const putDynamoDB = ({
   ...opt
 } = {}) => {
   const connector = new Connector({
-    debug, tableName, timeout, ...opt,
+    pipelineId, debug, tableName, timeout, ...opt
   });
 
   const invoke = (uow) => {

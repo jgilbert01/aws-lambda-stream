@@ -8,6 +8,7 @@ import { debug as d } from '../utils/print';
 import { compress } from '../utils/compression';
 
 export const sendToFirehose = ({
+  id: pipelineId,
   debug = d('firehose'),
   deliveryStreamName = process.env.DELIVERY_STREAM_NAME,
   eventField = 'event',
@@ -16,7 +17,7 @@ export const sendToFirehose = ({
   handleErrors = true,
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, deliveryStreamName, ...opt });
+  const connector = new Connector({ pipelineId, debug, deliveryStreamName, ...opt });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,

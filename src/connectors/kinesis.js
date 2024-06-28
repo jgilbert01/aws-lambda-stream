@@ -12,6 +12,7 @@ import { defaultDebugLogger } from '../utils/log';
 class Connector {
   constructor({
     debug,
+    pipelineId,
     streamName = process.env.STREAM_NAME,
     timeout = Number(process.env.KINESIS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
@@ -19,16 +20,26 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.streamName = streamName || 'undefined';
-    this.stream = new KinesisClient({
-      requestHandler: new NodeHttpHandler({
-        requestTimeout: timeout,
-        connectionTimeout: timeout,
-      }),
-      retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
-      logger: defaultDebugLogger(debug),
-    });
-    if (xrayEnabled) this.stream = require('../utils/xray').captureSdkClientTraces(this.stream);
     this.retryConfig = retryConfig;
+
+    this.stream = Connector.getClient(pipelineId, debug, timeout);
+    if (xrayEnabled) this.stream = require('../utils/xray').captureSdkClientTraces(this.stream);
+  }
+
+  static clients = {};
+
+  static getClient(pipelineId, debug, timeout) {
+    if (!this.clients[pipelineId]) {
+      this.clients[pipelineId] = new KinesisClient({
+        requestHandler: new NodeHttpHandler({
+          requestTimeout: timeout,
+          connectionTimeout: timeout,
+        }),
+        retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
+        logger: defaultDebugLogger(debug),
+      });
+    }
+    return this.clients[pipelineId];
   }
 
   putRecords(inputParams) {
