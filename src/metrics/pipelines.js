@@ -54,7 +54,7 @@ class PipelineMetrics {
     return this;
   }
 
-  startPipeline({ pipeline }, pipelineCount) {
+  startPipeline({ pipeline }, pipelineCount, opt) {
     const clone = new PipelineMetrics({
       pipeline,
       timer: this.timer,
@@ -100,7 +100,7 @@ class PipelineMetrics {
   }
 }
 
-export const endPipeline = (pipelineId) => (s) =>
+export const endPipeline = (pipelineId, opt, s) =>
   s.consume((err, x, push, next) => {
     /* istanbul ignore if */
     if (err) {

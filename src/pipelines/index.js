@@ -113,12 +113,12 @@ const initPipeline = (pipeline) => (uow) => ({
 
 const startPipeline = (opt, pipelineCount) => (uow) => {
   if (opt.metrics) {
-    uow.metrics = uow.metrics.startPipeline(uow, pipelineCount);
+    uow.metrics = uow.metrics.startPipeline(uow, pipelineCount, opt);
   }
 };
 
 const endPipeline = (opt, pipelineId) => (s) =>
-  (opt.metrics ? s.through(opt.metrics.endPipeline(pipelineId)) : s);
+  (opt.metrics ? opt.metrics.endPipeline(pipelineId, opt, s) : s);
 
 const addEncryptors = (opt) => ({
   encrypt: encryptData(opt),
