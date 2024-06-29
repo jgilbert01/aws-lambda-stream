@@ -4,8 +4,13 @@ import Promise from 'bluebird';
 import Timer from './timer';
 
 let funcMetrics = {};
-export const functionMetrics = () => funcMetrics;
-export const clear = () => {
+export const functionMetrics = (m) => {
+  /* istanbul ignore next */
+  if (m) funcMetrics = m;
+  return funcMetrics;
+};
+
+export const clear = (opt) => {
   funcMetrics = {};
   // TODO conditional xray
 };

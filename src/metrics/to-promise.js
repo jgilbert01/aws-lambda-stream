@@ -4,9 +4,9 @@ import Promise from 'bluebird';
 import { clear } from './pipelines';
 import { calculateMetrics } from './calculate';
 
-export const toPromise = (s) => // eslint-disable-line import/prefer-default-export
+export const toPromise = (opt, s) => // eslint-disable-line import/prefer-default-export
   new Promise((resolve, reject) => {
-    clear();
+    clear(opt);
     const collected = [];
     s.consume((err, x, push, next) => {
       /* istanbul ignore if */
