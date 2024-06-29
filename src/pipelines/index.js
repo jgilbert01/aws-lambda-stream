@@ -3,7 +3,9 @@ import memoryCache from 'memory-cache';
 
 import { faults, flushFaults } from '../faults';
 
-import { debug as d, encryptData, decryptData } from '../utils';
+import {
+  debug as d, encryptData, decryptData, options,
+} from '../utils';
 
 const debug = d('pl:init');
 
@@ -11,6 +13,7 @@ let thePipelines = {};
 
 export const initialize = (pipelines, opt = {}) => {
   const keys = Object.keys(pipelines);
+  options(opt);
 
   debug('initialize: %j', keys);
 
@@ -72,7 +75,7 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
 
       lines[i] = os
         .map(initPipeline(p.id))
-        .map(startPipeline)
+        .tap(startPipeline(opt))
         .through(p)
         .through(endPipeline(opt, p.id));
     });
@@ -81,7 +84,7 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
     const p = lines[last];
     lines[last] = head
       .map(initPipeline(p.id))
-      .map(startPipeline)
+      .tap(startPipeline(opt, keys.length))
       .through(lines[last])
       .through(endPipeline(opt, p.id));
   }
@@ -108,13 +111,14 @@ const initPipeline = (pipeline) => (uow) => ({
   ...addDebug(pipeline),
 });
 
-const startPipeline = (uow) => ({
-  ...uow,
-  metrics: uow.metrics?.startPipeline(uow),
-});
+const startPipeline = (opt, pipelineCount) => (uow) => {
+  if (opt.metrics) {
+    uow.metrics = uow.metrics.startPipeline(uow, pipelineCount);
+  }
+};
 
 const endPipeline = (opt, pipelineId) => (s) =>
-  (opt.metrics ? opt.metrics.endPipeline(s, pipelineId) : s);
+  (opt.metrics ? s.through(opt.metrics.endPipeline(pipelineId)) : s);
 
 const addEncryptors = (opt) => ({
   encrypt: encryptData(opt),

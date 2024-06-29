@@ -21,13 +21,15 @@ describe('from/sqs.js', () => {
         // console.log(JSON.stringify(collected, null, 2));
 
         expect(collected.length).to.equal(1);
-        expect(collected[0].record).to.deep.equal({
-          eventSource: 'aws:sqs',
-          awsRegion: 'us-west-2',
-          messageId: '00000000-0000-0000-0000-000000000000',
-          body: 'this is a test',
-          attributes: {
-            SentTimestamp: '1595616620000',
+        expect(collected[0]).to.deep.equal({
+          record: {
+            eventSource: 'aws:sqs',
+            awsRegion: 'us-west-2',
+            messageId: '00000000-0000-0000-0000-000000000000',
+            body: 'this is a test',
+            attributes: {
+              SentTimestamp: '1595616620000',
+            },
           },
         });
       })
@@ -126,21 +128,23 @@ describe('from/sqs.js', () => {
         // console.log(JSON.stringify(collected, null, 2));
 
         expect(collected.length).to.equal(1);
-        expect(collected[0].record).to.deep.equal({
-          eventSource: 'aws:sqs',
-          awsRegion: 'us-west-2',
-          messageId: '00000000-0000-0000-0000-000000000000',
-          body: '{"type":"thing-created","timestamp":"1595616620000","thing":{"name":"thing1"}}',
-          attributes: {
-            SentTimestamp: '1595616620000',
+        expect(collected[0]).to.deep.equal({
+          record: {
+            eventSource: 'aws:sqs',
+            awsRegion: 'us-west-2',
+            messageId: '00000000-0000-0000-0000-000000000000',
+            body: '{"type":"thing-created","timestamp":"1595616620000","thing":{"name":"thing1"}}',
+            attributes: {
+              SentTimestamp: '1595616620000',
+            },
           },
-        });
-        expect(collected[0].event).to.deep.equal({
-          id: '00000000-0000-0000-0000-000000000000',
-          type: 'thing-created',
-          timestamp: '1595616620000',
-          thing: {
-            name: 'thing1',
+          event: {
+            id: '00000000-0000-0000-0000-000000000000',
+            type: 'thing-created',
+            timestamp: '1595616620000',
+            thing: {
+              name: 'thing1',
+            },
           },
         });
       })

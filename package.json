@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-stream",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
@@ -95,6 +95,7 @@
     "lodash": "^4.17.15",
     "memory-cache": "^0.2.0",
     "mocha": "^10.2.0",
+    "nock": "^13.5.4",
     "node-fetch": "^2.7.0",
     "nyc": "^14.1.1",
     "sinon": "^17.0.1",

@@ -34,10 +34,15 @@ export const compact = (rule) => {
       .map((key) => {
         const batch = groups[key].sort(rule.compact.sort || ((lh, rh) => lh.event.timestamp - rh.event.timestamp));
         const last = batch[batch.length - 1];
+
+        const metrics = last.metrics ? {
+          metrics: last.metrics.gauge('stream.pipeline.compact.count', batch.length),
+        } : {};
+
         return {
           ...last,
           batch,
-          metrics: last.metrics?.guage('stream.pipeline.compact.count', batch.length),
+          ...metrics,
         };
       })));
 };

@@ -77,29 +77,31 @@ describe('faults/index.js', () => {
         expect(collected[2].event.tags.functionname).to.equal('undefined');
         expect(collected[2].event.tags.pipeline).to.equal('undefined');
 
-        expect(collected[2].event.uow.pipeline).to.be.undefined;
-        expect(collected[2].event.uow.record).to.deep.equal({
-          eventSource: 'aws:kinesis',
-          eventID: 'shardId-000000000000:1',
-          awsRegion: 'us-west-2',
-          kinesis: {
-            sequenceNumber: '1',
-            approximateArrivalTimestamp: undefined,
-            data: 'eyJ0eXBlIjoiZjIiLCJlbnRpdHkiOnsiZjEiOiJ2MSIsImYyIjoidjIifSwiZWVtIjp7ImZpZWxkcyI6WyJmMiJdfX0=',
+        expect(collected[2].event.uow).to.deep.equal({
+          pipeline: undefined,
+          record: {
+            eventSource: 'aws:kinesis',
+            eventID: 'shardId-000000000000:1',
+            awsRegion: 'us-west-2',
+            kinesis: {
+              approximateArrivalTimestamp: undefined,
+              sequenceNumber: '1',
+              data: 'eyJ0eXBlIjoiZjIiLCJlbnRpdHkiOnsiZjEiOiJ2MSIsImYyIjoidjIifSwiZWVtIjp7ImZpZWxkcyI6WyJmMiJdfX0=',
+            },
           },
-        });
-        expect(collected[2].event.uow.event).to.deep.equal({
-          id: 'shardId-000000000000:1',
-          type: 'f2',
-          entity: {
-            f1: 'v1',
-            f2: '[REDACTED]',
+          event: {
+            id: 'shardId-000000000000:1',
+            type: 'f2',
+            entity: {
+              f1: 'v1',
+              f2: '[REDACTED]',
+            },
+            eem: { fields: ['f2'] },
           },
-          eem: { fields: ['f2'] },
-        });
-        expect(collected[2].event.uow.someResponse).to.deep.equal({
-          f3: '[BUFFER: 2]',
-          f4: '[CIRCULAR]',
+          someResponse: {
+            f3: '[BUFFER: 2]',
+            f4: '[CIRCULAR]',
+          },
         });
       })
       .done(done);

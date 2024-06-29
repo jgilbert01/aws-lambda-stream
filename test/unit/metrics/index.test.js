@@ -1,27 +1,84 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import _ from 'highland';
 
-import { fromDynamodb, toDynamodbRecords } from '../../../src/from/dynamodb';
+import {
+  BatchGetCommand,
+  DynamoDBDocumentClient,
+  QueryCommand,
+  UpdateCommand,
+} from '@aws-sdk/lib-dynamodb';
+import {
+  EventBridgeClient,
+  PutEventsCommand,
+} from '@aws-sdk/client-eventbridge';
+import { mockClient } from 'aws-sdk-client-mock';
+
+// import { fromDynamodb, toDynamodbRecords } from '../../../src/from/dynamodb';
 import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import { updateExpression } from '../../../src/sinks/dynamodb';
 import { initialize, initializeFrom } from '../../../src';
 import { defaultOptions } from '../../../src/utils/opt';
+import { toPromise } from '../../../src/utils/handler';
 import { cdc } from '../../../src/flavors/cdc';
 import { materialize } from '../../../src/flavors/materialize';
 import { toGetRequest, toPkQueryRequest } from '../../../src/queries/dynamodb';
-import { DynamoDBConnector, EventBridgeConnector } from '../../../src/connectors';
 
-import { toPromiseWithMetrics } from '../../../src/metrics';
+import { monitor } from '../../../src/metrics/monitor';
 
-describe('utils/metrics.js', () => {
+const OPTIONS = {
+  ...defaultOptions,
+};
+
+const rules = [
+  {
+    id: 'p1',
+    flavor: materialize,
+    eventType: 'thing-created',
+    toUpdateRequest: async (uow, rule) => ({
+      Key: {
+        pk: uow.event.raw.new.id,
+        sk: 'thing',
+      },
+      ...updateExpression({
+        ...uow.event.thing,
+      }),
+    }),
+  },
+  {
+    id: 'p2',
+    flavor: cdc,
+    eventType: 'thing-updated',
+    toQueryRequest: toPkQueryRequest,
+    toGetRequest,
+    fks: ['fk1'],
+    compact: true,
+  },
+];
+
+const handle = async (event, context) => initialize({
+  ...initializeFrom(rules),
+}, OPTIONS)
+  .assemble(fromKinesis(event), false)
+  .through(toPromise);
+
+describe('metrics/index.js', () => {
+  let mockEventBridge;
+  let mockDdb;
+
   beforeEach(() => {
+    process.env.ENABLE_METRICS = 'true';
     process.env.BATCH_SIZE = 10;
-    sinon.stub(EventBridgeConnector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
-    sinon.stub(DynamoDBConnector.prototype, 'update').resolves({});
-    sinon.stub(DynamoDBConnector.prototype, 'query').resolves([]);
-    sinon.stub(DynamoDBConnector.prototype, 'batchGet').resolves({
+
+    // using aws-sdk-client-mock so that
+    // the capture logic within the connectes gets executed
+    mockEventBridge = mockClient(EventBridgeClient);
+    mockEventBridge.on(PutEventsCommand).resolves({ FailedEntryCount: 0 });
+
+    mockDdb = mockClient(DynamoDBDocumentClient);
+    mockDdb.on(UpdateCommand).resolves({});
+    mockDdb.on(QueryCommand).resolves({ Items: [] });
+    mockDdb.on(BatchGetCommand).resolves({
       Responses: { undefined: [] }, UnprocessedKeys: {},
     });
 
@@ -31,34 +88,15 @@ describe('utils/metrics.js', () => {
       stub.onCall(i).returns(start + i * 2);
     }
   });
-  afterEach(sinon.restore);
+  afterEach(() => {
+    sinon.restore();
+    mockDdb.restore();
+    mockEventBridge.restore();
+    delete process.env.BATCH_SIZE;
+    delete process.env.METRICS_ENABLED;
+  });
 
   it('should measure pipelines', async () => {
-    const rules = [
-      {
-        id: 'p1',
-        flavor: materialize,
-        eventType: 'thing-created',
-        toUpdateRequest: async (uow, rule) => ({
-          Key: {
-            pk: uow.event.raw.new.id,
-            sk: 'thing',
-          },
-          ...updateExpression({
-            ...uow.event.thing,
-          }),
-        }),
-      },
-      {
-        id: 'p2',
-        flavor: cdc,
-        eventType: 'thing-updated',
-        toQueryRequest: toPkQueryRequest,
-        toGetRequest,
-        fks: ['fk1'],
-      },
-    ];
-
     const events = toKinesisRecords([
       {
         id: '1',
@@ -123,17 +161,122 @@ describe('utils/metrics.js', () => {
       },
     ], 1719020816.001);
 
-    return initialize({
-      ...initializeFrom(rules),
-    }, defaultOptions)
-      .assemble(fromKinesis(events), false)
-      .through(toPromiseWithMetrics)
-      .tap((metrics) => {
-        console.log('metrics: ');
-        console.log(JSON.stringify(metrics, null, 2));
-        // expect(collected.length).to.equal(1);
-        // expect(collected[0].updateRequest).to.deep.equal({
-        // });
+    return monitor(handle, OPTIONS)(events)
+      .tap((themetrics) => {
+        // console.log(JSON.stringify(themetrics, null, 2));
+        expect(themetrics).to.deep.equal({
+          'stream.batch.size': 6,
+          'stream.batch.utilization': 0.6,
+          'stream.pipeline.count': 2,
+          'stream.uow.count': 4,
+          'p1|stream.pipeline.utilization': 0.75,
+          'p2|stream.pipeline.utilization': 0.25,
+          'p1|stream.channel.wait.time': {
+            average: 2010,
+            min: 2002,
+            max: 2018,
+            sum: 6030,
+            count: 3,
+          },
+          'p1|save|stream.pipeline.io.wait.time': {
+            average: 24,
+            min: 20,
+            max: 28,
+            sum: 72,
+            count: 3,
+          },
+          'p1|save|stream.pipeline.io.time': {
+            average: 2,
+            min: 2,
+            max: 2,
+            sum: 6,
+            count: 3,
+          },
+          'p1|stream.pipeline.time': {
+            average: 2048,
+            min: 2046,
+            max: 2050,
+            sum: 6144,
+            count: 3,
+          },
+          'p2|stream.channel.wait.time': {
+            average: 2012,
+            min: 2012,
+            max: 2012,
+            sum: 2012,
+            count: 1,
+          },
+          'p2|query|stream.pipeline.io.wait.time': {
+            average: 12,
+            min: 12,
+            max: 12,
+            sum: 12,
+            count: 1,
+          },
+          'p2|query|stream.pipeline.io.time': {
+            average: 2,
+            min: 2,
+            max: 2,
+            sum: 2,
+            count: 1,
+          },
+          'p2|get|stream.pipeline.io.wait.time': {
+            average: 16,
+            min: 16,
+            max: 16,
+            sum: 16,
+            count: 1,
+          },
+          'p2|get|stream.pipeline.io.time': {
+            average: 2,
+            min: 2,
+            max: 2,
+            sum: 2,
+            count: 1,
+          },
+          'p2|publish|stream.pipeline.io.wait.time': {
+            average: 10,
+            min: 10,
+            max: 10,
+            sum: 10,
+            count: 1,
+          },
+          'p2|publish|stream.pipeline.io.time': {
+            average: 2,
+            min: 2,
+            max: 2,
+            sum: 2,
+            count: 1,
+          },
+          'p2|stream.pipeline.time': {
+            average: 2058,
+            min: 2058,
+            max: 2058,
+            sum: 2058,
+            count: 1,
+          },
+          'p2|stream.pipeline.compact.count': {
+            average: 2,
+            min: 2,
+            max: 2,
+            sum: 2,
+            count: 1,
+          },
+          'p2|publish|stream.pipeline.batchSize.count': {
+            average: 1,
+            min: 1,
+            max: 1,
+            sum: 1,
+            count: 1,
+          },
+          'p2|publish|stream.pipeline.eventSize.bytes': {
+            average: 365,
+            min: 365,
+            max: 365,
+            sum: 365,
+            count: 1,
+          },
+        });
       });
   });
 });

@@ -1,11 +1,9 @@
 import _ from 'highland';
 
 import {
-  faulty, decompress, compress, claimcheck,
+  faulty, decompress, compress, claimcheck, options,
 } from '../utils';
 import { outSkip } from '../filters';
-
-import * as metrics from '../metrics';
 
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events
@@ -17,8 +15,8 @@ export const fromSqs = (event) =>
       // so we can correlate related work for error handling
       ({
         record,
-        metrics: metrics.startUow(record.attributes.SentTimestamp, event.Records.length),
-      }));
+      }))
+    .tap((uow) => options().metrics?.adornSqsMetrics(uow, event));
 
 export const fromSqsEvent = (event) => _(event.Records)
   // create a unit-of-work for each event
@@ -29,8 +27,8 @@ export const fromSqsEvent = (event) => _(event.Records)
       id: record.messageId,
       ...JSON.parse(record.body, decompress),
     },
-    metrics: metrics.startUow(record.attributes.SentTimestamp, event.Records.length),
   })))
+  .tap((uow) => options().metrics?.adornSqsMetrics(uow, event))
   .filter(outSkip)
   .through(claimcheck());
 
@@ -44,7 +42,7 @@ export const toSqsRecords = (messages) => ({
       // receiptHandle: 'AQEBwJnKyrHigUMZj6rYigCgxlaS3SLy0a...',
       body: m.body,
       attributes: {
-        // ApproximateReceiveCount: '1',
+      // ApproximateReceiveCount: '1',
         SentTimestamp: m.timestamp || /* istanbul ignore next */ '1545082649183',
         // SenderId: 'AIDAIENQZJOLO23YVJ4VO',
         // ApproximateFirstReceiveTimestamp: '1545082649185'
@@ -57,7 +55,7 @@ export const toSqsRecords = (messages) => ({
       // messageAttributes: {},
       // md5OfBody: 'e4e68fb7bd0e697a0ae8f1bb342846b3',
       awsRegion: m.region || /* istanbul ignore next */ 'us-west-2',
-      // eventSourceARN: 'arn:aws:sqs:us-west-2:123456789012:my-queue',
+    // eventSourceARN: 'arn:aws:sqs:us-west-2:123456789012:my-queue',
     })),
 });
 

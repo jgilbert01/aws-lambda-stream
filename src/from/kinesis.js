@@ -1,11 +1,9 @@
 import _ from 'highland';
 
 import {
-  faulty, decompress, compress, claimcheck,
+  faulty, decompress, compress, claimcheck, options,
 } from '../utils';
 import { outSkip } from '../filters';
-
-import * as metrics from '../metrics';
 
 export const fromKinesis = (event) =>
 
@@ -17,9 +15,7 @@ export const fromKinesis = (event) =>
       ({
         record,
         event: Buffer.from(record.kinesis.data, 'base64').toString('utf8'),
-        metrics: metrics.startUow(metrics.convertKinesisTs(record.kinesis.approximateArrivalTimestamp), event.Records.length),
       }))
-
     .map(faulty((uow) => ({
       ...uow,
       event: {
@@ -27,6 +23,7 @@ export const fromKinesis = (event) =>
         ...JSON.parse(uow.event, decompress),
       },
     })))
+    .tap((uow) => options().metrics?.adornKinesisMetrics(uow, event))
     .filter(outSkip)
     .through(claimcheck());
 
