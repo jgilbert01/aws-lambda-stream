@@ -98,7 +98,7 @@ class PipelineMetrics {
     return new Promise((resolve, reject) => {
       // console.log('uow: ', uow);
       self.startStep(step);
-      return p.then(resolve, reject)
+      return Promise.resolve(p).then(resolve, reject)
         // TODO record capacity utilization ???
         .tap(self.endStep(step));
     });

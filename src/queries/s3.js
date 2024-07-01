@@ -28,6 +28,7 @@ export const getObjectFromS3 = ({
   getRequestField = 'getRequest',
   getResponseField = 'getResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'get',
   ...opt
 } = {}) => {
   const connector = new Connector({
@@ -41,7 +42,7 @@ export const getObjectFromS3 = ({
       .then((getResponse) => ({ ...uow, [getResponseField]: getResponse })) // TODO decompress
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, 'get') || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -57,6 +58,7 @@ export const getObjectFromS3AsStream = ({
   getResponseField = 'getResponse',
   delimiter = '\n',
   splitFilter = () => true,
+  step = 'get',
   ...opt
 } = {}) => {
   const connector = new Connector({
@@ -67,7 +69,7 @@ export const getObjectFromS3AsStream = ({
     if (!uow[getRequestField]) return _(Promise.resolve(uow));
 
     const p = connector.getObjectStream(uow[getRequestField], uow);
-    return _(uow.metrics?.w(p, 'get') || p) // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p) // wrap promise in a stream
       .flatMap((readable) => _(readable)) // wrap stream in a stream
       .splitBy(delimiter)
       .filter(splitFilter)
@@ -104,6 +106,7 @@ export const listObjectsFromS3 = ({
   listRequestField = 'listRequest',
   listResponseField = 'listResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'list',
   ...opt
 } = {}) => {
   const connector = new Connector({
@@ -118,7 +121,7 @@ export const listObjectsFromS3 = ({
       .then((listResponse) => ({ ...uow, [listResponseField]: listResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, 'list') || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -132,6 +135,7 @@ export const pageObjectsFromS3 = ({
   bucketName = process.env.BUCKET_NAME,
   listRequestField = 'listRequest',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'list',
   ...opt
 } = {}) => {
   const connector = new Connector({
@@ -148,7 +152,7 @@ export const pageObjectsFromS3 = ({
       };
 
       const p = connector.listObjects(params, uow);
-      (uow.metrics?.w(p, 'list') || p)
+      (uow.metrics?.w(p, step) || p)
         .then((data) => {
           const { Contents, ...rest } = data;
 

@@ -12,6 +12,7 @@ export const publishToSns = ({ // eslint-disable-line import/prefer-default-expo
   topicArn = process.env.TOPIC_ARN,
   messageField = 'message',
   parallel = Number(process.env.SNS_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'publish',
   ...opt
 } = {}) => {
   const connector = new Connector({
@@ -23,7 +24,7 @@ export const publishToSns = ({ // eslint-disable-line import/prefer-default-expo
       .then((publishResponse) => ({ ...uow, publishResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, 'publish') || /* istanbul ignore next */ p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || /* istanbul ignore next */ p); // wrap promise in a stream
   };
 
   return (s) => s

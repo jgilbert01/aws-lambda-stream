@@ -14,6 +14,7 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   messageField = 'message',
   batchSize = Number(process.env.SQS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'send',
   ...opt
 } = {}) => {
   const connector = new Connector({
@@ -39,7 +40,7 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
       .then((sendMessageBatchResponse) => ({ ...batchUow, sendMessageBatchResponse }))
       .catch(rejectWithFault(batchUow));
 
-    return _(batchUow.batch[0].metrics?.w(p, 'send') || p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s
