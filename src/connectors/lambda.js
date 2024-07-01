@@ -12,9 +12,8 @@ class Connector {
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.opt = opt;
-
     this.client = Connector.getClient(pipelineId, debug, timeout);
+    this.opt = opt;
   }
 
   static clients = {};

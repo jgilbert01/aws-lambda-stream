@@ -36,7 +36,6 @@ class Connector {
     };
 
     const command = new PutMetricDataCommand(params);
-
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);

@@ -21,10 +21,9 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.topicArn = topicArn || 'undefined';
+    this.client = Connector.getClient(pipelineId, debug, timeout);
     this.retryConfig = retryConfig;
     this.opt = opt;
-
-    this.client = Connector.getClient(pipelineId, debug, timeout);
   }
 
   static clients = {};

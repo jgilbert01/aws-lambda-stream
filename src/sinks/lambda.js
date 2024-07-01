@@ -11,6 +11,7 @@ export const invokeLambda = ({ // eslint-disable-line import/prefer-default-expo
   debug = d('lambda'),
   invokeField = 'invokeRequest',
   parallel = Number(process.env.LAMBDA_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'invoke',
   ...opt
 } = {}) => {
   const connector = new Connector({ pipelineId, debug, ...opt });
@@ -20,7 +21,7 @@ export const invokeLambda = ({ // eslint-disable-line import/prefer-default-expo
       .then((invokeResponse) => ({ ...uow, invokeResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, 'invoke') || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s

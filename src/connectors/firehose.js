@@ -14,9 +14,8 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.deliveryStreamName = deliveryStreamName || 'undefined';
-    this.opt = opt;
-
     this.client = Connector.getClient(pipelineId, debug, timeout);
+    this.opt = opt;
   }
 
   static clients = {};

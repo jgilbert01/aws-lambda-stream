@@ -17,6 +17,7 @@ export const publishToKinesis = ({
   batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
+  step = 'publish',
   ...opt
 } = {}) => {
   const connector = new Publisher({
@@ -41,7 +42,7 @@ export const publishToKinesis = ({
       .then((publishResponse) => ({ ...batchUow, publishResponse }))
       .catch(rejectWithFault(batchUow, !handleErrors));
 
-    return _(batchUow.batch[0].metrics?.w(p, 'publish') || p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s

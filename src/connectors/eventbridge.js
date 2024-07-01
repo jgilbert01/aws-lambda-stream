@@ -17,10 +17,9 @@ class Connector {
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
     this.retryConfig = retryConfig;
     this.opt = opt;
-
-    this.client = Connector.getClient(pipelineId, debug, timeout);
   }
 
   static clients = {};

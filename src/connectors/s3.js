@@ -18,9 +18,8 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.bucketName = bucketName || 'undefined';
-    this.opt = opt;
-
     this.client = Connector.getClient(pipelineId, debug, timeout);
+    this.opt = opt;
   }
 
   static clients = {};

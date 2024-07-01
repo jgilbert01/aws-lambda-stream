@@ -25,6 +25,7 @@ import { materialize } from '../../../src/flavors/materialize';
 import { toGetRequest, toPkQueryRequest } from '../../../src/queries/dynamodb';
 
 import { monitor } from '../../../src/metrics/monitor';
+import Timer from '../../../src/metrics/timer';
 
 const OPTIONS = {
   ...defaultOptions,
@@ -65,6 +66,7 @@ const handle = async (event, context) => initialize({
 describe('metrics/index.js', () => {
   let mockEventBridge;
   let mockDdb;
+  let datestub;
 
   beforeEach(() => {
     process.env.ENABLE_METRICS = 'true';
@@ -83,9 +85,9 @@ describe('metrics/index.js', () => {
     });
 
     const start = 1719020818001; // publish time = 1719020816.001
-    const stub = sinon.stub(Date, 'now');
+    datestub = sinon.stub(Timer, 'now');
     for (let i = 1; i < 100; i++) { // eslint-disable-line no-plusplus
-      stub.onCall(i).returns(start + i * 2);
+      datestub.onCall(i).returns(start + i * 2);
     }
   });
   afterEach(() => {
@@ -93,7 +95,8 @@ describe('metrics/index.js', () => {
     mockDdb.restore();
     mockEventBridge.restore();
     delete process.env.BATCH_SIZE;
-    delete process.env.METRICS_ENABLED;
+    delete process.env.ENABLE_METRICS;
+    sinon.assert.callCount(datestub, 28);
   });
 
   it('should measure pipelines', async () => {
@@ -179,10 +182,10 @@ describe('metrics/index.js', () => {
             count: 3,
           },
           'p1|save|stream.pipeline.io.wait.time': {
-            average: 24,
-            min: 20,
-            max: 28,
-            sum: 72,
+            average: 22,
+            min: 18,
+            max: 26,
+            sum: 66,
             count: 3,
           },
           'p1|save|stream.pipeline.io.time': {
@@ -193,10 +196,10 @@ describe('metrics/index.js', () => {
             count: 3,
           },
           'p1|stream.pipeline.time': {
-            average: 2048,
-            min: 2046,
-            max: 2050,
-            sum: 6144,
+            average: 2046,
+            min: 2044,
+            max: 2048,
+            sum: 6138,
             count: 3,
           },
           'p2|stream.channel.wait.time': {
@@ -221,10 +224,10 @@ describe('metrics/index.js', () => {
             count: 1,
           },
           'p2|get|stream.pipeline.io.wait.time': {
-            average: 16,
-            min: 16,
-            max: 16,
-            sum: 16,
+            average: 14,
+            min: 14,
+            max: 14,
+            sum: 14,
             count: 1,
           },
           'p2|get|stream.pipeline.io.time': {
@@ -235,10 +238,10 @@ describe('metrics/index.js', () => {
             count: 1,
           },
           'p2|publish|stream.pipeline.io.wait.time': {
-            average: 10,
-            min: 10,
-            max: 10,
-            sum: 10,
+            average: 8,
+            min: 8,
+            max: 8,
+            sum: 8,
             count: 1,
           },
           'p2|publish|stream.pipeline.io.time': {
@@ -249,10 +252,10 @@ describe('metrics/index.js', () => {
             count: 1,
           },
           'p2|stream.pipeline.time': {
-            average: 2058,
-            min: 2058,
-            max: 2058,
-            sum: 2058,
+            average: 2054,
+            min: 2054,
+            max: 2054,
+            sum: 2054,
             count: 1,
           },
           'p2|stream.pipeline.compact.count': {

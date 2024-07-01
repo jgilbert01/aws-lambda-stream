@@ -13,6 +13,7 @@ export const putObjectToS3 = ({
   putRequestField = 'putRequest',
   putResponseField = 'putResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'save',
   ...opt
 } = {}) => {
   const connector = new Connector({
@@ -26,7 +27,7 @@ export const putObjectToS3 = ({
       .then((putResponse) => ({ ...uow, [putResponseField]: putResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, 'save') || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -42,6 +43,7 @@ export const deleteObjectFromS3 = ({
   deleteRequestField = 'deleteRequest',
   deleteResponseField = 'deleteResponse',
   parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'delete',
   ...opt
 } = {}) => {
   const connector = new Connector({
@@ -55,7 +57,7 @@ export const deleteObjectFromS3 = ({
       .then((deleteResponse) => ({ ...uow, [deleteResponseField]: deleteResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, 'delete') || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s

@@ -30,10 +30,9 @@ class Connector {
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
+    this.client = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout);
     this.retryConfig = retryConfig;
     this.opt = opt;
-
-    this.client = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout);
   }
 
   static clients = {};

@@ -59,6 +59,7 @@ export const updateDynamoDB = ({
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   removeUndefinedValues = true,
+  step = 'save',
   ...opt
 } = {}) => {
   const connector = new Connector({
@@ -72,7 +73,7 @@ export const updateDynamoDB = ({
       .then((updateResponse) => ({ ...uow, [updateResponseField]: updateResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, 'save') || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -88,6 +89,7 @@ export const putDynamoDB = ({
   putRequestField = 'putRequest',
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+  step = 'save',
   ...opt
 } = {}) => {
   const connector = new Connector({
@@ -101,7 +103,7 @@ export const putDynamoDB = ({
       .then((putResponse) => ({ ...uow, putResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, 'save') || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s
