@@ -5,8 +5,12 @@ class Timer {
     this.checkpoints = { ...(checkpoints || {}) };
   }
 
+  static now() {
+    return Date.now();
+  }
+
   checkpoint(key) {
-    const now = Date.now();
+    const now = Timer.now();
     this.checkpoints[key] = {
       value: now - this.last,
     };
@@ -15,7 +19,7 @@ class Timer {
   }
 
   end(key) {
-    const now = Date.now();
+    const now = Timer.now();
     this.checkpoints[key] = {
       value: now - this.start,
     };
