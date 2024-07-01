@@ -40,10 +40,10 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new PutRecordBatchCommand(params), ctx);
+    return this._sendCommand(new PutRecordBatchCommand(params), ctx);
   }
 
-  _executeCommand(command, ctx) {
+  _sendCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 'firehose', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

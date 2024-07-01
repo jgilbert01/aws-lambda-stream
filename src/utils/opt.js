@@ -13,8 +13,6 @@ export const defaultOptions = {
   busName: process.env.BUS_NAME,
   publish: publishToEventBridge,
 
-  xrayEnabled: process.env.XRAY_ENABLED === 'true' || process.env.AWS_XRAY_DAEMON_ADDRESS,
-
   maxRequestSize: Number(process.env.MAX_REQ_SIZE) || 1024 * 256, // 262,144
   compressionThreshold: Number(process.env.COMPRESSION_THRESHOLD) || 1024 * 10,
 

@@ -33,10 +33,10 @@ class Connector {
   }
 
   invoke(params, ctx) {
-    return this._executeCommand(new InvokeCommand(params), ctx);
+    return this._sendCommand(new InvokeCommand(params), ctx);
   }
 
-  _executeCommand(command, ctx) {
+  _sendCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 'lambda', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

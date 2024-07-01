@@ -49,7 +49,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new PublishCommand(params), ctx);
+    return this._sendCommand(new PublishCommand(params), ctx);
   }
 
   publishBatch(inputParams, ctx) {
@@ -65,7 +65,7 @@ class Connector {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._executeCommand(new PublishBatchCommand(params), ctx)
+      .then(() => this._sendCommand(new PublishBatchCommand(params), ctx)
         .then((resp) => {
           if (resp.Failed?.length > 0) {
             return this._publishBatch(unprocessed(params, resp), [...attempts, resp]);
@@ -75,7 +75,7 @@ class Connector {
         }));
   }
 
-  _executeCommand(command, ctx) {
+  _sendCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 'sns', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

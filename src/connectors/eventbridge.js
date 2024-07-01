@@ -47,7 +47,7 @@ class Connector {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._executeCommand(new PutEventsCommand(params), ctx)
+      .then(() => this._sendCommand(new PutEventsCommand(params), ctx)
         .then((resp) => {
           if (resp.FailedEntryCount > 0) {
             return this._putEvents(unprocessed(params, resp), [...attempts, resp], ctx);
@@ -57,7 +57,7 @@ class Connector {
         }));
   }
 
-  _executeCommand(command, ctx) {
+  _sendCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 'eventbridge', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

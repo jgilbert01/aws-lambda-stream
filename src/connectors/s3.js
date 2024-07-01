@@ -44,7 +44,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new PutObjectCommand(params), ctx);
+    return this._sendCommand(new PutObjectCommand(params), ctx);
   }
 
   deleteObject(inputParams, ctx) {
@@ -53,7 +53,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new DeleteObjectCommand(params), ctx);
+    return this._sendCommand(new DeleteObjectCommand(params), ctx);
   }
 
   getObject(inputParams, ctx) {
@@ -62,7 +62,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new GetObjectCommand(params), ctx)
+    return this._sendCommand(new GetObjectCommand(params), ctx)
       .then(async (response) => ({ ...response, Body: await response.Body.transformToString() }));
   }
 
@@ -72,7 +72,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new GetObjectCommand(params), ctx)
+    return this._sendCommand(new GetObjectCommand(params), ctx)
       .then((response) => Readable.from(response.Body));
   }
 
@@ -82,10 +82,10 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new ListObjectsV2Command(params), ctx);
+    return this._sendCommand(new ListObjectsV2Command(params), ctx);
   }
 
-  _executeCommand(command, ctx) {
+  _sendCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 's3', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

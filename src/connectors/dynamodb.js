@@ -64,7 +64,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new UpdateCommand(params), ctx)
+    return this._sendCommand(new UpdateCommand(params), ctx)
       .catch((err) => {
         /* istanbul ignore else */
         if (err.name === 'ConditionalCheckFailedException') {
@@ -81,7 +81,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new PutCommand(params), ctx);
+    return this._sendCommand(new PutCommand(params), ctx);
   }
 
   batchGet(inputParams, ctx) {
@@ -107,7 +107,7 @@ class Connector {
 
     return _((push, next) => {
       params.ExclusiveStartKey = cursor;
-      return this._executeCommand(new QueryCommand(params), ctx)
+      return this._sendCommand(new QueryCommand(params), ctx)
         .then((data) => {
           itemsCount += data.Items.length;
 
@@ -142,7 +142,7 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new QueryCommand(params), ctx);
+    return this._sendCommand(new QueryCommand(params), ctx);
   }
 
   scan(inputParams, ctx) {
@@ -151,14 +151,14 @@ class Connector {
       ...inputParams,
     };
 
-    return this._executeCommand(new ScanCommand(params), ctx);
+    return this._sendCommand(new ScanCommand(params), ctx);
   }
 
   _batchGet(params, attempts, ctx) {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._executeCommand(new BatchGetCommand(params), ctx)
+      .then(() => this._sendCommand(new BatchGetCommand(params), ctx)
         .then((resp) => {
           const response = {
             Responses: {},
@@ -172,7 +172,7 @@ class Connector {
         }));
   }
 
-  _executeCommand(command, ctx) {
+  _sendCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 'dynamodb', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

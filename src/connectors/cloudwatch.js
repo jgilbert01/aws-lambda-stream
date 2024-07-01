@@ -9,10 +9,8 @@ class Connector {
     debug,
     pipelineId,
     timeout = Number(process.env.CW_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.opt = opt;
     this.client = Connector.getClient(pipelineId, debug, timeout);
   }
 
@@ -31,18 +29,14 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  put({ Namespace, MetricData }, ctx) {
+  put({ Namespace, MetricData }) {
     const params = {
       Namespace,
       MetricData,
     };
 
     const command = new PutMetricDataCommand(params);
-    return this._executeCommand(command, ctx);
-  }
 
-  _executeCommand(command, ctx) {
-    this.opt.metrics?.capture(this.client, command, 'cloudwatch', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);

@@ -15,12 +15,9 @@ class Connector {
     pipelineId,
     secretId,
     timeout = Number(process.env.SECRETSMGR_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
-    ...opt
   }) {
     this.debug = /* istanbul ignore next */ (msg) => debug('%j', msg);
     this.secretId = secretId;
-    this.opt = opt;
-
     this.client = Connector.getClient(pipelineId, debug, timeout);
   }
 
@@ -39,25 +36,19 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  async get(ctx) {
+  async get() {
     if (!this.secrets) {
       const params = {
         SecretId: this.secretId,
       };
 
-      this.secrets = this._executeCommand(new GetSecretValueCommand(params), ctx)
+      this.secrets = await Promise.resolve(this.client.send(new GetSecretValueCommand(params)))
+        .tapCatch(this.debug)
         .then((data) => Buffer.from(data.SecretString, 'base64').toString())
         .then((data) => JSON.parse(data));
     }
 
     return this.secrets;
-  }
-
-  _executeCommand(command, ctx) {
-    this.opt.metrics?.capture(this.client, command, 'secretsmgr', this.opt, ctx);
-    return Promise.resolve(this.client.send(command))
-      .tap(this.debug)
-      .tapCatch(this.debug);
   }
 }
 

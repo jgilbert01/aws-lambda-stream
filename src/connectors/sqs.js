@@ -55,7 +55,7 @@ class Connector {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._executeCommand(new SendMessageBatchCommand(params), ctx)
+      .then(() => this._sendCommand(new SendMessageBatchCommand(params), ctx)
         .tap(this.debug)
         .tapCatch(this.debug)
         .then((resp) => {
@@ -67,7 +67,7 @@ class Connector {
         }));
   }
 
-  _executeCommand(command, ctx) {
+  _sendCommand(command, ctx) {
     this.opt.metrics?.capture(this.client, command, 'sqs', this.opt, ctx);
     return Promise.resolve(this.client.send(command))
       .tap(this.debug)

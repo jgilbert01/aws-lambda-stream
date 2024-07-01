@@ -21,6 +21,7 @@ import SnsConnector from '../../../src/connectors/sns';
 import SqsConnector from '../../../src/connectors/sqs';
 import DynamoConnector from '../../../src/connectors/dynamodb';
 import * as metrics from '../../../src/metrics';
+import { monitor } from '../../../src/metrics/monitor';
 
 const TEST_ROOT_SEGMENT = {
   id: 'test_root_segment',
@@ -48,6 +49,24 @@ const TEST_SUBSEGMENT = {
     this.in_progress = false;
   },
 };
+
+describe('metrics/monitor.js', () => {
+  beforeEach(() => {
+    process.env.METRICS_ENABLED = 'true';
+    process.env.XRAY_ENABLED = 'true';
+  });
+
+  afterEach(() => {
+    delete process.env.METRICS_ENABLED;
+    delete process.env.XRAY_ENABLED;
+  });
+
+  it('should enable xray', () => {
+    const opt = {};
+    monitor(() => {}, opt);
+    expect(opt.xrayEnabled).to.be.true;
+  });
+});
 
 describe('metrics/xray.js', () => {
   afterEach(sinon.restore);
@@ -169,7 +188,7 @@ describe('metrics/xray.js', () => {
 
       const connector = new klass({ debug: debug('test'), xrayEnabled: called, metrics });
       sinon.stub(connector.client, 'send');
-      await connector._executeCommand({});
+      await connector._sendCommand({});
 
       if (called) {
         expect(captureStub).to.have.been.called;
@@ -177,16 +196,6 @@ describe('metrics/xray.js', () => {
         expect(captureStub).to.not.have.been.called;
       }
     };
-
-    describe('cloudwatch', () => {
-      it('integrates with connector if enabled', async () => {
-        await validateConnector(CloudwatchConnector, true);
-      });
-
-      it('does not integrate with connector if not enabled', async () => {
-        await validateConnector(CloudwatchConnector, false);
-      });
-    });
 
     describe('eventbridge', () => {
       it('integrates with connector if enabled', async () => {
@@ -235,16 +244,6 @@ describe('metrics/xray.js', () => {
 
       it('does not integrate with connector if not enabled', async () => {
         await validateConnector(S3Connector, false);
-      });
-    });
-
-    describe('secretsmgr', () => {
-      it('integrates with connector if enabled', async () => {
-        await validateConnector(SecretsMgrConnector, true);
-      });
-
-      it('does not integrate with connector if not enabled', async () => {
-        await validateConnector(SecretsMgrConnector, false);
       });
     });
 
