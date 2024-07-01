@@ -2,12 +2,16 @@ import { publishToEventBridge } from '../sinks/eventbridge';
 
 import { debug } from './print';
 
-export const defaultOptions = { // eslint-disable-line import/prefer-default-export
+let opt = {};
+export const options = (o) => {
+  if (o) opt = o;
+  return opt;
+};
+
+export const defaultOptions = {
   debug: debug('handler'),
   busName: process.env.BUS_NAME,
   publish: publishToEventBridge,
-
-  metricsEnabled: process.env.ENABLE_METRICS === 'true',
 
   maxRequestSize: Number(process.env.MAX_REQ_SIZE) || 1024 * 256, // 262,144
   compressionThreshold: Number(process.env.COMPRESSION_THRESHOLD) || 1024 * 10,

@@ -59,20 +59,21 @@ export const updateDynamoDB = ({
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   removeUndefinedValues = true,
+  step = 'save',
   ...opt
 } = {}) => {
   const connector = new Connector({
-    pipelineId, debug, tableName, timeout, removeUndefinedValues,
+    pipelineId, debug, tableName, timeout, removeUndefinedValues, ...opt,
   });
 
   const invoke = (uow) => {
     if (!uow[updateRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.update(uow[updateRequestField])
+    const p = connector.update(uow[updateRequestField], uow)
       .then((updateResponse) => ({ ...uow, [updateResponseField]: updateResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -88,19 +89,21 @@ export const putDynamoDB = ({
   putRequestField = 'putRequest',
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+  step = 'save',
+  ...opt
 } = {}) => {
   const connector = new Connector({
-    pipelineId, debug, tableName, timeout,
+    pipelineId, debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {
     if (!uow[putRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.put(uow[putRequestField])
+    const p = connector.put(uow[putRequestField], uow)
       .then((putResponse) => ({ ...uow, putResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s

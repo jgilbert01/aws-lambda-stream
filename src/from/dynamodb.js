@@ -2,7 +2,7 @@
 import _ from 'highland';
 
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
-import { faulty } from '../utils';
+import { faulty, options } from '../utils';
 
 export const fromDynamodb = (event, {
   pkFn = 'pk',
@@ -46,7 +46,8 @@ export const fromDynamodb = (event, {
               : undefined,
           },
         },
-      })));
+      })))
+    .tap((uow) => options().metrics?.adornDynamoMetrics(uow, event));
 
 // https://www.trek10.com/blog/dynamodb-single-table-relational-modeling
 // all rows must have a discriminator field to store the prefix: <entityname> or <entityname-relationship>

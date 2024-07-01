@@ -11,7 +11,7 @@ class Connector {
     timeout = Number(process.env.CW_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.cw = Connector.getClient(pipelineId, debug, timeout);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
   }
 
   static clients = {};
@@ -36,7 +36,7 @@ class Connector {
     };
 
     const command = new PutMetricDataCommand(params);
-    return Promise.resolve(this.cw.send(command))
+    return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

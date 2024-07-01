@@ -10,10 +10,12 @@ class Connector {
     pipelineId,
     deliveryStreamName = process.env.DELIVERY_STREAM_NAME,
     timeout = Number(process.env.FIREHOSE_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.deliveryStreamName = deliveryStreamName || 'undefined';
-    this.stream = Connector.getClient(pipelineId, debug, timeout);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
+    this.opt = opt;
   }
 
   static clients = {};
@@ -31,13 +33,18 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  putRecordBatch(inputParams) {
+  putRecordBatch(inputParams, ctx) {
     const params = {
       DeliveryStreamName: this.deliveryStreamName,
       ...inputParams,
     };
 
-    return Promise.resolve(this.stream.send(new PutRecordBatchCommand(params)))
+    return this._sendCommand(new PutRecordBatchCommand(params), ctx);
+  }
+
+  _sendCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'firehose', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

@@ -84,6 +84,7 @@ describe('faults/index.js', () => {
             eventID: 'shardId-000000000000:1',
             awsRegion: 'us-west-2',
             kinesis: {
+              approximateArrivalTimestamp: undefined,
               sequenceNumber: '1',
               data: 'eyJ0eXBlIjoiZjIiLCJlbnRpdHkiOnsiZjEiOiJ2MSIsImYyIjoidjIifSwiZWVtIjp7ImZpZWxkcyI6WyJmMiJdfX0=',
             },

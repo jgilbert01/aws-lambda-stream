@@ -15,9 +15,11 @@ export const batchGetDynamoDB = ({
   parallel = Number(process.env.GET_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
+  step = 'get',
+  ...opt
 } = {}) => {
   const connector = new Connector({
-    pipelineId, debug, tableName, timeout,
+    pipelineId, debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {
@@ -28,7 +30,7 @@ export const batchGetDynamoDB = ({
 
     const p = (cached
       ? /* istanbul ignore next */ Promise.resolve(cached)
-      : connector.batchGet(uow[batchGetRequestField])
+      : connector.batchGet(uow[batchGetRequestField], uow)
         .then(async (batchGetResponse) => ({
           ...batchGetResponse,
           Responses: await Object.keys(batchGetResponse.Responses).reduce(async (a, c) => {
@@ -47,7 +49,7 @@ export const batchGetDynamoDB = ({
       .then((batchGetResponse) => ({ ...uow, [batchGetResponseField]: batchGetResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -64,9 +66,11 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
   parallel = Number(process.env.QUERY_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
+  step = 'query',
+  ...opt
 } = {}) => {
   const connector = new Connector({
-    pipelineId, debug, tableName, timeout,
+    pipelineId, debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {
@@ -77,7 +81,7 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
 
     const p = (cached
       ? Promise.resolve(cached)
-      : connector.query(uow[queryRequestField])
+      : connector.query(uow[queryRequestField], uow)
         .then((queryResponse) => Promise.all(queryResponse.map(decrypt)))
         .then((queryResponse) => {
           memoryCache.put(req, queryResponse);
@@ -87,7 +91,7 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
       .then((queryResponse) => ({ ...uow, [queryResponseField]: queryResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
   };
 
   return (s) => s
@@ -154,9 +158,11 @@ export const scanSplitDynamoDB = ({
   parallel = Number(process.env.SCAN_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
+  step = 'scan',
+  ...opt
 } = {}) => {
   const connector = new Connector({
-    pipelineId, debug, tableName, timeout,
+    pipelineId, debug, tableName, timeout, ...opt,
   });
 
   const scan = (uow) => {
@@ -171,7 +177,8 @@ export const scanSplitDynamoDB = ({
         ExclusiveStartKey: cursor,
       };
 
-      connector.scan(params)
+      const p = connector.scan(params, uow);
+      (uow.metrics?.w(p, step) || p)
         .then(async ({ LastEvaluatedKey, Items, ...rest }) => ({ LastEvaluatedKey, Items: await Promise.all(Items.map(decrypt)), ...rest }))
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;
@@ -223,9 +230,11 @@ export const querySplitDynamoDB = ({
   parallel = Number(process.env.SCAN_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   decrypt = async (data) => data,
+  step = 'query',
+  ...opt
 } = {}) => {
   const connector = new Connector({
-    pipelineId, debug, tableName, timeout,
+    pipelineId, debug, tableName, timeout, ...opt,
   });
 
   const invoke = (uow) => {
@@ -240,7 +249,8 @@ export const querySplitDynamoDB = ({
         ExclusiveStartKey: cursor,
       };
 
-      connector.queryPage(params)
+      const p = connector.queryPage(params, uow);
+      (uow.metrics?.w(p, step) || p)
         .then(async ({ LastEvaluatedKey, Items, ...rest }) => ({ LastEvaluatedKey, Items: await Promise.all(Items.map(decrypt)), ...rest }))
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;

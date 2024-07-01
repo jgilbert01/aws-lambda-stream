@@ -9,9 +9,11 @@ class Connector {
     debug,
     pipelineId,
     timeout = Number(process.env.LAMBDA_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.lambda = Connector.getClient(pipelineId, debug, timeout);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
+    this.opt = opt;
   }
 
   static clients = {};
@@ -29,8 +31,13 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  invoke(params) {
-    return Promise.resolve(this.lambda.send(new InvokeCommand(params)))
+  invoke(params, ctx) {
+    return this._sendCommand(new InvokeCommand(params), ctx);
+  }
+
+  _sendCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'lambda', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

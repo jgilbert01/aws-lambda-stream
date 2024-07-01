@@ -17,11 +17,13 @@ class Connector {
     topicArn = process.env.TOPIC_ARN,
     timeout = Number(process.env.SNS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.topicArn = topicArn || 'undefined';
-    this.topic = Connector.getClient(pipelineId, debug, timeout);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
     this.retryConfig = retryConfig;
+    this.opt = opt;
   }
 
   static clients = {};
@@ -40,29 +42,29 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  publish(inputParams) {
+  publish(inputParams, ctx) {
     const params = {
       TopicArn: this.topicArn,
       ...inputParams,
     };
 
-    return this._sendCommand(new PublishCommand(params));
+    return this._sendCommand(new PublishCommand(params), ctx);
   }
 
-  publishBatch(inputParams) {
+  publishBatch(inputParams, ctx) {
     const params = {
       TopicArn: this.topicArn,
       ...inputParams,
     };
 
-    return this._publishBatch(params, []);
+    return this._publishBatch(params, [], ctx);
   }
 
-  _publishBatch(params, attempts) {
+  _publishBatch(params, attempts, ctx) {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._sendCommand(new PublishBatchCommand(params))
+      .then(() => this._sendCommand(new PublishBatchCommand(params), ctx)
         .then((resp) => {
           if (resp.Failed?.length > 0) {
             return this._publishBatch(unprocessed(params, resp), [...attempts, resp]);
@@ -72,8 +74,9 @@ class Connector {
         }));
   }
 
-  _sendCommand(command) {
-    return Promise.resolve(this.topic.send(command))
+  _sendCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'sns', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

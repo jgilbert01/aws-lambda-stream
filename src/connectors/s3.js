@@ -14,10 +14,12 @@ class Connector {
     pipelineId,
     bucketName = process.env.BUCKET_NAME,
     timeout = Number(process.env.S3_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.bucketName = bucketName || 'undefined';
-    this.bucket = Connector.getClient(pipelineId, debug, timeout);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
+    this.opt = opt;
   }
 
   static clients = {};
@@ -35,55 +37,56 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  putObject(inputParams) {
+  putObject(inputParams, ctx) {
     const params = {
       Bucket: this.bucketName,
       ...inputParams,
     };
 
-    return this._sendCommand(new PutObjectCommand(params));
+    return this._sendCommand(new PutObjectCommand(params), ctx);
   }
 
-  deleteObject(inputParams) {
+  deleteObject(inputParams, ctx) {
     const params = {
       Bucket: this.bucketName,
       ...inputParams,
     };
 
-    return this._sendCommand(new DeleteObjectCommand(params));
+    return this._sendCommand(new DeleteObjectCommand(params), ctx);
   }
 
-  getObject(inputParams) {
+  getObject(inputParams, ctx) {
     const params = {
       Bucket: this.bucketName,
       ...inputParams,
     };
 
-    return this._sendCommand(new GetObjectCommand(params))
+    return this._sendCommand(new GetObjectCommand(params), ctx)
       .then(async (response) => ({ ...response, Body: await response.Body.transformToString() }));
   }
 
-  getObjectStream(inputParams) {
+  getObjectStream(inputParams, ctx) {
     const params = {
       Bucket: this.bucketName,
       ...inputParams,
     };
 
-    return this._sendCommand(new GetObjectCommand(params))
+    return this._sendCommand(new GetObjectCommand(params), ctx)
       .then((response) => Readable.from(response.Body));
   }
 
-  listObjects(inputParams) {
+  listObjects(inputParams, ctx) {
     const params = {
       Bucket: this.bucketName,
       ...inputParams,
     };
 
-    return this._sendCommand(new ListObjectsV2Command(params));
+    return this._sendCommand(new ListObjectsV2Command(params), ctx);
   }
 
-  _sendCommand(command) {
-    return Promise.resolve(this.bucket.send(command))
+  _sendCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 's3', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

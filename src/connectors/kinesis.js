@@ -16,11 +16,13 @@ class Connector {
     streamName = process.env.STREAM_NAME,
     timeout = Number(process.env.KINESIS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.streamName = streamName || 'undefined';
-    this.stream = Connector.getClient(pipelineId, debug, timeout);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
     this.retryConfig = retryConfig;
+    this.opt = opt;
   }
 
   static clients = {};
@@ -52,7 +54,7 @@ class Connector {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => Promise.resolve(this.stream.send(new PutRecordsCommand(params)))
+      .then(() => this._sendCommand(new PutRecordsCommand(params))
         .tap(this.debug)
         .tapCatch(this.debug)
         .then((resp) => {
@@ -62,6 +64,13 @@ class Connector {
             return accumlate(attempts, resp);
           }
         }));
+  }
+
+  _sendCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'kinesis', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
+      .tap(this.debug)
+      .tapCatch(this.debug);
   }
 }
 

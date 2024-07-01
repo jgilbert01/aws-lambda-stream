@@ -16,11 +16,13 @@ class Connector {
     queueUrl = process.env.QUEUE_URL,
     timeout = Number(process.env.SQS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.queueUrl = queueUrl || 'undefined';
-    this.queue = Connector.getClient(pipelineId, debug, timeout);
+    this.client = Connector.getClient(pipelineId, debug, timeout);
     this.retryConfig = retryConfig;
+    this.opt = opt;
   }
 
   static clients = {};
@@ -39,20 +41,20 @@ class Connector {
     return this.clients[pipelineId];
   }
 
-  sendMessageBatch(inputParams) {
+  sendMessageBatch(inputParams, ctx) {
     const params = {
       QueueUrl: this.queueUrl,
       ...inputParams,
     };
 
-    return this._sendMessageBatch(params, []);
+    return this._sendMessageBatch(params, [], ctx);
   }
 
-  _sendMessageBatch(params, attempts) {
+  _sendMessageBatch(params, attempts, ctx) {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => Promise.resolve(this.queue.send(new SendMessageBatchCommand(params)))
+      .then(() => this._sendCommand(new SendMessageBatchCommand(params), ctx)
         .tap(this.debug)
         .tapCatch(this.debug)
         .then((resp) => {
@@ -62,6 +64,13 @@ class Connector {
             return accumlate(attempts, resp);
           }
         }));
+  }
+
+  _sendCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'sqs', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
+      .tap(this.debug)
+      .tapCatch(this.debug);
   }
 }
 
