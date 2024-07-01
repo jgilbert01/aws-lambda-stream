@@ -1,6 +1,6 @@
 class Timer {
   constructor({ start, last, checkpoints }) {
-    this.start = (new Date(start)).getTime();
+    this.start = (new Date(start || Timer.now())).getTime();
     this.last = last || this.start;
     this.checkpoints = { ...(checkpoints || {}) };
   }

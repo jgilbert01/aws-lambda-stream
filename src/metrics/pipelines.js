@@ -45,7 +45,7 @@ class PipelineMetrics {
   }) {
     this.pipeline = pipeline || 'default';
     this.timer = new Timer({
-      start: publishTime || timer?.start || Timer.now(),
+      start: publishTime || timer?.start,
       last: timer?.last,
       checkpoints: timer?.checkpoints,
     });
