@@ -49,7 +49,7 @@ const TEST_SUBSEGMENT = {
   },
 };
 
-describe('utils/xray.js', () => {
+describe('metrics/xray.js', () => {
   afterEach(sinon.restore);
 
   it('should capture global promise and https on require.', () => {
@@ -154,7 +154,7 @@ describe('utils/xray.js', () => {
         },
       ]), false);
 
-      await pipeline.through(metrics.toPromiseWithMetrics(opt));
+      await pipeline.through(toPromise);
 
       expect(startStub).to.have.been.calledWith('TestPipeline');
       expect(endStub).to.have.been.calledWith('TestPipeline');
