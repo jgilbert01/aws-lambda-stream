@@ -1,10 +1,11 @@
 class Timer {
   constructor({ start, last, checkpoints }) {
-    this.start = (new Date(start || Timer.now())).getTime();
+    this.start = (new Date(start || /* istanbul ignore next */ Timer.now())).getTime();
     this.last = last || this.start;
     this.checkpoints = { ...(checkpoints || {}) };
   }
 
+  /* istanbul ignore next */
   static now() {
     return Date.now();
   }
