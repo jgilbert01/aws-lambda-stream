@@ -52,13 +52,13 @@ const TEST_SUBSEGMENT = {
 
 describe('metrics/monitor.js', () => {
   beforeEach(() => {
-    process.env.METRICS_ENABLED = 'true';
-    process.env.XRAY_ENABLED = 'true';
+    process.env.ENABLE_METRICS = 'true';
+    process.env.ENABLE_XRAY = 'true';
   });
 
   afterEach(() => {
-    delete process.env.METRICS_ENABLED;
-    delete process.env.XRAY_ENABLED;
+    delete process.env.ENABLE_METRICS;
+    delete process.env.ENABLE_XRAY;
   });
 
   it('should enable xray', () => {

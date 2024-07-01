@@ -15,7 +15,7 @@ export const monitor = (handle, opt) => { // eslint-disable-line import/prefer-d
   }
 
   /* istanbul ignore else */
-  if (process.env.XRAY_ENABLED === 'true' || process.env.AWS_XRAY_DAEMON_ADDRESS) {
+  if (process.env.ENABLE_XRAY === 'true' || process.env.AWS_XRAY_DAEMON_ADDRESS) {
     opt.xrayEnabled = true;
   }
 
