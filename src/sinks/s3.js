@@ -23,11 +23,11 @@ export const putObjectToS3 = ({
   const putObject = (uow) => {
     if (!uow[putRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.putObject(uow[putRequestField], uow)
+    const p = () => connector.putObject(uow[putRequestField], uow)
       .then((putResponse) => ({ ...uow, [putResponseField]: putResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p()); // wrap promise in a stream
   };
 
   return (s) => s
@@ -53,11 +53,11 @@ export const deleteObjectFromS3 = ({
   const deleteObject = (uow) => {
     if (!uow[deleteRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.deleteObject(uow[deleteRequestField])
+    const p = () => connector.deleteObject(uow[deleteRequestField])
       .then((deleteResponse) => ({ ...uow, [deleteResponseField]: deleteResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p()); // wrap promise in a stream
   };
 
   return (s) => s

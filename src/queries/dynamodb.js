@@ -28,7 +28,7 @@ export const batchGetDynamoDB = ({
     const req = JSON.stringify(uow[batchGetRequestField]);
     const cached = memoryCache.get(req);
 
-    const p = (cached
+    const p = () => (cached
       ? /* istanbul ignore next */ Promise.resolve(cached)
       : connector.batchGet(uow[batchGetRequestField], uow)
         .then(async (batchGetResponse) => ({
@@ -49,7 +49,7 @@ export const batchGetDynamoDB = ({
       .then((batchGetResponse) => ({ ...uow, [batchGetResponseField]: batchGetResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p()); // wrap promise in a stream
   };
 
   return (s) => s
@@ -79,7 +79,7 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
     const req = JSON.stringify(uow[queryRequestField]);
     const cached = memoryCache.get(req);
 
-    const p = (cached
+    const p = () => (cached
       ? Promise.resolve(cached)
       : connector.query(uow[queryRequestField], uow)
         .then((queryResponse) => Promise.all(queryResponse.map(decrypt)))
@@ -91,7 +91,7 @@ export const queryAllDynamoDB = (/* istanbul ignore next */{
       .then((queryResponse) => ({ ...uow, [queryResponseField]: queryResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p()); // wrap promise in a stream
   };
 
   return (s) => s
@@ -177,8 +177,8 @@ export const scanSplitDynamoDB = ({
         ExclusiveStartKey: cursor,
       };
 
-      const p = connector.scan(params, uow);
-      (uow.metrics?.w(p, step) || p)
+      const p = () => connector.scan(params, uow);
+      (uow.metrics?.w(p, step) || p())
         .then(async ({ LastEvaluatedKey, Items, ...rest }) => ({ LastEvaluatedKey, Items: await Promise.all(Items.map(decrypt)), ...rest }))
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;
@@ -249,8 +249,8 @@ export const querySplitDynamoDB = ({
         ExclusiveStartKey: cursor,
       };
 
-      const p = connector.queryPage(params, uow);
-      (uow.metrics?.w(p, step) || p)
+      const p = () => connector.queryPage(params, uow);
+      (uow.metrics?.w(p, step) || p())
         .then(async ({ LastEvaluatedKey, Items, ...rest }) => ({ LastEvaluatedKey, Items: await Promise.all(Items.map(decrypt)), ...rest }))
         .then((data) => {
           const { LastEvaluatedKey, Items, ...rest } = data;

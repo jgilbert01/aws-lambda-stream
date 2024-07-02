@@ -69,11 +69,11 @@ export const updateDynamoDB = ({
   const invoke = (uow) => {
     if (!uow[updateRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.update(uow[updateRequestField], uow)
+    const p = () => connector.update(uow[updateRequestField], uow)
       .then((updateResponse) => ({ ...uow, [updateResponseField]: updateResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p()); // wrap promise in a stream
   };
 
   return (s) => s
@@ -99,11 +99,11 @@ export const putDynamoDB = ({
   const invoke = (uow) => {
     if (!uow[putRequestField]) return _(Promise.resolve(uow));
 
-    const p = connector.put(uow[putRequestField], uow)
+    const p = () => connector.put(uow[putRequestField], uow)
       .then((putResponse) => ({ ...uow, putResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, step) || p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || p()); // wrap promise in a stream
   };
 
   return (s) => s
