@@ -103,7 +103,7 @@ class PipelineMetrics {
     const self = this;
     self.startStep(step);
     return Promise.resolve(p()) // now start the promise
-      .tap(self.endStep(step));
+      .tap(() => self.endStep(step));
   }
 }
 
