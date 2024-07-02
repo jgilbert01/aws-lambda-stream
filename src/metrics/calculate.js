@@ -26,6 +26,7 @@ export const calculateMetrics = (collected) => { // eslint-disable-line import/p
   functionMetrics()['stream.uow.count'] = collected.length;
 
   const checkpoints = collected
+    .filter((uow) => uow.metrics?.timer)
     .reduce((a, { metrics: { timer } }) => [
       ...a,
       ...Object.entries(timer.checkpoints)
@@ -39,6 +40,7 @@ export const calculateMetrics = (collected) => { // eslint-disable-line import/p
   // console.log('checkpoints: ', checkpoints);
 
   const gauges = collected
+    .filter((uow) => uow.metrics?.gauges)
     .reduce((a, { metrics: { gauges } }) => [ // eslint-disable-line no-shadow
       ...a,
       ...Object.entries(gauges)
