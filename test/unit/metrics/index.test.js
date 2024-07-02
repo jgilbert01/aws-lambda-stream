@@ -95,7 +95,7 @@ describe('metrics/index.js', () => {
     mockDdb.restore();
     mockEventBridge.restore();
     delete process.env.BATCH_SIZE;
-    delete process.env.METRICS_ENABLED;
+    delete process.env.ENABLE_METRICS;
     sinon.assert.callCount(datestub, 28);
   });
 

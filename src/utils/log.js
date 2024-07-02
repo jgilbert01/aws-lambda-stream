@@ -5,7 +5,7 @@ import { inspect } from 'util';
 export const defaultDebugLogger = (debug) => {
   const dbg = debug || /* istanbul ignore next */ d('debug');
 
-  const log = (...content) => dbg(...(content.map(normalize)));
+  const log = (...content) => dbg(...(content.map(normalizeLogMsg)));
   return {
     debug: () => {},
     info: log,
@@ -14,4 +14,4 @@ export const defaultDebugLogger = (debug) => {
   };
 };
 
-const normalize = (msg) => (typeof msg === 'string' ? msg : inspect(msg, { depth: 3 })).replace(/\n/g, '\r');
+export const normalizeLogMsg = (msg) => (typeof msg === 'string' ? msg : inspect(msg, { depth: 3 })).replace(/\n/g, '\r');
