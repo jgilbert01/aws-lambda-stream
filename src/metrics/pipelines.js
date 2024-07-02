@@ -101,13 +101,12 @@ class PipelineMetrics {
   // wrap promise
   w(p, step) {
     const self = this;
-    return new Promise((resolve, reject) => {
+    self.startStep(step);
+    return new Promise((resolve, reject) =>
       // console.log('uow: ', uow);
-      self.startStep(step);
-      return p.then(resolve, reject)
+      Promise.resolve(p).then(resolve, reject)
         // TODO record capacity utilization ???
-        .tap(self.endStep(step));
-    });
+        .tap(self.endStep(step)));
   }
 }
 
