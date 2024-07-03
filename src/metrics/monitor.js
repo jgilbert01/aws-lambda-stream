@@ -20,6 +20,6 @@ export const monitor = (handle, opt) => { // eslint-disable-line import/prefer-d
   }
 
   // could collect metrics here
-  return (event, context) => Promise.resolve().then(() => handle(event, context));
+  return (event, context, int) => Promise.resolve().then(() => handle(event, context, int));
   // could collect metrics here in .tap() and .tapCatch()
 };
