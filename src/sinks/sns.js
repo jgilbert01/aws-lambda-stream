@@ -20,11 +20,11 @@ export const publishToSns = ({ // eslint-disable-line import/prefer-default-expo
   });
 
   const publish = (uow) => {
-    const p = connector.publish(uow[messageField], uow)
+    const p = () => connector.publish(uow[messageField], uow)
       .then((publishResponse) => ({ ...uow, publishResponse }))
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, step) || /* istanbul ignore next */ p); // wrap promise in a stream
+    return _(uow.metrics?.w(p, step) || /* istanbul ignore next */ p()); // wrap promise in a stream
   };
 
   return (s) => s

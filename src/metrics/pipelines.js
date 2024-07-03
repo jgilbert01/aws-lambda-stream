@@ -12,10 +12,12 @@ export const functionMetrics = (m) => {
 
 export const clear = (opt) => {
   funcMetrics = {};
-  // TODO conditional xray
+  if (opt.xrayEnabled) {
+    require('./xray').clearPipelineSegments();
+  }
 };
 
-const startUow = (publishTime, batchSize) => {
+export const startUow = (publishTime, batchSize) => {
   funcMetrics['stream.batch.size'] = batchSize;
   funcMetrics['stream.batch.utilization'] = batchSize / Number(process.env.BATCH_SIZE || /* istanbul ignore next */ 100);
 
@@ -72,7 +74,11 @@ class PipelineMetrics {
       funcMetrics['stream.pipeline.count'] = pipelineCount;
     }
 
-    // TODO conditional xray
+    // Initialize an xray segment if enabled
+    if (opt.xrayEnabled) {
+      clone.xraySegment = require('./xray').startPipelineSegment(pipeline);
+    }
+
     return clone;
   }
 
@@ -95,13 +101,9 @@ class PipelineMetrics {
   // wrap promise
   w(p, step) {
     const self = this;
-    return new Promise((resolve, reject) => {
-      // console.log('uow: ', uow);
-      self.startStep(step);
-      return Promise.resolve(p).then(resolve, reject)
-        // TODO record capacity utilization ???
-        .tap(self.endStep(step));
-    });
+    self.startStep(step);
+    return Promise.resolve(p()) // now start the promise
+      .tap(() => self.endStep(step));
   }
 }
 
@@ -112,7 +114,9 @@ export const endPipeline = (pipelineId, opt, s) =>
       push(err);
       next();
     } else if (x === _.nil) {
-      // TODO conditional xray
+      if (opt.xrayEnabled) {
+        require('./xray').terminateSegment(pipelineId);
+      }
       push(null, x);
     } else {
       // per uow

@@ -10,8 +10,9 @@ export const putMetrics = ({ // eslint-disable-line import/prefer-default-export
   debug = d('cw'),
   putField = 'putRequest',
   parallel = Number(process.env.CW_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  ...opt
 } = {}) => {
-  const connector = new Connector({ pipelineId, debug });
+  const connector = new Connector({ pipelineId, debug, ...opt });
 
   const put = (uow) => {
     const p = connector.put(uow[putField])

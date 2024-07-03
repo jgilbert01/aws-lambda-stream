@@ -38,11 +38,11 @@ export const publishToKinesis = ({
       return _(Promise.resolve(batchUow));
     }
 
-    const p = connector.putRecords(batchUow.inputParams, batchUow)
+    const p = () => connector.putRecords(batchUow.inputParams, batchUow)
       .then((publishResponse) => ({ ...batchUow, publishResponse }))
       .catch(rejectWithFault(batchUow, !handleErrors));
 
-    return _(batchUow.batch[0].metrics?.w(p, step) || p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, step) || p()); // wrap promise in a stream
   };
 
   return (s) => s
