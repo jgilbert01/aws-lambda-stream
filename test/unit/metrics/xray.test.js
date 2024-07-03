@@ -10,18 +10,16 @@ import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { toPromise } from '../../../src/utils';
 import { initialize, initializeFrom } from '../../../src/pipelines';
 
-import CloudwatchConnector from '../../../src/connectors/cloudwatch';
 import EventBridgeConnector from '../../../src/connectors/eventbridge';
 import FirehoseConnector from '../../../src/connectors/firehose';
 import KinesisConnector from '../../../src/connectors/kinesis';
 import LambdaConnector from '../../../src/connectors/lambda';
 import S3Connector from '../../../src/connectors/s3';
-import SecretsMgrConnector from '../../../src/connectors/secretsmgr';
 import SnsConnector from '../../../src/connectors/sns';
 import SqsConnector from '../../../src/connectors/sqs';
 import DynamoConnector from '../../../src/connectors/dynamodb';
 import * as metrics from '../../../src/metrics';
-import { monitor } from '../../../src/metrics/monitor';
+import { mw } from '../../../src/utils/handler';
 
 const TEST_ROOT_SEGMENT = {
   id: 'test_root_segment',
@@ -50,7 +48,7 @@ const TEST_SUBSEGMENT = {
   },
 };
 
-describe('metrics/monitor.js', () => {
+describe('metrics/mw.js', () => {
   beforeEach(() => {
     process.env.ENABLE_METRICS = 'true';
     process.env.ENABLE_XRAY = 'true';
@@ -63,7 +61,7 @@ describe('metrics/monitor.js', () => {
 
   it('should enable xray', () => {
     const opt = {};
-    monitor(() => {}, opt);
+    mw(() => {}, opt).use(metrics.metrics)();
     expect(opt.xrayEnabled).to.be.true;
   });
 });

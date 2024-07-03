@@ -19,12 +19,12 @@ import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import { updateExpression } from '../../../src/sinks/dynamodb';
 import { initialize, initializeFrom } from '../../../src';
 import { defaultOptions } from '../../../src/utils/opt';
-import { toPromise } from '../../../src/utils/handler';
+import { toPromise, mw } from '../../../src/utils/handler';
 import { cdc } from '../../../src/flavors/cdc';
 import { materialize } from '../../../src/flavors/materialize';
 import { toGetRequest, toPkQueryRequest } from '../../../src/queries/dynamodb';
 
-import { monitor } from '../../../src/metrics/monitor';
+import { metrics } from '../../../src/metrics';
 import Timer from '../../../src/metrics/timer';
 
 const OPTIONS = {
@@ -57,11 +57,11 @@ const rules = [
   },
 ];
 
-const handle = async (event, context) => initialize({
+const handle = mw((event, context, options) => initialize({
   ...initializeFrom(rules),
-}, OPTIONS)
+}, options)
   .assemble(fromKinesis(event), false)
-  .through(toPromise);
+  .through(toPromise), OPTIONS);
 
 describe('metrics/index.js', () => {
   let mockEventBridge;
@@ -164,7 +164,7 @@ describe('metrics/index.js', () => {
       },
     ], 1719020816.001);
 
-    return monitor(handle, OPTIONS)(events)
+    return handle.use(metrics)(events)
       .tap((themetrics) => {
         // console.log(JSON.stringify(themetrics, null, 2));
         expect(themetrics).to.deep.equal({
