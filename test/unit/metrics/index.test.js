@@ -57,11 +57,11 @@ const rules = [
   },
 ];
 
-const handle = mw((event, context, options) => initialize({
+const handle = (event, context, options) => initialize({
   ...initializeFrom(rules),
 }, options)
   .assemble(fromKinesis(event), false)
-  .through(toPromise), OPTIONS);
+  .through(toPromise);
 
 describe('metrics/index.js', () => {
   let mockEventBridge;
@@ -164,7 +164,7 @@ describe('metrics/index.js', () => {
       },
     ], 1719020816.001);
 
-    return handle.use(metrics)(events)
+    return mw(handle, OPTIONS).use(metrics)(events)
       .tap((themetrics) => {
         // console.log(JSON.stringify(themetrics, null, 2));
         expect(themetrics).to.deep.equal({
