@@ -166,7 +166,7 @@ export const logMetrics = (metrics) => {
   if (process.env.ENABLE_EMF === 'true') {
     const emf = formatMetrics(metrics);
     emf.forEach((m) => {
-      console.log(JSON.stringify(m, null, 2));
+      console.log('%j', m);
     });
   } else {
     log('%j', metrics);
