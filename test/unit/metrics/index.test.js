@@ -70,7 +70,7 @@ describe('metrics/index.js', () => {
 
   beforeEach(() => {
     process.env.ENABLE_METRICS = 'true';
-    process.env.BATCH_SIZE = 10;
+    process.env.BATCH_SIZE = '10';
 
     // using aws-sdk-client-mock so that
     // the capture logic within the connectes gets executed

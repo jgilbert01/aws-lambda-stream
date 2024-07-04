@@ -3,7 +3,7 @@ import Promise from 'bluebird';
 
 import { clear } from './pipelines';
 import { calculateMetrics } from './calculate';
-// import { logMetrics } from './emf';
+import { logMetrics } from './emf';
 
 export const toPromise = (opt, s) =>
   new Promise((resolve, reject) => {
@@ -15,7 +15,7 @@ export const toPromise = (opt, s) =>
         reject(err);
       } else if (x === _.nil) {
         const metrics = calculateMetrics(collected);
-        // logMetrics(metrics);
+        logMetrics(metrics);
         resolve(metrics); //  TODO limit metrics returned ???
       } else {
         collected.push(x);
