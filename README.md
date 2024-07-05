@@ -533,6 +533,8 @@ Pipeline and step specific metric include thes tags:
 * `pipeline` is the pipeline/rule id
 * `step` is the step name which a pipeline, such as save, query, get, publish
 
+> Note: It will be counter intuitive at first, but your biggest performance gains will most likely come from minimizing wait time. So play close attention the `channel.wait` and `io.wait` metrics.
+
 ## Validation
 * https://github.com/jgilbert01/aws-lambda-stream/issues/22
 
