@@ -468,6 +468,8 @@ These features are intended for implementing intra-service logic. They are frequ
 ## Metrics Support
 AWS Lambda provides various metrics that help us gauge the performance of our stream process functions. For example, `Iterator Age` tells us if we have an unhandled error or if we are not processing events fast enough. However, to tune our pipelines we need more fine-grained metrics. This is where the metrics feature comes into play.
 
+> Note: It will be counter intuitive at first, but your biggest performance gains will most likely come from minimizing wait time. So play close attention the `channel.wait` and `io.wait` metrics.
+
 To enable and control the metrics feature we use the `process.env.METRICS` environment variable.
 
 ```
@@ -532,8 +534,6 @@ All metrics include the following tags:
 Pipeline and step specific metric include thes tags:
 * `pipeline` is the pipeline/rule id
 * `step` is the step name which a pipeline, such as save, query, get, publish
-
-> Note: It will be counter intuitive at first, but your biggest performance gains will most likely come from minimizing wait time. So play close attention the `channel.wait` and `io.wait` metrics.
 
 ## Validation
 * https://github.com/jgilbert01/aws-lambda-stream/issues/22
