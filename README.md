@@ -466,7 +466,71 @@ These features are intended for implementing intra-service logic. They are frequ
 * https://github.com/jgilbert01/aws-lambda-stream/issues/20
 
 ## Metrics Support
-* https://github.com/jgilbert01/aws-lambda-stream/issues/21
+AWS Lambda provides various metrics that help us gauge the performance of our stream process functions. For example, `Iterator Age` tells us if we have an unhandled error or if we are not processing events fast enough. However, to tune our pipelines we need more fine-grained metrics. This is where the metrics feature comes into play.
+
+To enable and control the metrics feature we use the `process.env.METRICS` environment variable.
+
+```
+environment:
+  METRICS: true or any value
+```
+
+This will enable the essential metrics:
+* `stream.batch.size` is the incoming batch size
+* `stream.batch.utilization` is the incoming batch size divided by the possible `process.env.BATCH_SIZE`. If the average is consistently above 70% you may be falling behind. see [Little's Law](https://en.wikipedia.org/wiki/Little%27s_law) and [Chapter 4](https://www.amazon.com/Software-Architecture-Patterns-Serverless-Systems/dp/1803235446)
+* `stream.pipeline.count` is the number of pipelines in the function
+* `stream.uow.count` is the number of Units of Work (uow) flowing through the function
+* `stream.pipeline.utilization` is the percentage of work performed by a pipeline verses others
+* `stream.channel.wait.time` is a pipeline specific version of `Iterator Age`. High wait time may indicate a need for more `shards` or `parallelization`.
+* `stream.pipeline.time` is the total time it takes a uow to flow through a pipeline. NOTE: this value includes the `stream.channel.wait.time` to highlight the true processing latency
+
+```
+environment:
+  METRICS: emf,xray
+```
+* `emf` enables logging of the metrics using the [CloudWatch Embedded Mertric Format](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html)
+  * future enhancements may include similar support for `datadog` and other tools
+* `xray` enables AWS Xray support
+
+```
+environment:
+  METRICS: emf,xray,metrics:*
+```
+Including `*` enables all detailed metrics. Or individual detailed metrics can be enables:
+
+```
+  METRICS: emf,xray,metrics:step
+```
+This will enable metrics for the IO steps with the pipelines"
+* `stream.pipeline.io.wait.time` is the amount of time an IO step waits for parallel capacity. Consistently high wait times my indicate that the `parallel` setting is too low or the function need more IO capacity (aka a higher function `memorySize`)
+* `stream.pipeline.io.time` is the amount of time an IO step took once it finsihed waiting
+
+```
+  METRICS: emf,xray,metrics:step,metrics:compact
+```
+This will add the metrics for the `compact` feature if you are using it:
+* `stream.pipeline.compact.count` is the number of uow that were compacted into one uow by partition key
+
+```
+  METRICS: emf,xray,metrics:size
+```
+This will add detailed metrics regarding the publishing of events"
+* `stream.pipeline.batchSize.count` is the number of events sent to the bus per request
+* `stream.pipeline.eventSize.bytes` is the size of the events sent to the bus
+
+### Namespace
+Use `process.env.METRICS` to set the namespace for CloudWatch metrics
+
+### Tags/Dimensions
+All metrics include the following tags:
+* `account` is the name of your account, such as subsys1-nonprd, subsys3-prd
+* `region` is self explanatory, such as us-east-1, us-west-2, etc
+* `stage` is the environment, such dev, qa, prd
+* `source` is the service name
+* `functionname` is self explanatory
+Pipeline and step specific metric include thes tags:
+* `pipeline` is the pipeline id
+* `step` is the step name, such as save, query, get, publish
 
 ## Validation
 * https://github.com/jgilbert01/aws-lambda-stream/issues/22
