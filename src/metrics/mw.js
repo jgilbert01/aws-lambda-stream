@@ -2,20 +2,23 @@ import * as pipelines from './pipelines';
 import * as capture from './capture';
 import * as toPromise from './to-promise';
 
+const enabled = (key) => process.env.METRICS.includes(key) || process.env.METRICS.includes('*');
+
 // handler middleware
 export const metrics = (next, opt, evt, ctx) => {
   /* istanbul ignore else */
-  if (process.env.ENABLE_METRICS === 'true') {
+  if (process.env.METRICS) {
     opt.metrics = {
       ...pipelines,
       ...capture,
       ...toPromise,
+      enabled,
     };
-  }
 
-  /* istanbul ignore else */
-  if (process.env.ENABLE_XRAY === 'true' || process.env.AWS_XRAY_DAEMON_ADDRESS) {
-    opt.xrayEnabled = true;
+    /* istanbul ignore else */
+    if (process.env.METRICS.includes('xray') && process.env.AWS_XRAY_DAEMON_ADDRESS) {
+      opt.xrayEnabled = true;
+    }
   }
 
   // could collect metrics here

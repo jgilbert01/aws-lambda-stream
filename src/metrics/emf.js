@@ -163,7 +163,7 @@ export const formatMetrics = (metrics) => {
 
 export const logMetrics = (metrics) => {
   /* istanbul ignore if */
-  if (process.env.ENABLE_EMF === 'true') {
+  if (process.env.METRICS?.includes('emf')) {
     const emf = formatMetrics(metrics);
     emf.forEach((m) => {
       console.log('%j', m);

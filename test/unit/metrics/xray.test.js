@@ -50,13 +50,13 @@ const TEST_SUBSEGMENT = {
 
 describe('metrics/mw.js', () => {
   beforeEach(() => {
-    process.env.ENABLE_METRICS = 'true';
-    process.env.ENABLE_XRAY = 'true';
+    process.env.METRICS = 'xray';
+    process.env.AWS_XRAY_DAEMON_ADDRESS = 'true';
   });
 
   afterEach(() => {
-    delete process.env.ENABLE_METRICS;
-    delete process.env.ENABLE_XRAY;
+    delete process.env.METRICS;
+    delete process.env.AWS_XRAY_DAEMON_ADDRESS;
   });
 
   it('should enable xray', () => {

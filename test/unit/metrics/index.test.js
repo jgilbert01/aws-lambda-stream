@@ -69,7 +69,7 @@ describe('metrics/index.js', () => {
   let datestub;
 
   beforeEach(() => {
-    process.env.ENABLE_METRICS = 'true';
+    process.env.METRICS = 'metrics:*';
     process.env.BATCH_SIZE = '10';
 
     // using aws-sdk-client-mock so that
@@ -95,7 +95,7 @@ describe('metrics/index.js', () => {
     mockDdb.restore();
     mockEventBridge.restore();
     delete process.env.BATCH_SIZE;
-    delete process.env.ENABLE_METRICS;
+    delete process.env.METRICS;
     sinon.assert.callCount(datestub, 28);
   });
 

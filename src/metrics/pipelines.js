@@ -43,7 +43,7 @@ export const adornSqsMetrics = (uow, event) => {
 
 class PipelineMetrics {
   constructor({
-    pipeline, publishTime, timer, gauges,
+    pipeline, publishTime, timer, gauges, opt,
   }) {
     this.pipeline = pipeline || 'default';
     this.timer = new Timer({
@@ -52,6 +52,7 @@ class PipelineMetrics {
       checkpoints: timer?.checkpoints,
     });
     this.gauges = gauges || {};
+    this.opt = opt;
   }
 
   gauge(key, value) {
@@ -65,6 +66,7 @@ class PipelineMetrics {
     const clone = new PipelineMetrics({
       pipeline,
       timer: this.timer,
+      opt,
     });
 
     // time waiting on channel capacity (e.g. shard count)
@@ -88,13 +90,19 @@ class PipelineMetrics {
   }
 
   startStep(step) {
-    // time waiting for io capacity (e.g parallel count)
-    this.timer.checkpoint(`${this.pipeline}|${step}|stream.pipeline.io.wait.time`);
+    /* istanbul ignore else */
+    if (this.opt?.metrics.enabled('step')) {
+      // time waiting for io capacity (e.g parallel count)
+      this.timer.checkpoint(`${this.pipeline}|${step}|stream.pipeline.io.wait.time`);
+    }
     return this;
   }
 
   endStep(step) {
-    this.timer.checkpoint(`${this.pipeline}|${step}|stream.pipeline.io.time`);
+    /* istanbul ignore else */
+    if (this.opt?.metrics.enabled('step')) {
+      this.timer.checkpoint(`${this.pipeline}|${step}|stream.pipeline.io.time`);
+    }
     return this;
   }
 

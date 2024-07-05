@@ -35,7 +35,7 @@ export const compact = (rule) => {
         const batch = groups[key].sort(rule.compact.sort || ((lh, rh) => lh.event.timestamp - rh.event.timestamp));
         const last = batch[batch.length - 1];
 
-        const metrics = last.metrics ? {
+        const metrics = last.metrics?.opt.metrics.enabled('compact') ? {
           metrics: last.metrics.gauge('stream.pipeline.compact.count', batch.length),
         } : {};
 
@@ -94,6 +94,8 @@ export const batchWithSize = (opt) => {
 };
 
 const logMetrics = (batch, sizes, opt) => {
-  batch[0].metrics?.gauge('publish|stream.pipeline.batchSize.count', batch.length);
-  batch[0].metrics?.gauge('publish|stream.pipeline.eventSize.bytes', sizes);
+  if (opt.metrics?.enabled('size')) {
+    batch[0].metrics?.gauge('publish|stream.pipeline.batchSize.count', batch.length);
+    batch[0].metrics?.gauge('publish|stream.pipeline.eventSize.bytes', sizes);
+  }
 };
