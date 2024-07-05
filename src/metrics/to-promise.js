@@ -16,7 +16,7 @@ export const toPromise = (opt, s) =>
       } else if (x === _.nil) {
         const metrics = calculateMetrics(collected);
         logMetrics(metrics);
-        resolve(metrics); //  TODO limit metrics returned ???
+        resolve(metrics);
       } else {
         collected.push(x);
         next();
