@@ -496,17 +496,17 @@ environment:
 environment:
   METRICS: emf,xray,metrics:*
 ```
-Including `*` enables all detailed metrics. Or individual detailed metrics can be enables:
+Including `*` enables all detailed metrics. Or individual detailed metrics can be enabled:
 
 ```
   METRICS: emf,xray,metrics:step
 ```
-This will enable metrics for the IO steps with the pipelines"
-* `stream.pipeline.io.wait.time` is the amount of time an IO step waits for parallel capacity. Consistently high wait times my indicate that the `parallel` setting is too low or the function need more IO capacity (aka a higher function `memorySize`)
+This will enable metrics for the IO steps with the pipelines:
+* `stream.pipeline.io.wait.time` is the amount of time an IO step waits for parallel capacity. Consistently high wait times my indicate that the `parallel` setting is too low or the function needs more IO capacity (aka higher function `memorySize`)
 * `stream.pipeline.io.time` is the amount of time an IO step took once it finsihed waiting
 
 ```
-  METRICS: emf,xray,metrics:step,metrics:compact
+  METRICS: emf,xray,metrics:compact,metrics:step
 ```
 This will add the metrics for the `compact` feature if you are using it:
 * `stream.pipeline.compact.count` is the number of uow that were compacted into one uow by partition key
@@ -514,12 +514,12 @@ This will add the metrics for the `compact` feature if you are using it:
 ```
   METRICS: emf,xray,metrics:size
 ```
-This will add detailed metrics regarding the publishing of events"
-* `stream.pipeline.batchSize.count` is the number of events sent to the bus per request
+This will add detailed metrics regarding the publishing of events:
+* `stream.pipeline.batchSize.count` is the number of events sent to the bus per batch request
 * `stream.pipeline.eventSize.bytes` is the size of the events sent to the bus
 
 ### Namespace
-Use `process.env.METRICS` to set the namespace for CloudWatch metrics
+Use `process.env.NAMESPACE` to set the namespace for CloudWatch metrics
 
 ### Tags/Dimensions
 All metrics include the following tags:
@@ -528,9 +528,10 @@ All metrics include the following tags:
 * `stage` is the environment, such dev, qa, prd
 * `source` is the service name
 * `functionname` is self explanatory
+
 Pipeline and step specific metric include thes tags:
-* `pipeline` is the pipeline id
-* `step` is the step name, such as save, query, get, publish
+* `pipeline` is the pipeline/rule id
+* `step` is the step name which a pipeline, such as save, query, get, publish
 
 ## Validation
 * https://github.com/jgilbert01/aws-lambda-stream/issues/22
