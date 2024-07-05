@@ -481,7 +481,7 @@ This will enable the essential metrics:
 * `stream.batch.size` is the incoming batch size
 * `stream.batch.utilization` is the incoming batch size divided by the possible `process.env.BATCH_SIZE`. If the average is consistently above 70% you may be falling behind. see [Little's Law](https://en.wikipedia.org/wiki/Little%27s_law) and [Chapter 4](https://www.amazon.com/Software-Architecture-Patterns-Serverless-Systems/dp/1803235446)
 * `stream.pipeline.count` is the number of pipelines in the function
-* `stream.uow.count` is the number of Units of Work (uow) flowing through the function
+* `stream.uow.count` is the number of Units of Work (uow) flowing through the function per invocation
 * `stream.pipeline.utilization` is the percentage of work performed by a pipeline verses others
 * `stream.channel.wait.time` is a pipeline specific version of `Iterator Age`. High wait time may indicate a need for more `shards` or `parallelization`.
 * `stream.pipeline.time` is the total time it takes a uow to flow through a pipeline. NOTE: this value includes the `stream.channel.wait.time` to highlight the true processing latency
@@ -503,7 +503,7 @@ Including `*` enables all detailed metrics. Or individual detailed metrics can b
 ```
   METRICS: emf,xray,metrics:step
 ```
-This will enable metrics for the IO steps with the pipelines:
+This will enable metrics for the IO steps within the pipelines:
 * `stream.pipeline.io.wait.time` is the amount of time an IO step waits for parallel capacity. Consistently high wait times my indicate that the `parallel` setting is too low or the function needs more IO capacity (aka higher function `memorySize`)
 * `stream.pipeline.io.time` is the amount of time an IO step took once it finsihed waiting
 
@@ -531,9 +531,9 @@ All metrics include the following tags:
 * `source` is the service name
 * `functionname` is self explanatory
 
-Pipeline and step specific metric include thes tags:
+The `pipeline` and `step` specific metrics covered above include these tags as well:
 * `pipeline` is the pipeline/rule id
-* `step` is the step name which a pipeline, such as save, query, get, publish
+* `step` is the step name within a pipeline, such as save, query, get, publish
 
 ## Validation
 * https://github.com/jgilbert01/aws-lambda-stream/issues/22
