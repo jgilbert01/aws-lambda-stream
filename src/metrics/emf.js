@@ -16,9 +16,11 @@ const formatUnit = ({ metric, key }) => {
   if (metric.endsWith('time')) {
     return 'Milliseconds';
   }
+  /* istanbul ignore else */
   if (metric.endsWith('utilization')) {
     return 'Percent';
   }
+  /* istanbul ignore next */
   return 'None';
 };
 

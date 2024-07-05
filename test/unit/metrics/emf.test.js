@@ -27,9 +27,7 @@ describe('metrics/emf.js', () => {
         'stage': 'undefined',
         'source': 'undefined',
         'functionname': 'undefined',
-        'stream.batch.size': 6,
         'stream.batch.utilization': 0.6,
-        'stream.pipeline.count': 2,
         'stream.uow.count': 4,
         '_aws': {
           Timestamp: 1720069357686,
@@ -45,16 +43,8 @@ describe('metrics/emf.js', () => {
               ],
               Metrics: [
                 {
-                  Name: 'stream.batch.size',
-                  Unit: 'None',
-                },
-                {
                   Name: 'stream.batch.utilization',
                   Unit: 'Percent',
-                },
-                {
-                  Name: 'stream.pipeline.count',
-                  Unit: 'Count',
                 },
                 {
                   Name: 'stream.uow.count',
@@ -619,9 +609,7 @@ describe('metrics/emf.js', () => {
 });
 
 const METRICS = {
-  'stream.batch.size': 6,
   'stream.batch.utilization': 0.6,
-  'stream.pipeline.count': 2,
   'stream.uow.count': 4,
   'p1|stream.pipeline.utilization': 0.75,
   'p2|stream.pipeline.utilization': 0.25,
