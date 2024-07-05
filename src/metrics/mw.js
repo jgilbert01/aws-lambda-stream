@@ -7,7 +7,7 @@ const enabled = (key) => process.env.METRICS.includes(key) || process.env.METRIC
 // handler middleware
 export const metrics = (next, opt, evt, ctx) => {
   /* istanbul ignore else */
-  if (process.env.METRICS) {
+  if (process.env.METRICS?.length) {
     opt.metrics = {
       ...pipelines,
       ...capture,

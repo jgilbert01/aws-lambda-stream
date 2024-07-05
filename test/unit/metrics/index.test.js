@@ -168,9 +168,7 @@ describe('metrics/index.js', () => {
       .tap((themetrics) => {
         // console.log(JSON.stringify(themetrics, null, 2));
         expect(themetrics).to.deep.equal({
-          'stream.batch.size': 6,
           'stream.batch.utilization': 0.6,
-          'stream.pipeline.count': 2,
           'stream.uow.count': 4,
           'p1|stream.pipeline.utilization': 0.75,
           'p2|stream.pipeline.utilization': 0.25,

@@ -84,7 +84,7 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
     const p = lines[last];
     lines[last] = head
       .map(initPipeline(p.id))
-      .tap(startPipeline(opt, keys.length))
+      .tap(startPipeline(opt))
       .through(lines[last])
       .through(endPipeline(opt, p.id));
   }
@@ -111,9 +111,9 @@ const initPipeline = (pipeline) => (uow) => ({
   ...addDebug(pipeline),
 });
 
-const startPipeline = (opt, pipelineCount) => (uow) => {
+const startPipeline = (opt) => (uow) => {
   if (opt.metrics) {
-    uow.metrics = uow.metrics.startPipeline(uow, pipelineCount, opt);
+    uow.metrics = uow.metrics.startPipeline(uow, opt);
   }
 };
 

@@ -18,7 +18,6 @@ export const clear = (opt) => {
 };
 
 export const startUow = (publishTime, batchSize) => {
-  funcMetrics['stream.batch.size'] = batchSize;
   funcMetrics['stream.batch.utilization'] = batchSize / Number(process.env.BATCH_SIZE || /* istanbul ignore next */ 100);
 
   return new PipelineMetrics({
@@ -62,7 +61,7 @@ class PipelineMetrics {
     return this;
   }
 
-  startPipeline({ pipeline }, pipelineCount, opt) {
+  startPipeline({ pipeline }, opt) {
     const clone = new PipelineMetrics({
       pipeline,
       timer: this.timer,
@@ -71,10 +70,6 @@ class PipelineMetrics {
 
     // time waiting on channel capacity (e.g. shard count)
     clone.timer.checkpoint(`${pipeline}|stream.channel.wait.time`);
-
-    if (pipelineCount) {
-      funcMetrics['stream.pipeline.count'] = pipelineCount;
-    }
 
     // Initialize an xray segment if enabled
     if (opt.xrayEnabled) {

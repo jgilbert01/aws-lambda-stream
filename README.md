@@ -478,9 +478,7 @@ environment:
 ```
 
 This will enable the essential metrics:
-* `stream.batch.size` is the incoming batch size
 * `stream.batch.utilization` is the incoming batch size divided by the possible `process.env.BATCH_SIZE`. If the average is consistently above 70% you may be falling behind. see [Little's Law](https://en.wikipedia.org/wiki/Little%27s_law) and [Chapter 4](https://www.amazon.com/Software-Architecture-Patterns-Serverless-Systems/dp/1803235446)
-* `stream.pipeline.count` is the number of pipelines in the function
 * `stream.uow.count` is the number of Units of Work (uow) flowing through the function per invocation
 * `stream.pipeline.utilization` is the percentage of work performed by a pipeline verses others
 * `stream.channel.wait.time` is a pipeline specific version of `Iterator Age`. High wait time may indicate a need for more `shards` or `parallelization`.

@@ -3,7 +3,7 @@ import debug from 'debug';
 import Timer from './timer';
 import { envTags } from '../utils/tags';
 
-const log = debug('handler:metrics');
+const log = debug('pl:metrics');
 
 // https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_MetricDatum.html
 const formatUnit = ({ metric, key }) => {
@@ -78,7 +78,7 @@ const StepDimensions = [
 
 export const formatMetrics = (metrics) => {
   const Timestamp = Timer.now();
-  const Namespace = process.env.NAMESPACE;
+  const Namespace = process.env.NAMESPACE || /* istanbul ignore next */ 'lambda-stream/metrics';
   const tags = envTags();
   delete tags.pipeline;
 
