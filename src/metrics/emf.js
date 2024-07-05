@@ -61,20 +61,20 @@ const formatEntry = ({
   });
 
 const FunctionDimensions = [
-  'functionname',
-  'source',
-  'stage',
-  'region',
-  'account',
+  ['functionname'],
+  ['source'],
+  ['stage'],
+  ['region'],
+  ['account'],
 ];
 
 const PipelineDimensions = [
-  'pipeline',
+  ['pipeline'],
   ...FunctionDimensions,
 ];
 
 const StepDimensions = [
-  'step',
+  ['step'],
   ...PipelineDimensions,
 ];
 
