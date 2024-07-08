@@ -19,12 +19,12 @@ import { fromKinesis, toKinesisRecords } from '../../../src/from/kinesis';
 import { updateExpression } from '../../../src/sinks/dynamodb';
 import { initialize, initializeFrom } from '../../../src';
 import { defaultOptions } from '../../../src/utils/opt';
-import { toPromise } from '../../../src/utils/handler';
+import { toPromise, mw } from '../../../src/utils/handler';
 import { cdc } from '../../../src/flavors/cdc';
 import { materialize } from '../../../src/flavors/materialize';
 import { toGetRequest, toPkQueryRequest } from '../../../src/queries/dynamodb';
 
-import { monitor } from '../../../src/metrics/monitor';
+import { metrics } from '../../../src/metrics';
 import Timer from '../../../src/metrics/timer';
 
 const OPTIONS = {
@@ -57,9 +57,9 @@ const rules = [
   },
 ];
 
-const handle = async (event, context) => initialize({
+const handle = (event, context, options) => initialize({
   ...initializeFrom(rules),
-}, OPTIONS)
+}, options)
   .assemble(fromKinesis(event), false)
   .through(toPromise);
 
@@ -69,8 +69,8 @@ describe('metrics/index.js', () => {
   let datestub;
 
   beforeEach(() => {
-    process.env.ENABLE_METRICS = 'true';
-    process.env.BATCH_SIZE = 10;
+    process.env.METRICS = 'metrics:*';
+    process.env.BATCH_SIZE = '10';
 
     // using aws-sdk-client-mock so that
     // the capture logic within the connectes gets executed
@@ -95,7 +95,7 @@ describe('metrics/index.js', () => {
     mockDdb.restore();
     mockEventBridge.restore();
     delete process.env.BATCH_SIZE;
-    delete process.env.ENABLE_METRICS;
+    delete process.env.METRICS;
     sinon.assert.callCount(datestub, 28);
   });
 
@@ -164,13 +164,11 @@ describe('metrics/index.js', () => {
       },
     ], 1719020816.001);
 
-    return monitor(handle, OPTIONS)(events)
+    return mw(handle, OPTIONS).use(metrics)(events)
       .tap((themetrics) => {
         // console.log(JSON.stringify(themetrics, null, 2));
         expect(themetrics).to.deep.equal({
-          'stream.batch.size': 6,
           'stream.batch.utilization': 0.6,
-          'stream.pipeline.count': 2,
           'stream.uow.count': 4,
           'p1|stream.pipeline.utilization': 0.75,
           'p2|stream.pipeline.utilization': 0.25,

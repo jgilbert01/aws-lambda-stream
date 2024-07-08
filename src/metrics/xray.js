@@ -1,6 +1,5 @@
 import AWSXray from 'aws-xray-sdk-core';
 import debug from 'debug';
-import _ from 'highland';
 
 const log = debug('xray');
 const INPUT_CAPTURE_MIDDLEWARE_NAME = 'XraySDKClientInputCapture';

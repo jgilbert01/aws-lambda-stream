@@ -3,8 +3,9 @@ import Promise from 'bluebird';
 
 import { clear } from './pipelines';
 import { calculateMetrics } from './calculate';
+import { logMetrics } from './emf';
 
-export const toPromise = (opt, s) => // eslint-disable-line import/prefer-default-export
+export const toPromise = (opt, s) =>
   new Promise((resolve, reject) => {
     clear(opt);
     const collected = [];
@@ -14,7 +15,7 @@ export const toPromise = (opt, s) => // eslint-disable-line import/prefer-defaul
         reject(err);
       } else if (x === _.nil) {
         const metrics = calculateMetrics(collected);
-        // TODO logMetrics(metrics);
+        logMetrics(metrics);
         resolve(metrics);
       } else {
         collected.push(x);

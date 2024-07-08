@@ -3,17 +3,22 @@ import Promise from 'bluebird';
 
 import { options } from './opt';
 
-export const toCallback = (cb) => (s) =>
-  s.consume((err, x, push, next) => {
-    if (err) {
-      cb(err);
-    } else if (x === _.nil) {
-      cb(null, 'Success');
-    } else {
-      next();
-    }
-  })
-    .resume();
+export const mw = (handle, opt) => {
+  const stack = [];
+
+  const run = (event, context) => {
+    stack.push((n, o, e, c) => handle(e, c, o)); // do the real work last
+    const runner = (index) => Promise.resolve(stack[index](() => runner(index + 1), opt, event, context));
+    return Promise.resolve(runner(0));
+  };
+
+  run.use = (middleware) => {
+    stack.push(...(Array.isArray(middleware) ? middleware : [middleware]));
+    return run;
+  };
+
+  return run;
+};
 
 export const toPromise = (s) => {
   const opt = options();

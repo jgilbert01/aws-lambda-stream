@@ -18,7 +18,6 @@ export const clear = (opt) => {
 };
 
 export const startUow = (publishTime, batchSize) => {
-  funcMetrics['stream.batch.size'] = batchSize;
   funcMetrics['stream.batch.utilization'] = batchSize / Number(process.env.BATCH_SIZE || /* istanbul ignore next */ 100);
 
   return new PipelineMetrics({
@@ -43,7 +42,7 @@ export const adornSqsMetrics = (uow, event) => {
 
 class PipelineMetrics {
   constructor({
-    pipeline, publishTime, timer, gauges,
+    pipeline, publishTime, timer, gauges, opt,
   }) {
     this.pipeline = pipeline || 'default';
     this.timer = new Timer({
@@ -52,6 +51,7 @@ class PipelineMetrics {
       checkpoints: timer?.checkpoints,
     });
     this.gauges = gauges || {};
+    this.opt = opt;
   }
 
   gauge(key, value) {
@@ -61,18 +61,15 @@ class PipelineMetrics {
     return this;
   }
 
-  startPipeline({ pipeline }, pipelineCount, opt) {
+  startPipeline({ pipeline }, opt) {
     const clone = new PipelineMetrics({
       pipeline,
       timer: this.timer,
+      opt,
     });
 
     // time waiting on channel capacity (e.g. shard count)
     clone.timer.checkpoint(`${pipeline}|stream.channel.wait.time`);
-
-    if (pipelineCount) {
-      funcMetrics['stream.pipeline.count'] = pipelineCount;
-    }
 
     // Initialize an xray segment if enabled
     if (opt.xrayEnabled) {
@@ -88,13 +85,19 @@ class PipelineMetrics {
   }
 
   startStep(step) {
-    // time waiting for io capacity (e.g parallel count)
-    this.timer.checkpoint(`${this.pipeline}|${step}|stream.pipeline.io.wait.time`);
+    /* istanbul ignore else */
+    if (this.opt?.metrics.enabled('step')) {
+      // time waiting for io capacity (e.g parallel count)
+      this.timer.checkpoint(`${this.pipeline}|${step}|stream.pipeline.io.wait.time`);
+    }
     return this;
   }
 
   endStep(step) {
-    this.timer.checkpoint(`${this.pipeline}|${step}|stream.pipeline.io.time`);
+    /* istanbul ignore else */
+    if (this.opt?.metrics.enabled('step')) {
+      this.timer.checkpoint(`${this.pipeline}|${step}|stream.pipeline.io.time`);
+    }
     return this;
   }
 
