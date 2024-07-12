@@ -60,23 +60,32 @@ const formatEntry = ({
     },
   });
 
-const FunctionDimensions = [
-  ['functionname'],
-  ['source'],
-  ['stage'],
-  ['region'],
-  ['account'],
-];
+const FunctionDimensions = [[
+  'functionname',
+  'source',
+  'stage',
+  'region',
+  'account',
+]];
 
-const PipelineDimensions = [
-  ['pipeline'],
-  ...FunctionDimensions,
-];
+const PipelineDimensions = [[
+  'pipeline',
+  'functionname',
+  'source',
+  'stage',
+  'region',
+  'account',
+]];
 
-const StepDimensions = [
-  ['step'],
-  ...PipelineDimensions,
-];
+const StepDimensions = [[
+  'step',
+  'pipeline',
+  'functionname',
+  'source',
+  'stage',
+  'region',
+  'account',
+]];
 
 export const formatMetrics = (metrics) => {
   const Timestamp = Timer.now();
