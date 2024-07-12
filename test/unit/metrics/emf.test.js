@@ -35,11 +35,13 @@ describe('metrics/emf.js', () => {
             {
               Namespace: 'test',
               Dimensions: [
-                ['functionname'],
-                ['source'],
-                ['stage'],
-                ['region'],
-                ['account'],
+                [
+                  'functionname',
+                  'source',
+                  'stage',
+                  'region',
+                  'account',
+                ],
               ],
               Metrics: [
                 {
@@ -79,12 +81,14 @@ describe('metrics/emf.js', () => {
             {
               Namespace: 'test',
               Dimensions: [
-                ['pipeline'],
-                ['functionname'],
-                ['source'],
-                ['stage'],
-                ['region'],
-                ['account'],
+                [
+                  'pipeline',
+                  'functionname',
+                  'source',
+                  'stage',
+                  'region',
+                  'account',
+                ],
               ],
               Metrics: [
                 {
@@ -165,12 +169,14 @@ describe('metrics/emf.js', () => {
             {
               Namespace: 'test',
               Dimensions: [
-                ['pipeline'],
-                ['functionname'],
-                ['source'],
-                ['stage'],
-                ['region'],
-                ['account'],
+                [
+                  'pipeline',
+                  'functionname',
+                  'source',
+                  'stage',
+                  'region',
+                  'account',
+                ],
               ],
               Metrics: [
                 {
@@ -266,13 +272,15 @@ describe('metrics/emf.js', () => {
             {
               Namespace: 'test',
               Dimensions: [
-                ['step'],
-                ['pipeline'],
-                ['functionname'],
-                ['source'],
-                ['stage'],
-                ['region'],
-                ['account'],
+                [
+                  'step',
+                  'pipeline',
+                  'functionname',
+                  'source',
+                  'stage',
+                  'region',
+                  'account',
+                ],
               ],
               Metrics: [
                 {
@@ -344,13 +352,15 @@ describe('metrics/emf.js', () => {
             {
               Namespace: 'test',
               Dimensions: [
-                ['step'],
-                ['pipeline'],
-                ['functionname'],
-                ['source'],
-                ['stage'],
-                ['region'],
-                ['account'],
+                [
+                  'step',
+                  'pipeline',
+                  'functionname',
+                  'source',
+                  'stage',
+                  'region',
+                  'account',
+                ],
               ],
               Metrics: [
                 {
@@ -422,13 +432,15 @@ describe('metrics/emf.js', () => {
             {
               Namespace: 'test',
               Dimensions: [
-                ['step'],
-                ['pipeline'],
-                ['functionname'],
-                ['source'],
-                ['stage'],
-                ['region'],
-                ['account'],
+                [
+                  'step',
+                  'pipeline',
+                  'functionname',
+                  'source',
+                  'stage',
+                  'region',
+                  'account',
+                ],
               ],
               Metrics: [
                 {
@@ -510,13 +522,15 @@ describe('metrics/emf.js', () => {
             {
               Namespace: 'test',
               Dimensions: [
-                ['step'],
-                ['pipeline'],
-                ['functionname'],
-                ['source'],
-                ['stage'],
-                ['region'],
-                ['account'],
+                [
+                  'step',
+                  'pipeline',
+                  'functionname',
+                  'source',
+                  'stage',
+                  'region',
+                  'account',
+                ],
               ],
               Metrics: [
                 {
