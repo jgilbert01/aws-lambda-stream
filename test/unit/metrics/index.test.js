@@ -169,7 +169,7 @@ describe('metrics/index.js', () => {
           },
         },
       },
-    ], 1719020816.010);
+    ], 1719020816.01);
 
     return mw(handle, OPTIONS).use(metrics)(events)
       .tap((themetrics) => {
