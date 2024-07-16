@@ -26,7 +26,7 @@ export const startUow = (publishTime, batchSize) => {
 };
 
 export const adornKinesisMetrics = (uow, event) => {
-  const time = `${uow.record.kinesis.approximateArrivalTimestamp}`;
+  const time = `${uow.record.kinesis.approximateArrivalTimestamp}`.padEnd(14, '0');
   uow.metrics = startUow(Number(`${time.substring(0, 10)}${time.substring(11)}`), event.Records.length);
 };
 

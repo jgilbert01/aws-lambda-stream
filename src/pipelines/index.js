@@ -49,7 +49,8 @@ export const initializeFrom = (rules) => rules.reduce(
 );
 
 const assemble = (opt) => (head, includeFaultHandler = true) => {
-  const keys = Object.keys(thePipelines);
+  const keys = Object.keys(thePipelines)
+    .filter((k) => !process.env.DISABLED_PIPELINES?.includes(k));
 
   debug('assemble: %j', keys);
 

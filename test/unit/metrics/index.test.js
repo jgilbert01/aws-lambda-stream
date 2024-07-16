@@ -55,6 +55,11 @@ const rules = [
     fks: ['fk1'],
     compact: true,
   },
+  {
+    id: 'p9',
+    flavor: cdc,
+    eventType: 'thing-updated',
+  },
 ];
 
 const handle = (event, context, options) => initialize({
@@ -71,6 +76,7 @@ describe('metrics/index.js', () => {
   beforeEach(() => {
     process.env.METRICS = 'metrics:*';
     process.env.BATCH_SIZE = '10';
+    process.env.DISABLED_PIPELINES = 'p9';
 
     // using aws-sdk-client-mock so that
     // the capture logic within the connectes gets executed
@@ -94,6 +100,7 @@ describe('metrics/index.js', () => {
     sinon.restore();
     mockDdb.restore();
     mockEventBridge.restore();
+    delete process.env.DISABLED_PIPELINES;
     delete process.env.BATCH_SIZE;
     delete process.env.METRICS;
     sinon.assert.callCount(datestub, 28);
@@ -162,7 +169,7 @@ describe('metrics/index.js', () => {
           },
         },
       },
-    ], 1719020816.001);
+    ], 1719020816.01);
 
     return mw(handle, OPTIONS).use(metrics)(events)
       .tap((themetrics) => {
@@ -173,10 +180,10 @@ describe('metrics/index.js', () => {
           'p1|stream.pipeline.utilization': 0.75,
           'p2|stream.pipeline.utilization': 0.25,
           'p1|stream.channel.wait.time': {
-            average: 2010,
-            min: 2002,
-            max: 2018,
-            sum: 6030,
+            average: 2001,
+            min: 1993,
+            max: 2009,
+            sum: 6003,
             count: 3,
           },
           'p1|save|stream.pipeline.io.wait.time': {
@@ -194,17 +201,17 @@ describe('metrics/index.js', () => {
             count: 3,
           },
           'p1|stream.pipeline.time': {
-            average: 2044,
-            min: 2042,
-            max: 2046,
-            sum: 6132,
+            average: 2035,
+            min: 2033,
+            max: 2037,
+            sum: 6105,
             count: 3,
           },
           'p2|stream.channel.wait.time': {
-            average: 2012,
-            min: 2012,
-            max: 2012,
-            sum: 2012,
+            average: 2003,
+            min: 2003,
+            max: 2003,
+            sum: 2003,
             count: 1,
           },
           'p2|query|stream.pipeline.io.wait.time': {
@@ -250,10 +257,10 @@ describe('metrics/index.js', () => {
             count: 1,
           },
           'p2|stream.pipeline.time': {
-            average: 2054,
-            min: 2054,
-            max: 2054,
-            sum: 2054,
+            average: 2045,
+            min: 2045,
+            max: 2045,
+            sum: 2045,
             count: 1,
           },
           'p2|stream.pipeline.compact.count': {
