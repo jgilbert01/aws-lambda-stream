@@ -14,19 +14,21 @@ class Connector {
     pipelineId,
     bucketName = process.env.BUCKET_NAME,
     timeout = Number(process.env.S3_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+    credentials,
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.bucketName = bucketName || 'undefined';
-    this.client = Connector.getClient(pipelineId, debug, timeout);
+    this.client = Connector.getClient(pipelineId, debug, timeout, credentials);
     this.opt = opt;
   }
 
   static clients = {};
 
-  static getClient(pipelineId, debug, timeout) {
+  static getClient(pipelineId, debug, timeout, credentials) {
     if (!this.clients[pipelineId]) {
       this.clients[pipelineId] = new S3Client({
+        credentials,
         requestHandler: new NodeHttpHandler({
           requestTimeout: timeout,
           connectionTimeout: timeout,

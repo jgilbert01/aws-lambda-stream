@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-stream",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
@@ -67,6 +67,7 @@
     "@aws-sdk/client-secrets-manager": "^3.450.0",
     "@aws-sdk/client-sns": "^3.450.0",
     "@aws-sdk/client-sqs": "^3.450.0",
+    "@aws-sdk/client-sts": "^3.450.0",
     "@aws-sdk/lib-dynamodb": "^3.450.0",
     "@aws-sdk/util-dynamodb": "^3.450.0",
     "@babel/cli": "^7.10.0",
