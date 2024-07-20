@@ -14,12 +14,19 @@ export const compress = (opt = { compressionThreshold: 1024 * 10, compressionIgn
     (key /* no key is the top */
     && !opt.compressionIgnore?.includes(key)
     && !isArrayElement(key)
+    // avoid compound compression
+    && !(typeof value === 'string' && value.startsWith(COMPRESSION_PREFIX))
     && sizeof(value) > opt.compressionThreshold
       ? `${COMPRESSION_PREFIX}${zip(JSON.stringify(value))}`
       : value);
 
 // JSON.parse reviver
-export const decompress = (key, value) =>
-  (typeof value === 'string' && value.startsWith(COMPRESSION_PREFIX)
-    ? JSON.parse(unzip(value.substring(COMPRESSION_PREFIX.length)))
-    : value);
+export const decompress = (key, value) => {
+  if (typeof value === 'string' && value.startsWith(COMPRESSION_PREFIX)) {
+    const dv = JSON.parse(unzip(value.substring(COMPRESSION_PREFIX.length)));
+    // handle compound compression
+    return decompress(key, dv);
+  } else {
+    return value;
+  }
+};
