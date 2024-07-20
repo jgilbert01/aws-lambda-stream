@@ -201,10 +201,10 @@ describe('metrics/index.js', () => {
             count: 3,
           },
           'p1|stream.pipeline.time': {
-            average: 2035,
-            min: 2033,
-            max: 2037,
-            sum: 6105,
+            average: 34,
+            min: 28,
+            max: 40,
+            sum: 102,
             count: 3,
           },
           'p2|stream.channel.wait.time': {
@@ -257,10 +257,10 @@ describe('metrics/index.js', () => {
             count: 1,
           },
           'p2|stream.pipeline.time': {
-            average: 2045,
-            min: 2045,
-            max: 2045,
-            sum: 2045,
+            average: 42,
+            min: 42,
+            max: 42,
+            sum: 42,
             count: 1,
           },
           'p2|stream.pipeline.compact.count': {

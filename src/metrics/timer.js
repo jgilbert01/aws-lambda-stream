@@ -22,7 +22,7 @@ class Timer {
   end(key) {
     const now = Timer.now();
     this.checkpoints[key] = {
-      value: now - this.start,
+      value: now - (Object.values(this.checkpoints)[0].value + this.start),
     };
     this.last = now;
     return this;
