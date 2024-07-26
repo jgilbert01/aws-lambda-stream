@@ -10,6 +10,7 @@ export const fromDynamodb = (event, {
   discriminatorFn = 'discriminator',
   eventTypePrefix = undefined,
   ignoreTtlExpiredEvents = false,
+  ignoreReplicas = true,
 } = {}) => // eslint-disable-line import/prefer-default-export
 
   // prepare the event stream
@@ -17,7 +18,7 @@ export const fromDynamodb = (event, {
 
     //--------------------------------
     // global table support
-    .filter(outReplicas)
+    .filter(outReplicas(ignoreReplicas))
     .filter(outGlobalTableExtraModify)
     //--------------------------------
     // ttl support
@@ -106,7 +107,9 @@ const calculateEventTypeSuffix = (record) => {
 //           S:
 //             - ${opt:region}
 
-export const outReplicas = (record) => {
+export const outReplicas = (ignoreReplicas) => (record) => {
+  if (!ignoreReplicas) return true;
+
   const image = record.dynamodb.NewImage || record.dynamodb.OldImage;
 
   // is this a global table event
@@ -180,7 +183,7 @@ export const toDynamodbRecords = (events, { removeUndefinedValues = true } = {})
       eventName: !e.oldImage ? 'INSERT' : !e.newImage ? 'REMOVE' : 'MODIFY', // eslint-disable-line no-nested-ternary
       // eventVersion: '1.0',
       eventSource: 'aws:dynamodb',
-      awsRegion: process.env.AWS_REGION || /* istanbul ignore next */ 'us-west-2',
+      awsRegion: e.newImage?.awsregion || process.env.AWS_REGION || /* istanbul ignore next */ 'us-west-2',
       dynamodb: {
         ApproximateCreationDateTime: e.timestamp,
         Keys: e.keys ? marshall(e.keys, { removeUndefinedValues }) : /* istanbul ignore next */ undefined,
