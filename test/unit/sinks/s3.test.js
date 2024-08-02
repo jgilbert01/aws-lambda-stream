@@ -46,6 +46,20 @@ describe('utils/s3.js', () => {
       .done(done);
   });
 
+  it('should passthrough additional client options to connector', () => {
+    putObjectToS3({
+      id: 'put-object-passthrough-test',
+      additionalClientOpts: {
+        followRegionRedirects: true,
+        bucketEndpoint: true,
+      },
+    });
+
+    const clientInstance = Connector.getClient('put-object-passthrough-test');
+    expect(clientInstance.config.followRegionRedirects).to.eq(true);
+    expect(clientInstance.config.bucketEndpoint).to.eq(true);
+  });
+
   it('should delete object', (done) => {
     const stub = sinon.stub(Connector.prototype, 'deleteObject').resolves({ DeleteMarker: false });
 

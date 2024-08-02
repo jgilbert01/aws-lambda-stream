@@ -9,6 +9,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { sdkStreamMixin } from '@smithy/util-stream';
 
+import { v4 } from 'uuid';
 import Connector from '../../../src/connectors/s3';
 
 import { debug } from '../../../src/utils';
@@ -22,6 +23,7 @@ describe('connectors/s3.js', () => {
 
   afterEach(() => {
     mockS3.restore();
+    sinon.restore();
   });
 
   it('should reuse client per pipeline', () => {
@@ -31,6 +33,24 @@ describe('connectors/s3.js', () => {
 
     expect(client1).to.eq(client2);
     expect(client2).to.not.eq(client3);
+  });
+
+  it('should accept additional client options', async () => {
+    // Don't use mock for this one test...
+    mockS3.restore();
+
+    const connector = new Connector({
+      pipelineId: v4(),
+      debug: debug('s3'),
+      bucketName: 'b1',
+      additionalClientOpts: {
+        followRegionRedirects: true,
+        bucketEndpoint: true,
+      },
+    });
+
+    expect(connector.client.config.followRegionRedirects).to.eq(true);
+    expect(connector.client.config.bucketEndpoint).to.eq(true);
   });
 
   it('should put object', async () => {
