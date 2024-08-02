@@ -4,6 +4,7 @@ import { SQSClient, SendMessageBatchCommand } from '@aws-sdk/client-sqs';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfiguredRetryStrategy } from '@smithy/util-retry';
 
+import { omit, pick } from 'lodash';
 import {
   defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
@@ -16,26 +17,32 @@ class Connector {
     queueUrl = process.env.QUEUE_URL,
     timeout = Number(process.env.SQS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
+    additionalClientOpts = {},
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.queueUrl = queueUrl || 'undefined';
-    this.client = Connector.getClient(pipelineId, debug, timeout);
+    this.client = Connector.getClient(pipelineId, debug, timeout, additionalClientOpts);
     this.retryConfig = retryConfig;
     this.opt = opt;
   }
 
   static clients = {};
 
-  static getClient(pipelineId, debug, timeout) {
+  static getClient(pipelineId, debug, timeout, additionalClientOpts) {
+    const addlRequestHandlerOpts = pick(additionalClientOpts, ['requestHandler']);
+    const addlClientOpts = omit(additionalClientOpts, ['requestHandler']);
+
     if (!this.clients[pipelineId]) {
       this.clients[pipelineId] = new SQSClient({
         requestHandler: new NodeHttpHandler({
           requestTimeout: timeout,
           connectionTimeout: timeout,
+          ...addlRequestHandlerOpts,
         }),
         retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
         logger: defaultDebugLogger(debug),
+        ...addlClientOpts,
       });
     }
     return this.clients[pipelineId];

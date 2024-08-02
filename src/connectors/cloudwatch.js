@@ -2,6 +2,7 @@
 import { CloudWatchClient, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
+import { omit, pick } from 'lodash';
 import { defaultDebugLogger } from '../utils/log';
 
 class Connector {
@@ -9,21 +10,27 @@ class Connector {
     debug,
     pipelineId,
     timeout = Number(process.env.CW_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+    additionalClientOpts = {},
   }) {
     this.debug = (msg) => debug('%j', msg);
-    this.client = Connector.getClient(pipelineId, debug, timeout);
+    this.client = Connector.getClient(pipelineId, debug, timeout, additionalClientOpts);
   }
 
   static clients = {};
 
-  static getClient(pipelineId, debug, timeout) {
+  static getClient(pipelineId, debug, timeout, additionalClientOpts) {
+    const addlRequestHandlerOpts = pick(additionalClientOpts, ['requestHandler']);
+    const addlClientOpts = omit(additionalClientOpts, ['requestHandler']);
+
     if (!this.clients[pipelineId]) {
       this.clients[pipelineId] = new CloudWatchClient({
         requestHandler: new NodeHttpHandler({
           requestTimeout: timeout,
           connectionTimeout: timeout,
+          ...addlRequestHandlerOpts,
         }),
         logger: defaultDebugLogger(debug),
+        ...addlClientOpts,
       });
     }
     return this.clients[pipelineId];
