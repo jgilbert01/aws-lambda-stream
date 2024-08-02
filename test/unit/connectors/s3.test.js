@@ -5,6 +5,7 @@ import _ from 'highland';
 import { Readable } from 'stream';
 import { mockClient } from 'aws-sdk-client-mock';
 import {
+  CopyObjectCommand,
   DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
 } from '@aws-sdk/client-s3';
 import { sdkStreamMixin } from '@smithy/util-stream';
@@ -175,5 +176,27 @@ describe('connectors/s3.js', () => {
       Prefix: 'p1',
     });
     expect(data.Contents[0].Key).to.equal('p1/2021/03/26/19/1234');
+  });
+
+  it('should copy object', async () => {
+    const spy = sinon.spy(() => ({}));
+    mockS3.on(CopyObjectCommand).callsFake(spy);
+
+    const inputParams = {
+      Key: 'k1',
+      CopySource: '/copysource/test-k1',
+    };
+
+    const data = await new Connector({
+      debug: debug('s3'),
+      bucketName: 'b1',
+    }).copyObject(inputParams);
+
+    expect(spy).to.have.been.calledWith({
+      Bucket: 'b1',
+      Key: 'k1',
+      CopySource: '/copysource/test-k1',
+    });
+    expect(data).to.deep.equal({});
   });
 });

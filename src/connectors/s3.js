@@ -2,6 +2,7 @@
 // import { S3, config } from 'aws-sdk';
 import { Readable } from 'stream';
 import {
+  CopyObjectCommand,
   DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
 } from '@aws-sdk/client-s3';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
@@ -91,6 +92,15 @@ class Connector {
     };
 
     return this._sendCommand(new ListObjectsV2Command(params), ctx);
+  }
+
+  copyObject(inputParams, ctx) {
+    const params = {
+      Bucket: this.bucketName,
+      ...inputParams,
+    };
+
+    return this._sendCommand(new CopyObjectCommand(params), ctx);
   }
 
   _sendCommand(command, ctx) {
