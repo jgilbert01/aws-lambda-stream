@@ -64,3 +64,32 @@ export const deleteObjectFromS3 = ({
     .map(deleteObject)
     .parallel(parallel);
 };
+
+export const copyS3Object = ({
+  debug,
+  id: pipelineId,
+  bucketName = process.env.BUCKET_NAME,
+  copyRequestField = 'copyRequest',
+  copyResponseField = 'copyResponse',
+  parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'copy',
+  ...opt
+} = {}) => {
+  const connector = new Connector({
+    pipelineId, debug, bucketName, ...opt,
+  });
+
+  const copyObject = (uow) => {
+    if (!uow[copyRequestField]) return _(Promise.resolve(uow));
+
+    const p = () => connector.copyObject(uow[copyRequestField])
+      .then((copyResponse) => ({ ...uow, [copyResponseField]: copyResponse }))
+      .catch(rejectWithFault(uow));
+
+    return _(uow.metrics?.w(p, step) || p());
+  };
+
+  return (s) => s
+    .map(copyObject)
+    .parallel(parallel);
+};

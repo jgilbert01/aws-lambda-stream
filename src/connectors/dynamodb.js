@@ -12,6 +12,7 @@ import Promise from 'bluebird';
 import _ from 'highland';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfiguredRetryStrategy } from '@smithy/util-retry';
+import { omit, pick } from 'lodash';
 import {
   defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
@@ -26,26 +27,32 @@ class Connector {
     removeUndefinedValues = true,
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
+    additionalClientOpts = {},
     ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
-    this.client = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout);
+    this.client = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout, additionalClientOpts);
     this.retryConfig = retryConfig;
     this.opt = opt;
   }
 
   static clients = {};
 
-  static getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout) {
+  static getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout, additionalClientOpts) {
+    const addlRequestHandlerOpts = pick(additionalClientOpts, ['requestHandler']);
+    const addlClientOpts = omit(additionalClientOpts, ['requestHandler']);
+
     if (!this.clients[pipelineId]) {
       const dynamoClient = new DynamoDBClient({
         requestHandler: new NodeHttpHandler({
           requestTimeout: timeout,
           connectionTimeout: timeout,
+          ...addlRequestHandlerOpts,
         }),
         retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
         logger: defaultDebugLogger(debug),
+        ...addlClientOpts,
       });
       this.clients[pipelineId] = DynamoDBDocumentClient.from(dynamoClient, {
         marshallOptions: {
