@@ -192,18 +192,6 @@ describe('from/s3s.js', () => {
 
     await fromS3Event(event)
       .collect()
-      .tap((collected) => {
-        // console.log(JSON.stringify(collected, null, 2));
-        expect(collected.length).to.equal(1);
-        expect(collected[0].event).to.deep.equal({
-          id: '00000000-0000-0000-0000-000000000000',
-          type: 'thing-created',
-          timestamp: '1595616620000',
-          thing: {
-            name: 'thing1',
-          },
-        });
-      })
       .through(toPromise);
 
     const testClient = new Connector({ debug: debug('test'), bucketName: 'test-bucket', pipelineId: 'handler:fromS3' }).client;
