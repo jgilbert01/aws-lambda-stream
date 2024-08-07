@@ -10,7 +10,6 @@ import {
 
 import {
   filterOnEventType, filterOnContent,
-  outSkip,
 } from '../filters';
 
 import { putDynamoDB } from '../sinks/dynamodb';
