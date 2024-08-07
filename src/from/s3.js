@@ -57,7 +57,13 @@ export const fromS3Event = (event, options = {}) =>
         Key: uow.record.s3.s3.object.key,
       },
     }))
-    .through(getObjectFromS3(options))
+    .through(getObjectFromS3({
+      id: 'handler:fromS3',
+      additionalClientOpts: {
+        followRegionRedirects: true,
+      },
+      ...options,
+    }))
     .map((uow) => ({
       ...uow,
       event: JSON.parse(Buffer.from(uow.getResponse.Body), decompress),

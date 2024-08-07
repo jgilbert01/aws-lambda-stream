@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
 
+import debug from 'debug';
 import { claimcheck } from '../../../src/utils/claimcheck';
 
 import Connector from '../../../src/connectors/s3';
@@ -65,5 +66,11 @@ describe('utils/claimcheck.js', () => {
         });
       })
       .done(done);
+  });
+
+  it('should use a pipeline label to cache regional redirects configuration', () => {
+    claimcheck();
+    const testClient = new Connector({ debug: debug('test'), bucketName: 'test-bucket', pipelineId: 'handler:claimcheck' }).client;
+    expect(testClient.config.followRegionRedirects).to.eq(true);
   });
 });
