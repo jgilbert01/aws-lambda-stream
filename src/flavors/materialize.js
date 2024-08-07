@@ -8,7 +8,7 @@ import {
 } from '../sinks/dynamodb';
 import {
   filterOnEventType, filterOnContent,
-  outSkip, outSourceIsSelf,
+  outSourceIsSelf,
 } from '../filters';
 
 export const materialize = (rule) => (s) => s // eslint-disable-line import/prefer-default-export

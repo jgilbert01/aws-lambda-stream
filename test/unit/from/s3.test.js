@@ -2,13 +2,19 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
+import debug from 'debug';
 import {
   fromS3, fromSqsSnsS3, fromS3Event, toS3Records, toSqsSnsS3Records,
 } from '../../../src/from/s3';
 
 import Connector from '../../../src/connectors/s3';
+import { toPromise } from '../../../src/utils';
 
 describe('from/s3s.js', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
   it('should parse records', (done) => {
     const event = toS3Records([
       {
@@ -160,5 +166,35 @@ describe('from/s3s.js', () => {
         });
       })
       .done(done);
+  });
+
+  it('should use a pipeline label to cache regional redirects configuration', async () => {
+    sinon.stub(Connector.prototype, 'getObject').resolves({
+      Key: '1/thing',
+      Body: Buffer.from(JSON.stringify({
+        id: '00000000-0000-0000-0000-000000000000',
+        type: 'thing-created',
+        timestamp: '1595616620000',
+        thing: {
+          name: 'thing1',
+        },
+      })),
+    });
+
+    const event = toSqsSnsS3Records([{
+      bucket: {
+        name: 'my-bucket',
+      },
+      object: {
+        key: '1/thing',
+      },
+    }]);
+
+    await fromS3Event(event)
+      .collect()
+      .through(toPromise);
+
+    const testClient = new Connector({ debug: debug('test'), bucketName: 'test-bucket', pipelineId: 'handler:fromS3' }).client;
+    expect(testClient.config.followRegionRedirects).to.eq(true);
   });
 });
