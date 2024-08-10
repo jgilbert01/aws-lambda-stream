@@ -6,8 +6,12 @@ import _ from 'highland';
 import { publishToEventBridge as publish } from '../../../src/sinks/eventbridge';
 
 import Connector from '../../../src/connectors/eventbridge';
+import S3Connector from '../../../src/connectors/s3';
 
 describe('utils/eventbridge.js', () => {
+  beforeEach(() => {
+    process.env.CLAIMCHECK_BUCKET_NAME = 'test-bucket-name';
+  });
   afterEach(sinon.restore);
 
   it('should batch and publish', (done) => {
@@ -43,6 +47,7 @@ describe('utils/eventbridge.js', () => {
               skip: true,
             },
           },
+          claimcheckRequired: false,
           publishRequestEntry: {
             EventBusName: 'b1',
             Source: 'custom',
@@ -139,6 +144,7 @@ describe('utils/eventbridge.js', () => {
                   skip: true,
                 },
               },
+              claimcheckRequired: false,
               publishRequestEntry: {
                 EventBusName: 'undefined',
                 Source: 'custom',
@@ -223,6 +229,7 @@ describe('utils/eventbridge.js', () => {
                   skip: true,
                 },
               },
+              claimcheckRequired: false,
               publishRequestEntry: {
                 EventBusName: 'undefined',
                 Source: 'custom',
@@ -246,6 +253,100 @@ describe('utils/eventbridge.js', () => {
       .collect()
       .tap((collected) => {
         expect(collected.length).to.equal(0);
+      })
+      .done(done);
+  });
+
+  it('should claimcheck large event payloads', (done) => {
+    sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
+    sinon.stub(S3Connector.prototype, 'putObject').resolves({});
+
+    const uows = [{
+      event: {
+        id: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+        type: 'p1',
+        partitionKey: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+        timestamp: 12345,
+      },
+    }];
+
+    _(uows)
+      .through(publish({
+        // 350 used here to be small enough to require a claimcheck but not so small
+        // that the claimcheck itself exceeds the maximum publish size.
+        busName: 'b1', metricsEnabled: true, maxPublishRequestSize: 350,
+      }))
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({
+          event: {
+            id: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+            type: 'p1',
+            partitionKey: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+            timestamp: 12345,
+            tags: {
+              account: 'undefined',
+              region: 'us-west-2',
+              stage: 'undefined',
+              source: 'undefined',
+              functionname: 'undefined',
+              pipeline: 'undefined',
+              skip: true,
+            },
+          },
+          claimcheckEvent: {
+            id: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+            partitionKey: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+            type: 'p1',
+            timestamp: 12345,
+            s3: {
+              bucket: 'test-bucket-name',
+              key: 'CLAIMCHECK-79a0d8f0-0eef-11ea-8d71-362b9e155667',
+            },
+          },
+          putClaimcheckRequest: {
+            Key: 'CLAIMCHECK-79a0d8f0-0eef-11ea-8d71-362b9e155667',
+            Body: '{\"id\":\"79a0d8f0-0eef-11ea-8d71-362b9e155667\",\"type\":\"p1\",\"partitionKey\":\"79a0d8f0-0eef-11ea-8d71-362b9e155667\",\"timestamp\":12345,\"tags\":{\"account\":\"undefined\",\"region\":\"us-west-2\",\"stage\":\"undefined\",\"source\":\"undefined\",\"functionname\":\"undefined\",\"pipeline\":\"undefined\",\"skip\":true}}',
+          },
+          putClaimcheckResponse: {},
+          claimcheckRequired: true,
+          publishRequestEntry: {
+            EventBusName: 'b1',
+            Source: 'custom',
+            DetailType: 'p1',
+            Detail: JSON.stringify({
+              id: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+              type: 'p1',
+              partitionKey: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+              timestamp: 12345,
+              s3: {
+                bucket: 'test-bucket-name',
+                key: 'CLAIMCHECK-79a0d8f0-0eef-11ea-8d71-362b9e155667',
+              },
+            }),
+          },
+          publishRequest: {
+            Entries: [{
+              EventBusName: 'b1',
+              Source: 'custom',
+              DetailType: 'p1',
+              Detail: JSON.stringify({
+                id: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+                type: 'p1',
+                partitionKey: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+                timestamp: 12345,
+                s3: {
+                  bucket: 'test-bucket-name',
+                  key: 'CLAIMCHECK-79a0d8f0-0eef-11ea-8d71-362b9e155667',
+                },
+              }),
+            }],
+          },
+          publishResponse: { FailedEntryCount: 0 },
+        });
       })
       .done(done);
   });
