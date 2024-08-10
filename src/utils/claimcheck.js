@@ -2,10 +2,12 @@ import { decompress } from './compression';
 import { faulty } from './faults';
 import { getObjectFromS3 } from '../queries/s3';
 
-// claim-check pattern support
-// https://www.enterpriseintegrationpatterns.com/patterns/messaging/StoreInLibrary.html
+/*
+* Claim-check pattern support
+* https://www.enterpriseintegrationpatterns.com/patterns/messaging/StoreInLibrary.html
+*/
 
-export const claimcheck = (opt = {}) => (s) => s // eslint-disable-line import/prefer-default-export
+export const consumeClaimcheck = (opt = {}) => (s) => s
   .map(faulty((uow) => ({
     ...uow,
     getClaimCheckRequest: uow.event.s3 ? {
@@ -36,3 +38,6 @@ const clear = (uow) => {
   }
   return uow;
 };
+
+// Deprecrated - use consumeClaimcheck
+export const claimcheck = consumeClaimcheck;
