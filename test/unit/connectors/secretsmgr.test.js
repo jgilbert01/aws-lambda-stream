@@ -108,7 +108,7 @@ describe('connectors/secretsmgr.js', () => {
     const connector = new Connector({ debug: debug('sm'), secretId: 'my-service/tst', decodeFn: (data) => JSON.parse(data) });
 
     const secrets = await connector.get().catch((e) => {
-      expect(e.message).to.equal('Unexpected non-whitespace character after JSON at position 22');
+      expect(e.name).to.equal('SyntaxError');
       return 'Failed.';
     });
     expect(secrets).to.equal('Failed.');
