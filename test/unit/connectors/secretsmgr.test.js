@@ -58,4 +58,64 @@ describe('connectors/secretsmgr.js', () => {
       SecretId: 'my-service/tst',
     });
   });
+
+  it('should use a decode function override', async () => {
+    const SecretString = JSON.stringify({ MY_SECRET: '123456' });
+
+    const spy = sinon.spy(() => ({
+      ARN: 'arn:aws:secretsmanager:us-west-2:123456789012:secret:MyTestDatabaseSecret-xxxxxx',
+      CreatedDate: '<Date Representation>',
+      Name: 'my-service/tst',
+      SecretString,
+      VersionId: 'EXAMPLE1-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+      VersionStages: [
+        'AWSPREVIOUS',
+      ],
+    }));
+
+    mockSecretsMgr.on(GetSecretValueCommand).callsFake(spy);
+
+    const connector = new Connector({ debug: debug('sm'), secretId: 'my-service/tst', decodeFn: (data) => JSON.parse(data) });
+
+    let secrets = await connector.get();
+    expect(secrets).to.deep.equal({ MY_SECRET: '123456' });
+
+    secrets = await connector.get();
+    expect(secrets).to.deep.equal({ MY_SECRET: '123456' });
+
+    // assert cached
+    expect(spy).to.have.been.calledOnceWith({
+      SecretId: 'my-service/tst',
+    });
+  });
+
+  it('should return a rejected promise if decode function fails', async () => {
+    const SecretString = `${JSON.stringify({ MY_SECRET: '123456' })}-this-will-fail`;
+
+    const spy = sinon.spy(() => ({
+      ARN: 'arn:aws:secretsmanager:us-west-2:123456789012:secret:MyTestDatabaseSecret-xxxxxx',
+      CreatedDate: '<Date Representation>',
+      Name: 'my-service/tst',
+      SecretString,
+      VersionId: 'EXAMPLE1-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+      VersionStages: [
+        'AWSPREVIOUS',
+      ],
+    }));
+
+    mockSecretsMgr.on(GetSecretValueCommand).callsFake(spy);
+
+    const connector = new Connector({ debug: debug('sm'), secretId: 'my-service/tst', decodeFn: (data) => JSON.parse(data) });
+
+    const secrets = await connector.get().catch((e) => {
+      expect(e.message).to.equal('Unexpected non-whitespace character after JSON at position 22');
+      return 'Failed.';
+    });
+    expect(secrets).to.equal('Failed.');
+
+    // assert cached
+    expect(spy).to.have.been.calledOnceWith({
+      SecretId: 'my-service/tst',
+    });
+  });
 });
