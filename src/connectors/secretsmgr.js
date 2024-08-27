@@ -5,6 +5,9 @@ import Promise from 'bluebird';
 import { omit, pick } from 'lodash';
 import { defaultDebugLogger } from '../utils/log';
 
+const defaultDecodeFn = (encoded) =>
+  JSON.parse(Buffer.from(encoded, 'base64').toString());
+
 /**
  * All secrets are combined to reduce the number of calls
  * Secrets are transferred from a ci/cd pipeline's secured variables
@@ -15,12 +18,14 @@ class Connector {
     debug,
     pipelineId,
     secretId,
+    decodeFn = defaultDecodeFn,
     timeout = Number(process.env.SECRETSMGR_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     additionalClientOpts = {},
   }) {
     this.debug = /* istanbul ignore next */ (msg) => debug('%j', msg);
     this.secretId = secretId;
     this.client = Connector.getClient(pipelineId, debug, timeout, additionalClientOpts);
+    this.decodeFn = decodeFn;
   }
 
   static clients = {};
@@ -51,8 +56,7 @@ class Connector {
 
       this.secrets = await Promise.resolve(this.client.send(new GetSecretValueCommand(params)))
         .tapCatch(this.debug)
-        .then((data) => Buffer.from(data.SecretString, 'base64').toString())
-        .then((data) => JSON.parse(data));
+        .then((data) => this.decodeFn(data.SecretString));
     }
 
     return this.secrets;
