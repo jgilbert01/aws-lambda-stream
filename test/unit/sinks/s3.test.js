@@ -6,6 +6,7 @@ import _ from 'highland';
 import {
   putObjectToS3,
   deleteObjectFromS3,
+  copyS3Object,
 } from '../../../src/sinks/s3';
 
 import Connector from '../../../src/connectors/s3';
@@ -46,6 +47,37 @@ describe('utils/s3.js', () => {
       .done(done);
   });
 
+  it('should copy object', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'copyObject').resolves({});
+
+    const uows = [
+      {
+        copyRequest: {
+          CopySource: '/sourcebucket/source-key',
+          Key: 'destination-key',
+        },
+      },
+      {},
+    ];
+
+    _(uows)
+      .through(copyS3Object())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(stub).to.have.been.calledWith({ CopySource: '/sourcebucket/source-key', Key: 'destination-key' });
+
+        expect(collected.length).to.equal(2);
+        expect(collected[0]).to.deep.equal({
+          copyRequest: { CopySource: '/sourcebucket/source-key', Key: 'destination-key' },
+          copyResponse: {},
+        });
+        expect(collected[1]).to.deep.equal({});
+      })
+      .done(done);
+  });
+
   it('should delete object', (done) => {
     const stub = sinon.stub(Connector.prototype, 'deleteObject').resolves({ DeleteMarker: false });
 
@@ -74,5 +106,19 @@ describe('utils/s3.js', () => {
         });
       })
       .done(done);
+  });
+
+  it('should passthrough additional client options to connector', () => {
+    putObjectToS3({
+      id: 'put-object-passthrough-test',
+      additionalClientOpts: {
+        followRegionRedirects: true,
+        bucketEndpoint: true,
+      },
+    });
+
+    const clientInstance = Connector.getClient('put-object-passthrough-test');
+    expect(clientInstance.config.followRegionRedirects).to.eq(true);
+    expect(clientInstance.config.bucketEndpoint).to.eq(true);
   });
 });

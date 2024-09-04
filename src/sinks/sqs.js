@@ -8,14 +8,18 @@ import { rejectWithFault } from '../utils/faults';
 import { debug as d } from '../utils/print';
 
 export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
+  id: pipelineId,
   debug = d('sqs'),
   queueUrl = process.env.QUEUE_URL,
   messageField = 'message',
   batchSize = Number(process.env.SQS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'send',
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, queueUrl });
+  const connector = new Connector({
+    pipelineId, debug, queueUrl, ...opt,
+  });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,
@@ -32,11 +36,11 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
       return _(Promise.resolve(batchUow));
     }
 
-    const p = connector.sendMessageBatch(batchUow.inputParams)
+    const p = () => connector.sendMessageBatch(batchUow.inputParams, batchUow)
       .then((sendMessageBatchResponse) => ({ ...batchUow, sendMessageBatchResponse }))
       .catch(rejectWithFault(batchUow));
 
-    return _(p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, step) || p()); // wrap promise in a stream
   };
 
   return (s) => s

@@ -1,27 +1,41 @@
 import _ from 'highland';
+import Promise from 'bluebird';
 
-export const toCallback = (cb) => (s) =>
-  s.consume((err, x, push, next) => {
-    if (err) {
-      cb(err);
-    } else if (x === _.nil) {
-      cb(null, 'Success');
-    } else {
-      next();
-    }
-  })
-    .resume();
+import { options } from './opt';
 
-export const toPromise = (s) =>
-  new Promise((resolve, reject) => {
-    s.consume((err, x, push, next) => {
-      if (err) {
-        reject(err);
-      } else if (x === _.nil) {
-        resolve('Success');
-      } else {
-        next();
-      }
-    })
-      .resume();
-  });
+export const mw = (handle, opt) => {
+  const stack = [];
+
+  const run = (event, context) => {
+    stack.push((n, o, e, c) => handle(e, c, o)); // do the real work last
+    const runner = (index) => Promise.resolve(stack[index](() => runner(index + 1), opt, event, context));
+    return Promise.resolve(runner(0));
+  };
+
+  run.use = (middleware) => {
+    stack.push(...(Array.isArray(middleware) ? middleware : [middleware]));
+    return run;
+  };
+
+  return run;
+};
+
+export const toPromise = (s) => {
+  const opt = options();
+  if (opt.metrics) {
+    return opt.metrics.toPromise(opt, s);
+  } else {
+    return new Promise((resolve, reject) => {
+      s.consume((err, x, push, next) => {
+        if (err) {
+          reject(err);
+        } else if (x === _.nil) {
+          resolve('Success');
+        } else {
+          next();
+        }
+      })
+        .resume();
+    });
+  }
+};

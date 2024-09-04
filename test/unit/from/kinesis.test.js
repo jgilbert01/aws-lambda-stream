@@ -31,6 +31,7 @@ describe('from/kinesis.js', () => {
             awsRegion: 'us-west-2',
             eventID: 'shardId-000000000000:0',
             kinesis: {
+              approximateArrivalTimestamp: undefined,
               sequenceNumber: '0',
               data: 'eyJ0eXBlIjoidDEiLCJwYXJ0aXRpb25LZXkiOiIxIn0=',
             },

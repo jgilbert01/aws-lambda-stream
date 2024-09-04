@@ -4,6 +4,7 @@ import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfiguredRetryStrategy } from '@smithy/util-retry';
 import Promise from 'bluebird';
 
+import { omit, pick } from 'lodash';
 import {
   defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
@@ -12,21 +13,39 @@ import { defaultDebugLogger } from '../utils/log';
 class Connector {
   constructor({
     debug,
+    pipelineId,
     streamName = process.env.STREAM_NAME,
     timeout = Number(process.env.KINESIS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
+    additionalClientOpts = {},
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.streamName = streamName || 'undefined';
-    this.stream = new KinesisClient({
-      requestHandler: new NodeHttpHandler({
-        requestTimeout: timeout,
-        connectionTimeout: timeout,
-      }),
-      retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
-      logger: defaultDebugLogger(debug),
-    });
+    this.client = Connector.getClient(pipelineId, debug, timeout, additionalClientOpts);
     this.retryConfig = retryConfig;
+    this.opt = opt;
+  }
+
+  static clients = {};
+
+  static getClient(pipelineId, debug, timeout, additionalClientOpts) {
+    const addlRequestHandlerOpts = pick(additionalClientOpts, ['requestHandler']);
+    const addlClientOpts = omit(additionalClientOpts, ['requestHandler']);
+
+    if (!this.clients[pipelineId]) {
+      this.clients[pipelineId] = new KinesisClient({
+        requestHandler: new NodeHttpHandler({
+          requestTimeout: timeout,
+          connectionTimeout: timeout,
+          ...addlRequestHandlerOpts,
+        }),
+        retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
+        logger: defaultDebugLogger(debug),
+        ...addlClientOpts,
+      });
+    }
+    return this.clients[pipelineId];
   }
 
   putRecords(inputParams) {
@@ -42,7 +61,7 @@ class Connector {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => Promise.resolve(this.stream.send(new PutRecordsCommand(params)))
+      .then(() => this._sendCommand(new PutRecordsCommand(params))
         .tap(this.debug)
         .tapCatch(this.debug)
         .then((resp) => {
@@ -52,6 +71,13 @@ class Connector {
             return accumlate(attempts, resp);
           }
         }));
+  }
+
+  _sendCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'kinesis', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
+      .tap(this.debug)
+      .tapCatch(this.debug);
   }
 }
 

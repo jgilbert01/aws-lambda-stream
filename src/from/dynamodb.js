@@ -2,13 +2,15 @@
 import _ from 'highland';
 
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
-import { faulty } from '../utils';
+import { faulty, options } from '../utils';
 
 export const fromDynamodb = (event, {
   pkFn = 'pk',
   skFn = 'sk',
   discriminatorFn = 'discriminator',
   eventTypePrefix = undefined,
+  ignoreTtlExpiredEvents = false,
+  ignoreReplicas = true,
 } = {}) => // eslint-disable-line import/prefer-default-export
 
   // prepare the event stream
@@ -16,8 +18,11 @@ export const fromDynamodb = (event, {
 
     //--------------------------------
     // global table support
-    .filter(outReplicas)
+    .filter(outReplicas(ignoreReplicas))
     .filter(outGlobalTableExtraModify)
+    //--------------------------------
+    // ttl support
+    .filter(outTtlExpiredEvents(ignoreTtlExpiredEvents))
     //--------------------------------
 
     .map(faulty((record) =>
@@ -42,7 +47,8 @@ export const fromDynamodb = (event, {
               : undefined,
           },
         },
-      })));
+      })))
+    .tap((uow) => options().metrics?.adornDynamoMetrics(uow, event));
 
 // https://www.trek10.com/blog/dynamodb-single-table-relational-modeling
 // all rows must have a discriminator field to store the prefix: <entityname> or <entityname-relationship>
@@ -85,22 +91,39 @@ const calculateEventTypeSuffix = (record) => {
 //--------------------------------------------
 // global table support - version: 2017.11.29
 //--------------------------------------------
+// or use the following:
+//
+// filterPatterns:
+//   - eventName: [ INSERT, MODIFY ]
+//     dynamodb:
+//       NewImage:
+//         awsregion:
+//           S:
+//             - ${opt:region}
+//   - eventName: [ REMOVE ]
+//     dynamodb:
+//       OldImage:
+//         awsregion:
+//           S:
+//             - ${opt:region}
 
-export const outReplicas = (record) => {
+export const outReplicas = (ignoreReplicas) => (record) => {
+  if (!ignoreReplicas) return true;
+
   const image = record.dynamodb.NewImage || record.dynamodb.OldImage;
 
   // is this a global table event
+  // v2
+  if (image.awsregion) {
+    // only process events from the current region
+    return image.awsregion.S === process.env.AWS_REGION;
+  }
+
   // v1
   /* istanbul ignore next */
   if (image['aws:rep:updateregion']) {
     // only process events from the current region
     return image['aws:rep:updateregion'].S === process.env.AWS_REGION;
-  }
-
-  // v2
-  if (image.awsregion) {
-    // only process events from the current region
-    return image.awsregion.S === process.env.AWS_REGION;
   }
 
   return true;
@@ -110,6 +133,12 @@ export const outReplicas = (record) => {
 export const outGlobalTableExtraModify = (record) => {
   const { NewImage, OldImage } = record.dynamodb;
 
+  // v1/v2 transition
+  if (NewImage && NewImage.awsregion && OldImage && (!OldImage.awsregion && !OldImage['aws:rep:updateregion'])) {
+    // skip
+    return false;
+  }
+
   // v1
   /* istanbul ignore next */
   if (NewImage && NewImage['aws:rep:updateregion'] && OldImage && !OldImage['aws:rep:updateregion']) {
@@ -117,13 +146,33 @@ export const outGlobalTableExtraModify = (record) => {
     return false;
   }
 
-  // v2
-  if (NewImage && NewImage.awsregion && OldImage && !OldImage.awsregion) {
-    // skip
-    return false;
-  }
-
   return true;
+};
+
+//--------------------------------------------
+// ttl support or use filterPatterns
+//--------------------------------------------
+
+export const outTtlExpiredEvents = (ignoreTtlExpiredEvents) => (record) => {
+  // this is not a REMOVE event
+  if (record.eventName !== 'REMOVE') return true;
+
+  const { OldImage } = record.dynamodb;
+
+  // this record does not have ttl
+  if (!OldImage.ttl || !OldImage.timestamp) return true;
+
+  // ttl has not expired
+  if (Number(OldImage.ttl.N) * 1000 > Number(OldImage.timestamp.N)) return true;
+
+  // this is a ttl expired event
+  // should we ignore it
+  /* istanbul ignore else */
+  if (ignoreTtlExpiredEvents) {
+    return false;
+  } else {
+    return true;
+  }
 };
 
 // test helper
@@ -134,7 +183,7 @@ export const toDynamodbRecords = (events, { removeUndefinedValues = true } = {})
       eventName: !e.oldImage ? 'INSERT' : !e.newImage ? 'REMOVE' : 'MODIFY', // eslint-disable-line no-nested-ternary
       // eventVersion: '1.0',
       eventSource: 'aws:dynamodb',
-      awsRegion: 'us-west-2',
+      awsRegion: e.newImage?.awsregion || process.env.AWS_REGION || /* istanbul ignore next */ 'us-west-2',
       dynamodb: {
         ApproximateCreationDateTime: e.timestamp,
         Keys: e.keys ? marshall(e.keys, { removeUndefinedValues }) : /* istanbul ignore next */ undefined,

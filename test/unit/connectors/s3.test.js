@@ -5,10 +5,12 @@ import _ from 'highland';
 import { Readable } from 'stream';
 import { mockClient } from 'aws-sdk-client-mock';
 import {
+  CopyObjectCommand,
   DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
 } from '@aws-sdk/client-s3';
 import { sdkStreamMixin } from '@smithy/util-stream';
 
+import { v4 } from 'uuid';
 import Connector from '../../../src/connectors/s3';
 
 import { debug } from '../../../src/utils';
@@ -22,6 +24,34 @@ describe('connectors/s3.js', () => {
 
   afterEach(() => {
     mockS3.restore();
+    sinon.restore();
+  });
+
+  it('should reuse client per pipeline', () => {
+    const client1 = Connector.getClient('test1', debug('test'));
+    const client2 = Connector.getClient('test1', debug('test'));
+    const client3 = Connector.getClient('test2', debug('test'));
+
+    expect(client1).to.eq(client2);
+    expect(client2).to.not.eq(client3);
+  });
+
+  it('should accept additional client options', async () => {
+    // Don't use mock for this one test...
+    mockS3.restore();
+
+    const connector = new Connector({
+      pipelineId: v4(),
+      debug: debug('s3'),
+      bucketName: 'b1',
+      additionalClientOpts: {
+        followRegionRedirects: true,
+        bucketEndpoint: true,
+      },
+    });
+
+    expect(connector.client.config.followRegionRedirects).to.eq(true);
+    expect(connector.client.config.bucketEndpoint).to.eq(true);
   });
 
   it('should put object', async () => {
@@ -146,5 +176,27 @@ describe('connectors/s3.js', () => {
       Prefix: 'p1',
     });
     expect(data.Contents[0].Key).to.equal('p1/2021/03/26/19/1234');
+  });
+
+  it('should copy object', async () => {
+    const spy = sinon.spy(() => ({}));
+    mockS3.on(CopyObjectCommand).callsFake(spy);
+
+    const inputParams = {
+      Key: 'k1',
+      CopySource: '/copysource/test-k1',
+    };
+
+    const data = await new Connector({
+      debug: debug('s3'),
+      bucketName: 'b1',
+    }).copyObject(inputParams);
+
+    expect(spy).to.have.been.calledWith({
+      Bucket: 'b1',
+      Key: 'k1',
+      CopySource: '/copysource/test-k1',
+    });
+    expect(data).to.deep.equal({});
   });
 });

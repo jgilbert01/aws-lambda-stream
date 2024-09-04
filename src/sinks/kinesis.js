@@ -10,15 +10,19 @@ import { compress } from '../utils/compression';
 import { ratelimit } from '../utils/ratelimit';
 
 export const publishToKinesis = ({
+  id: pipelineId,
   debug = d('kinesis'),
   streamName = process.env.STREAM_NAME,
   eventField = 'event',
   batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 25,
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
+  step = 'publish',
   ...opt
 } = {}) => {
-  const connector = new Publisher({ debug, streamName });
+  const connector = new Publisher({
+    pipelineId, debug, streamName, ...opt,
+  });
 
   const toInputParams = (batchUow) => ({
     ...batchUow,
@@ -34,11 +38,11 @@ export const publishToKinesis = ({
       return _(Promise.resolve(batchUow));
     }
 
-    const p = connector.putRecords(batchUow.inputParams)
+    const p = () => connector.putRecords(batchUow.inputParams, batchUow)
       .then((publishResponse) => ({ ...batchUow, publishResponse }))
       .catch(rejectWithFault(batchUow, !handleErrors));
 
-    return _(p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, step) || p()); // wrap promise in a stream
   };
 
   return (s) => s

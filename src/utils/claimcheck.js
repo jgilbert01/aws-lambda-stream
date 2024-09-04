@@ -14,8 +14,12 @@ export const claimcheck = (opt = {}) => (s) => s // eslint-disable-line import/p
     } : undefined,
   })))
   .through(getObjectFromS3({
+    id: 'handler:claimcheck',
     getRequestField: 'getClaimCheckRequest',
     getResponseField: 'getClaimCheckResponse',
+    additionalClientOpts: {
+      followRegionRedirects: true,
+    },
   }))
   .map(faulty((uow) => clear({
     ...uow,

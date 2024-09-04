@@ -11,7 +11,6 @@ import {
 } from '../sinks/s3';
 import {
   filterOnEventType, filterOnContent,
-  outSkip,
 } from '../filters';
 
 export const materializeS3 = (rule) => (s) => s // eslint-disable-line import/prefer-default-export

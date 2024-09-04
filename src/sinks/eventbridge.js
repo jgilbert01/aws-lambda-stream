@@ -3,13 +3,14 @@ import _ from 'highland';
 import Connector from '../connectors/eventbridge';
 
 import { toBatchUow, unBatchUow, batchWithSize } from '../utils/batch';
-import { rejectWithFault } from '../utils/faults';
+import { rejectWithFault, FAULT_COMPRESSION_IGNORE } from '../utils/faults';
 import { debug as d } from '../utils/print';
 import { adornStandardTags } from '../utils/tags';
 import { compress } from '../utils/compression';
 import { ratelimit } from '../utils/ratelimit';
 
 export const publishToEventBridge = ({ // eslint-disable-line import/prefer-default-export
+  id: pipelineId,
   debug = d('eventbridge'),
   busName = process.env.BUS_NAME || 'undefined',
   source = process.env.BUS_SRC || 'custom', // could change this to internal vs external/ingress/egress
@@ -21,9 +22,12 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
   handleErrors = true,
   retryConfig,
+  step = 'publish',
   ...opt
 } = {}) => {
-  const connector = new Connector({ debug, retryConfig });
+  const connector = new Connector({
+    pipelineId, debug, retryConfig, ...opt,
+  });
 
   const toPublishRequestEntry = (uow) => ({
     ...uow,
@@ -31,7 +35,8 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
       EventBusName: busName,
       Source: source,
       DetailType: uow[eventField].type,
-      Detail: JSON.stringify(uow[eventField], compress(opt)),
+      Detail: JSON.stringify(uow[eventField],
+        compress(uow[eventField].type !== 'fault' ? opt : { ...opt, compressionIgnore: FAULT_COMPRESSION_IGNORE })),
     } : undefined,
   });
 
@@ -48,11 +53,11 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
     if (!batchUow[publishRequestField].Entries.length) {
       return _(Promise.resolve(batchUow));
     }
-    const p = connector.putEvents(batchUow[publishRequestField])
+    const p = () => connector.putEvents(batchUow[publishRequestField], batchUow)
       .catch(rejectWithFault(batchUow, !handleErrors))
       .then((publishResponse) => ({ ...batchUow, publishResponse }));
 
-    return _(p); // wrap promise in a stream
+    return _(batchUow.batch[0].metrics?.w(p, step) || p()); // wrap promise in a stream
   };
 
   return (s) => s

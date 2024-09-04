@@ -12,6 +12,7 @@ import Promise from 'bluebird';
 import _ from 'highland';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfiguredRetryStrategy } from '@smithy/util-retry';
+import { omit, pick } from 'lodash';
 import {
   defaultRetryConfig, wait, getDelay, assertMaxRetries, defaultBackoffDelay,
 } from '../utils/retry';
@@ -22,36 +23,54 @@ class Connector {
     debug,
     tableName,
     convertEmptyValues,
+    pipelineId,
     removeUndefinedValues = true,
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
+    additionalClientOpts = {},
+    ...opt
   }) {
     this.debug = (msg) => debug('%j', msg);
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
-    const dynamoClient = new DynamoDBClient({
-      requestHandler: new NodeHttpHandler({
-        requestTimeout: timeout,
-        connectionTimeout: timeout,
-      }),
-      retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
-      logger: defaultDebugLogger(debug),
-    });
-    this.db = DynamoDBDocumentClient.from(dynamoClient, {
-      marshallOptions: {
-        convertEmptyValues,
-        removeUndefinedValues,
-      },
-    });
+    this.client = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout, additionalClientOpts);
     this.retryConfig = retryConfig;
+    this.opt = opt;
   }
 
-  update(inputParams) {
+  static clients = {};
+
+  static getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout, additionalClientOpts) {
+    const addlRequestHandlerOpts = pick(additionalClientOpts, ['requestHandler']);
+    const addlClientOpts = omit(additionalClientOpts, ['requestHandler']);
+
+    if (!this.clients[pipelineId]) {
+      const dynamoClient = new DynamoDBClient({
+        requestHandler: new NodeHttpHandler({
+          requestTimeout: timeout,
+          connectionTimeout: timeout,
+          ...addlRequestHandlerOpts,
+        }),
+        retryStrategy: new ConfiguredRetryStrategy(11, defaultBackoffDelay),
+        logger: defaultDebugLogger(debug),
+        ...addlClientOpts,
+      });
+      this.clients[pipelineId] = DynamoDBDocumentClient.from(dynamoClient, {
+        marshallOptions: {
+          convertEmptyValues,
+          removeUndefinedValues,
+        },
+      });
+    }
+    return this.clients[pipelineId];
+  }
+
+  update(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new UpdateCommand(params))
+    return this._sendCommand(new UpdateCommand(params), ctx)
       .catch((err) => {
         /* istanbul ignore else */
         if (err.name === 'ConditionalCheckFailedException') {
@@ -62,28 +81,28 @@ class Connector {
       });
   }
 
-  put(inputParams) {
+  put(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new PutCommand(params));
+    return this._sendCommand(new PutCommand(params), ctx);
   }
 
-  batchGet(inputParams) {
+  batchGet(inputParams, ctx) {
     const params = {
       ...inputParams,
     };
 
-    return this._batchGet(params, []);
+    return this._batchGet(params, [], ctx);
   }
 
-  query(inputParams) {
-    return this.queryAll(inputParams);
+  query(inputParams, ctx) {
+    return this.queryAll(inputParams, ctx);
   }
 
-  queryAll(inputParams) {
+  queryAll(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
@@ -94,7 +113,7 @@ class Connector {
 
     return _((push, next) => {
       params.ExclusiveStartKey = cursor;
-      return this._executeCommand(new QueryCommand(params))
+      return this._sendCommand(new QueryCommand(params), ctx)
         .then((data) => {
           itemsCount += data.Items.length;
 
@@ -123,44 +142,45 @@ class Connector {
       .toPromise(Promise);
   }
 
-  queryPage(inputParams) {
+  queryPage(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new QueryCommand(params));
+    return this._sendCommand(new QueryCommand(params), ctx);
   }
 
-  scan(inputParams) {
+  scan(inputParams, ctx) {
     const params = {
       TableName: this.tableName,
       ...inputParams,
     };
 
-    return this._executeCommand(new ScanCommand(params));
+    return this._sendCommand(new ScanCommand(params), ctx);
   }
 
-  _batchGet(params, attempts) {
+  _batchGet(params, attempts, ctx) {
     assertMaxRetries(attempts, this.retryConfig.maxRetries);
 
     return wait(getDelay(this.retryConfig.retryWait, attempts.length))
-      .then(() => this._executeCommand(new BatchGetCommand(params))
+      .then(() => this._sendCommand(new BatchGetCommand(params), ctx)
         .then((resp) => {
           const response = {
             Responses: {},
             ...resp,
           };
           if (Object.keys(response.UnprocessedKeys || /* istanbul ignore next */ {}).length > 0) {
-            return this._batchGet(unprocessed(params, response), [...attempts, response]);
+            return this._batchGet(unprocessed(params, response), [...attempts, response], ctx);
           } else {
             return accumlate(attempts, response);
           }
         }));
   }
 
-  _executeCommand(command) {
-    return Promise.resolve(this.db.send(command))
+  _sendCommand(command, ctx) {
+    this.opt.metrics?.capture(this.client, command, 'dynamodb', this.opt, ctx);
+    return Promise.resolve(this.client.send(command))
       .tap(this.debug)
       .tapCatch(this.debug);
   }

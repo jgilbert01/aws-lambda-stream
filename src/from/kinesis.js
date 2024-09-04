@@ -1,7 +1,7 @@
 import _ from 'highland';
 
 import {
-  faulty, decompress, compress, claimcheck,
+  faulty, decompress, compress, claimcheck, options,
 } from '../utils';
 import { outSkip } from '../filters';
 
@@ -24,11 +24,12 @@ export const fromKinesis = (event) =>
         ...JSON.parse(uow.event, decompress),
       },
     })))
+    .tap((uow) => options().metrics?.adornKinesisMetrics(uow, event))
     .filter(outSkip)
     .through(claimcheck());
 
 // test helper
-export const toKinesisRecords = (events) => ({
+export const toKinesisRecords = (events, approximateArrivalTimestamp) => ({
   Records: events.map((e, i) =>
     ({
       eventSource: 'aws:kinesis',
@@ -43,7 +44,7 @@ export const toKinesisRecords = (events) => ({
         // partitionKey: e.partitionKey,
         sequenceNumber: `${i}`,
         data: Buffer.from(JSON.stringify(e, compress())).toString('base64'),
-        // approximateArrivalTimestamp: 1545084650.987,
+        approximateArrivalTimestamp, // format: 1545084650.987
       },
     })),
 });

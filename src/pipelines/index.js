@@ -3,7 +3,9 @@ import memoryCache from 'memory-cache';
 
 import { faults, flushFaults } from '../faults';
 
-import { debug as d, encryptData, decryptData } from '../utils';
+import {
+  debug as d, encryptData, decryptData, options,
+} from '../utils';
 
 const debug = d('pl:init');
 
@@ -11,6 +13,7 @@ let thePipelines = {};
 
 export const initialize = (pipelines, opt = {}) => {
   const keys = Object.keys(pipelines);
+  options(opt);
 
   debug('initialize: %j', keys);
 
@@ -46,7 +49,8 @@ export const initializeFrom = (rules) => rules.reduce(
 );
 
 const assemble = (opt) => (head, includeFaultHandler = true) => {
-  const keys = Object.keys(thePipelines);
+  const keys = Object.keys(thePipelines)
+    .filter((k) => !process.env.DISABLED_PIPELINES?.includes(k));
 
   debug('assemble: %j', keys);
 
@@ -71,24 +75,19 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
       const os = head.observe();
 
       lines[i] = os
-        // shallow clone of data per pipeline
-        .map((uow) => ({
-          pipeline: p.id,
-          ...uow,
-          ...addDebug(p.id),
-        }))
-        .through(p);
+        .map(initPipeline(p.id))
+        .tap(startPipeline(opt))
+        .through(p)
+        .through(endPipeline(opt, p.id));
     });
 
     debug('FORK: %s', lines[last].id);
     const p = lines[last];
     lines[last] = head
-      .map((uow) => ({
-        pipeline: p.id,
-        ...uow,
-        ...addDebug(p.id),
-      }))
-      .through(lines[last]);
+      .map(initPipeline(p.id))
+      .tap(startPipeline(opt))
+      .through(lines[last])
+      .through(endPipeline(opt, p.id));
   }
 
   let s = _(lines).merge();
@@ -105,6 +104,22 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
 };
 
 const addDebug = (id) => ({ debug: d(`pl:${id}`) });
+
+const initPipeline = (pipeline) => (uow) => ({
+  // shallow clone of data per pipeline
+  pipeline,
+  ...uow,
+  ...addDebug(pipeline),
+});
+
+const startPipeline = (opt) => (uow) => {
+  if (opt.metrics) {
+    uow.metrics = uow.metrics.startPipeline(uow, opt);
+  }
+};
+
+const endPipeline = (opt, pipelineId) => (s) =>
+  (opt.metrics ? opt.metrics.endPipeline(pipelineId, opt, s) : s);
 
 const addEncryptors = (opt) => ({
   encrypt: encryptData(opt),
