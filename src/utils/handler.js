@@ -7,8 +7,8 @@ export const mw = (handle, opt) => {
   const stack = [];
 
   const run = (event, context) => {
-    stack.push((n, o, e, c) => handle(e, c, o)); // do the real work last
-    const runner = (index) => Promise.resolve(stack[index](() => runner(index + 1), opt, event, context));
+    const mwStack = [...stack, (n, o, e, c) => handle(e, c, o)]; // Do the real work last
+    const runner = (index) => Promise.resolve(mwStack[index](() => runner(index + 1), opt, event, context));
     return Promise.resolve(runner(0));
   };
 
