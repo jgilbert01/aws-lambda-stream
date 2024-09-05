@@ -1,5 +1,12 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
+import {
+  InvokeCommand,
+  ListEventSourceMappingsCommand,
+  CreateEventSourceMappingCommand,
+  UpdateEventSourceMappingCommand,
+  DeleteEventSourceMappingCommand,
+  LambdaClient,
+} from '@aws-sdk/client-lambda';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
 import { omit, pick } from 'lodash';
@@ -40,6 +47,22 @@ class Connector {
 
   invoke(params, ctx) {
     return this._sendCommand(new InvokeCommand(params), ctx);
+  }
+
+  listEventSourceMappings(params, ctx) {
+    return this._sendCommand(new ListEventSourceMappingsCommand(params), ctx);
+  }
+
+  createEventSourceMapping(params, ctx) {
+    return this._sendCommand(new CreateEventSourceMappingCommand(params), ctx);
+  }
+
+  updateEventSourceMapping(params, ctx) {
+    return this._sendCommand(new UpdateEventSourceMappingCommand(params), ctx);
+  }
+
+  deleteEventSourceMapping(params, ctx) {
+    return this._sendCommand(new DeleteEventSourceMappingCommand(params), ctx);
   }
 
   _sendCommand(command, ctx) {

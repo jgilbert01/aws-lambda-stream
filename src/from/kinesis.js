@@ -16,6 +16,7 @@ export const fromKinesis = (event) =>
         record,
         event: Buffer.from(record.kinesis.data, 'base64').toString('utf8'),
       }))
+
     .map(faulty((uow) => ({
       ...uow,
       event: {

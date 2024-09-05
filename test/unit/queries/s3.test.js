@@ -16,7 +16,7 @@ import {
 
 import Connector from '../../../src/connectors/s3';
 
-describe('utils/s3.js', () => {
+describe('queries/s3.js', () => {
   afterEach(sinon.restore);
 
   it('should get object', (done) => {

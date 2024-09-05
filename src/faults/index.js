@@ -9,8 +9,10 @@ export const FAULT_EVENT_TYPE = 'fault';
 // does not cause handler faults to be repeatedly published
 const theFaults = [];
 
-export const faults = (err, push) => {
-  if (err.uow) {
+export const faults = (opt) => (err, push) => {
+  logErr(err);
+
+  if (err.uow && !(opt.retryable && opt.retryable(err, opt))) {
     // handled exceptions are adorned with the uow in error
     // push a fault event onto the stack for publishing by publishFaultsPipeline
     theFaults.push({
@@ -29,8 +31,6 @@ export const faults = (err, push) => {
       },
       uow: trimAndRedact(err.uow),
     });
-
-    logErr(err);
   } else {
     // rethrow unhandled/unexpected exceptions to stop processing
     push(err);

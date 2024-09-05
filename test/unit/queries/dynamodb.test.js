@@ -10,7 +10,7 @@ import {
 
 import Connector from '../../../src/connectors/dynamodb';
 
-describe('utils/dynamodb.js', () => {
+describe('queries/dynamodb.js', () => {
   afterEach(sinon.restore);
 
   it('should call batchGet', (done) => {

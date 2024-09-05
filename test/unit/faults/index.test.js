@@ -11,6 +11,7 @@ import {
 import { FAULT_COMPRESSION_IGNORE } from '../../../src/utils/faults';
 
 import { defaultOptions } from '../../../src/utils/opt';
+import { retryable } from '../../../src/utils/retry';
 import { compress } from '../../../src/utils/compression';
 
 let publishStub;
@@ -59,7 +60,7 @@ describe('faults/index.js', () => {
         },
       }))
       .map(simulateHandledError)
-      .errors(faults)
+      .errors(faults(defaultOptions))
       .through(flushFaults(defaultOptions))
 
       .collect()
@@ -122,7 +123,7 @@ describe('faults/index.js', () => {
 
     fromKinesis(events)
       .map(simulateUnhandledError)
-      .errors(faults)
+      .errors(faults(defaultOptions))
       .stopOnError(spy)
       .collect()
       .tap((collected) => {
@@ -222,5 +223,34 @@ describe('faults/index.js', () => {
         ],
       },
     });
+  });
+
+  it('should account for retriable error', (done) => {
+    process.env.STREAM_RETRY_ENABLED = 'true';
+    const spy = sinon.spy();
+    const err = new Error('retriable error');
+    const simulateRetriableError = (uow) => {
+      err.uow = uow; // retry even though uow is attached
+      err.code = 'ECONNREFUSED';
+      throw err;
+    };
+
+    const events = toKinesisRecords([
+      {
+        type: 'u1',
+      },
+    ]);
+
+    fromKinesis(events)
+      .map(simulateRetriableError)
+      .errors(faults({ retryable, ...defaultOptions }))
+      .stopOnError(spy)
+      .collect()
+      .tap((collected) => {
+        delete process.env.STREAM_RETRY_ENABLED;
+        expect(spy).to.have.been.calledWith(err);
+        expect(collected.length).to.equal(0);
+      })
+      .done(done);
   });
 });

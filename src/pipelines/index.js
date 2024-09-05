@@ -56,7 +56,7 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
 
   if (includeFaultHandler) {
     // after pre processoring
-    head = head.errors(faults);
+    head = head.errors(faults(opt));
   }
 
   const lines = keys.map((key) => {
@@ -93,7 +93,7 @@ const assemble = (opt) => (head, includeFaultHandler = true) => {
   let s = _(lines).merge();
 
   if (includeFaultHandler) {
-    s = s.errors(faults)
+    s = s.errors(faults(opt))
       .through(flushFaults({
         ...opt,
         ...addDebug('fault'),

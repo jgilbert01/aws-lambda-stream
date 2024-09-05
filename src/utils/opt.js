@@ -1,6 +1,7 @@
 import { publishToEventBridge } from '../sinks/eventbridge';
 
 import { debug } from './print';
+import { retryable } from './retry';
 
 let opt = {};
 export const options = (o) => {
@@ -21,4 +22,8 @@ export const defaultOptions = {
   masterKeyAlias: process.env.MASTER_KEY_ALIAS,
   regions: (process.env.KMS_REGIONS && process.env.KMS_REGIONS.split(',')),
   AES: process.env.AES !== 'false',
+
+  // lambda retry
+  // can disable in index file by setting to undefined
+  retryable,
 };

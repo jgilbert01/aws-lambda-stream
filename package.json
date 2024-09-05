@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-stream",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
@@ -40,6 +40,7 @@
       "command": "nyc mocha --recursive \"./test/unit/**/*.test.js\"",
       "env": {
         "AWS_REGION": "us-west-2",
+        "FAILOVER_REGION": "us-east-1",
         "KMS_REGIONS": "us-west-2",
         "NODE_ENV": "test",
         "AWS_ACCESS_KEY_ID": "notarealaccesskeyid",
@@ -77,6 +78,7 @@
     "@babel/register": "^7.10.0",
     "@babel/runtime": "^7.10.0",
     "@smithy/node-http-handler": "^2.1.8",
+    "@smithy/service-error-classification": "^2.1.5",
     "@smithy/util-retry": "^2.1.1",
     "@smithy/util-stream": "^2.1.1",
     "aws-kms-ee": "^1.0.0",
@@ -109,6 +111,7 @@
   "peerDependencies": {
     "@babel/runtime": "7.x",
     "@smithy/node-http-handler": "2.x",
+    "@smithy/service-error-classification": "2.x",
     "@smithy/util-retry": "2.x",
     "@smithy/util-stream": "2.x",
     "aws-kms-ee": "1.x",
