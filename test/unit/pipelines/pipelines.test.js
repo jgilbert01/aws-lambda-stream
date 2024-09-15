@@ -12,6 +12,7 @@ import Connector from '../../../src/connectors/eventbridge';
 describe('pipelines/index.js', () => {
   beforeEach(() => {
     sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
+    delete process.env.DISABLED_PIPELINES;
   });
   afterEach(sinon.restore);
 
@@ -41,6 +42,65 @@ describe('pipelines/index.js', () => {
         // console.log(JSON.stringify(collected, null, 2));
         expect(collected.length).to.equal(3);
         expect(counter).to.equal(3);
+      })
+      .done(done);
+  });
+
+  it('should ignore disabled pipelines - string', (done) => {
+    process.env.DISABLED_PIPELINES = 'p1a';
+    let counter = 0;
+
+    const count = (uow) => {
+      uow.counter = counter++; // eslint-disable-line no-plusplus
+      return uow;
+    };
+
+    const events = toKinesisRecords([{
+      type: 't1',
+    }]);
+
+    initialize({
+      p1: (opt) => (s) => s.map(count),
+      p1a: (opt) => (s) => s.map(count),
+      p1b: (opt) => (s) => s.map(count),
+    })
+      .assemble(fromKinesis(events), false)
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(2);
+        expect(counter).to.equal(2);
+        expect(collected[0].pipeline).to.equal('p1b');
+        expect(collected[1].pipeline).to.equal('p1');
+      })
+      .done(done);
+  });
+
+  it('should ignore disabled pipelines - array', (done) => {
+    process.env.DISABLED_PIPELINES = ['p1', 'p2'];
+    let counter = 0;
+
+    const count = (uow) => {
+      uow.counter = counter++; // eslint-disable-line no-plusplus
+      return uow;
+    };
+
+    const events = toKinesisRecords([{
+      type: 't1',
+    }]);
+
+    initialize({
+      p1: (opt) => (s) => s.map(count),
+      p2: (opt) => (s) => s.map(count),
+      p3: (opt) => (s) => s.map(count),
+    })
+      .assemble(fromKinesis(events), false)
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(1);
+        expect(counter).to.equal(1);
+        expect(collected[0].pipeline).to.equal('p3');
       })
       .done(done);
   });
