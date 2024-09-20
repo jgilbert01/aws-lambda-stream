@@ -1,9 +1,10 @@
 import _ from 'highland';
 
 import {
-  faulty, decompress, compress, claimcheck, options,
+  faulty, decompress, compress, options,
 } from '../utils';
 import { outSkip } from '../filters';
+import { claimcheck } from '../queries';
 
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events

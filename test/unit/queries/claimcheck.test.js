@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import _ from 'highland';
 
 import debug from 'debug';
-import { claimcheck } from '../../../src/utils/claimcheck';
+import { claimcheck } from '../../../src/queries/claimcheck';
 
 import Connector from '../../../src/connectors/s3';
 

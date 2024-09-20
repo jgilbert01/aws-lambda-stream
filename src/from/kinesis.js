@@ -1,9 +1,10 @@
 import _ from 'highland';
 
 import {
-  faulty, decompress, compress, claimcheck, options,
+  faulty, decompress, compress, options,
 } from '../utils';
 import { outSkip } from '../filters';
+import { claimcheck } from '../queries';
 
 export const fromKinesis = (event) =>
 
