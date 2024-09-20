@@ -4,7 +4,7 @@ import {
   faulty, decompress, compress, options,
 } from '../utils';
 import { outSkip } from '../filters';
-import { claimcheck } from '../queries';
+import { redeemClaimcheck } from '../queries';
 
 export const fromKinesis = (event) =>
 
@@ -27,7 +27,7 @@ export const fromKinesis = (event) =>
     })))
     .tap((uow) => options().metrics?.adornKinesisMetrics(uow, event))
     .filter(outSkip)
-    .through(claimcheck());
+    .through(redeemClaimcheck());
 
 // test helper
 export const toKinesisRecords = (events, approximateArrivalTimestamp) => ({

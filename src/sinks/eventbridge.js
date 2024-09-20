@@ -8,6 +8,7 @@ import { debug as d } from '../utils/print';
 import { adornStandardTags } from '../utils/tags';
 import { compress } from '../utils/compression';
 import { ratelimit } from '../utils/ratelimit';
+import { storeClaimcheck } from './claimcheck';
 
 export const publishToEventBridge = ({ // eslint-disable-line import/prefer-default-export
   id: pipelineId,
@@ -74,6 +75,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
       requestField: publishRequestField,
       debug,
     }))
+    .through(storeClaimcheck(opt))
     .map(toBatchUow)
     .map(toPublishRequest)
 

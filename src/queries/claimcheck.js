@@ -5,9 +5,7 @@ import { getObjectFromS3 } from './s3';
 // claim-check pattern support
 // https://www.enterpriseintegrationpatterns.com/patterns/messaging/StoreInLibrary.html
 
-// TODO move to query folder
-
-export const claimcheck = (opt = {}) => (s) => s // eslint-disable-line import/prefer-default-export
+export const redeemClaimcheck = (opt = {}) => (s) => s // eslint-disable-line import/prefer-default-export
   .map(faulty((uow) => ({
     ...uow,
     getClaimCheckRequest: uow.event.s3 ? {
