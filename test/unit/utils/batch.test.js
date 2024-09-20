@@ -140,13 +140,13 @@ describe('utils/batch.js', () => {
         },
       },
       {
-        publishRequestEntry: { // size = 29
-          id: 'xxxxxxxxxxxxxxxxxxxx',
+        publishRequestEntry: { // size = 39
+          id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         },
       },
       {
-        publishRequestEntry: { // size = 39
-          id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        publishRequestEntry: { // size = 29
+          id: 'xxxxxxxxxxxxxxxxxxxx',
         },
       },
     ];

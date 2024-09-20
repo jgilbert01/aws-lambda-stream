@@ -30,8 +30,10 @@ export const toPutClaimcheckRequest = (event, Bucket) => ({
   Body: JSON.stringify(event),
 });
 
+// designed to run right after batchWithSize
 export const storeClaimcheck = ({
   id: pipelineId,
+  // usually the s3 event lake bucket
   claimCheckBucketName = process.env.CLAIMCHECK_BUCKET_NAME,
   putClaimcheckRequest = 'putClaimcheckRequest',
   putClaimcheckResponse = 'putClaimcheckResponse',
@@ -56,5 +58,7 @@ export const storeClaimcheck = ({
           step,
           ...opt,
         }))
+        // reassemble the batch
         .collect());
+  // minus any faults during putObject
 };
