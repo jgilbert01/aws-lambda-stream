@@ -8,7 +8,7 @@ import { redeemClaimcheck } from '../../../src/queries/claimcheck';
 
 import Connector from '../../../src/connectors/s3';
 
-describe('utils/claimcheck.js', () => {
+describe('queries/claimcheck.js', () => {
   afterEach(sinon.restore);
 
   it('should get event', (done) => {
