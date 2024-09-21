@@ -7,7 +7,7 @@ import { publishToSns } from '../../../src/sinks/sns';
 
 import Connector from '../../../src/connectors/sns';
 
-describe('utils/sns.js', () => {
+describe('sinks/sns.js', () => {
   afterEach(sinon.restore);
 
   it('should publish', (done) => {

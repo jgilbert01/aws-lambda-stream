@@ -7,7 +7,7 @@ import { sendToSqs } from '../../../src/sinks/sqs';
 
 import Connector from '../../../src/connectors/sqs';
 
-describe('utils/sqs.js', () => {
+describe('sinks/sqs.js', () => {
   afterEach(sinon.restore);
 
   it('should batch and send', (done) => {

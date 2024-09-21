@@ -8,7 +8,7 @@ import { sendToFirehose, toFirehoseRecord } from '../../../src/sinks/firehose';
 
 import Connector from '../../../src/connectors/firehose';
 
-describe('utils/firehose.js', () => {
+describe('sinks/firehose.js', () => {
   afterEach(sinon.restore);
 
   it('should batch and put', (done) => {

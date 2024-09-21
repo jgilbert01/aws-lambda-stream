@@ -7,7 +7,7 @@ import { putMetrics } from '../../../src/sinks/cloudwatch';
 
 import Connector from '../../../src/connectors/cloudwatch';
 
-describe('utils/cloudwatch.js', () => {
+describe('sinks/cloudwatch.js', () => {
   afterEach(sinon.restore);
 
   it('should putMetrics', (done) => {
