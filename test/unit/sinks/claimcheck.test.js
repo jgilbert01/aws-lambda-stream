@@ -59,12 +59,12 @@ describe('sinks/claimcheck.js', () => {
               tags: undefined,
               s3: {
                 bucket: 'event-lake-s3',
-                key: 'us-west-2/claimchecks/2024/8/20/13/3',
+                key: 'us-west-2/claimchecks/2024/8/20/17/3',
               },
             },
             putClaimcheckRequest: {
               Bucket: 'event-lake-s3',
-              Key: 'us-west-2/claimchecks/2024/8/20/13/3',
+              Key: 'us-west-2/claimchecks/2024/8/20/17/3',
               Body: '{\"id\":\"3\",\"body\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}',
             },
           },

@@ -9,7 +9,7 @@ import { now } from '../utils/time';
 const formatKey = (event) => {
   const d = new Date(now());
   // region/claimchecks/YYYY/MM/DD/HH/id
-  return `${process.env.AWS_REGION}/claimchecks/${d.getFullYear()}/${d.getMonth()}/${d.getDate()}/${d.getHours()}/${event.id}`;
+  return `${process.env.AWS_REGION}/claimchecks/${d.getUTCFullYear()}/${d.getUTCMonth()}/${d.getUTCDate()}/${d.getUTCHours()}/${event.id}`;
 };
 
 export const toClaimcheckEvent = (event, bucket) => ({
