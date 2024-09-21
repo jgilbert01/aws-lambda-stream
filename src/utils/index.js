@@ -1,5 +1,4 @@
 export * from './batch';
-export * from './claimcheck';
 export * from './compression';
 export * from './encryption';
 export * from './faults';

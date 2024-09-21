@@ -1,9 +1,10 @@
 import _ from 'highland';
 
 import {
-  faulty, decompress, compress, claimcheck, options,
+  faulty, decompress, compress, options,
 } from '../utils';
 import { outSkip } from '../filters';
+import { redeemClaimcheck } from '../queries';
 
 // this from function is intended for use with intra-service messages
 // as opposed to consuming inter-servic events
@@ -30,7 +31,7 @@ export const fromSqsEvent = (event) => _(event.Records)
   })))
   .tap((uow) => options().metrics?.adornSqsMetrics(uow, event))
   .filter(outSkip)
-  .through(claimcheck());
+  .through(redeemClaimcheck());
 
 // test helper
 // https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html

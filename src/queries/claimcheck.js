@@ -1,11 +1,11 @@
-import { decompress } from './compression';
-import { faulty } from './faults';
-import { getObjectFromS3 } from '../queries/s3';
+import { decompress } from '../utils/compression';
+import { faulty } from '../utils/faults';
+import { getObjectFromS3 } from './s3';
 
 // claim-check pattern support
 // https://www.enterpriseintegrationpatterns.com/patterns/messaging/StoreInLibrary.html
 
-export const claimcheck = (opt = {}) => (s) => s // eslint-disable-line import/prefer-default-export
+export const redeemClaimcheck = (opt = {}) => (s) => s // eslint-disable-line import/prefer-default-export
   .map(faulty((uow) => ({
     ...uow,
     getClaimCheckRequest: uow.event.s3 ? {

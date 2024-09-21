@@ -4,11 +4,11 @@ import sinon from 'sinon';
 import _ from 'highland';
 
 import debug from 'debug';
-import { claimcheck } from '../../../src/utils/claimcheck';
+import { redeemClaimcheck } from '../../../src/queries/claimcheck';
 
 import Connector from '../../../src/connectors/s3';
 
-describe('utils/claimcheck.js', () => {
+describe('queries/claimcheck.js', () => {
   afterEach(sinon.restore);
 
   it('should get event', (done) => {
@@ -36,7 +36,7 @@ describe('utils/claimcheck.js', () => {
     }];
 
     _(uows)
-      .through(claimcheck())
+      .through(redeemClaimcheck())
       .collect()
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
@@ -69,7 +69,7 @@ describe('utils/claimcheck.js', () => {
   });
 
   it('should use a pipeline label to cache regional redirects configuration', () => {
-    claimcheck();
+    redeemClaimcheck();
     const testClient = new Connector({ debug: debug('test'), bucketName: 'test-bucket', pipelineId: 'handler:claimcheck' }).client;
     expect(testClient.config.followRegionRedirects).to.eq(true);
   });

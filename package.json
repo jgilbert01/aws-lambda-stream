@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-stream",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
