@@ -30,6 +30,7 @@ describe('filters/index.js', () => {
     };
 
     expect(filterOnEventType(rule, { event: { type: 't1' } })).to.be.true;
+    expect(filterOnEventType(rule, { event: { type: 't1-thing' } })).to.be.false;
     expect(filterOnEventType(rule, { event: { type: 't2' } })).to.be.true;
     expect(filterOnEventType(rule, { event: { type: 't3' } })).to.be.false;
   });

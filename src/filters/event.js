@@ -9,7 +9,7 @@ export const filterOnEventType = (rule, uow) => {
   } else if (rule.eventType instanceof RegExp) {
     return rule.eventType.test(uow.event.type);
   } else if (isArray(rule.eventType)) {
-    return rule.eventType.join().indexOf(uow.event.type) > -1;
+    return rule.eventType.includes(uow.event.type);
   } else if (isFunction(rule.eventType)) {
     return rule.eventType(uow.event.type, rule);
   } else {
