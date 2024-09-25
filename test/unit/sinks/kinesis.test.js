@@ -8,7 +8,7 @@ import { publishToKinesis as publish, toRecord } from '../../../src/sinks/kinesi
 
 import Connector from '../../../src/connectors/kinesis';
 
-describe('utils/kinesis.js', () => {
+describe('sinks/kinesis.js', () => {
   afterEach(sinon.restore);
 
   it('should batch and publish', (done) => {

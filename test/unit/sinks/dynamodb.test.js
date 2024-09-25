@@ -12,7 +12,7 @@ import {
 
 import Connector from '../../../src/connectors/dynamodb';
 
-describe('utils/dynamodb.js', () => {
+describe('sinks/dynamodb.js', () => {
   afterEach(sinon.restore);
 
   it('should calculate ttl', () => {

@@ -7,7 +7,7 @@ import { fetch } from '../../../src/sinks/fetch';
 
 import Connector from '../../../src/connectors/fetch';
 
-describe('utils/fetch.js', () => {
+describe('sinks/fetch.js', () => {
   afterEach(sinon.restore);
 
   it('should fetch', (done) => {

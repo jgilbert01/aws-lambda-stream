@@ -7,7 +7,7 @@ import { publishToEventBridge as publish } from '../../../src/sinks/eventbridge'
 
 import Connector from '../../../src/connectors/eventbridge';
 
-describe('utils/eventbridge.js', () => {
+describe('sinks/eventbridge.js', () => {
   afterEach(sinon.restore);
 
   it('should batch and publish', (done) => {
