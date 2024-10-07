@@ -61,6 +61,22 @@ describe('flavors/cdc.js', () => {
           timestamp: 1548967022000,
         },
       },
+      {
+        timestamp: 1572832690,
+        keys: {
+          pk: '1',
+          sk: 'override',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'override',
+          discriminator: 'override',
+          name: 'Override One',
+          description: 'This is override one',
+          ttl: 1549053422,
+          timestamp: 1548967022000,
+        },
+      },
     ]);
 
     initialize({
@@ -70,7 +86,7 @@ describe('flavors/cdc.js', () => {
       .collect()
       // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
       .tap((collected) => {
-        expect(collected.length).to.equal(2);
+        expect(collected.length).to.equal(3);
         expect(collected[1].pipeline).to.equal('cdc1');
         expect(collected[1].event.type).to.equal('thing-created');
         expect(collected[1].event.thing).to.deep.equal({
@@ -85,6 +101,21 @@ describe('flavors/cdc.js', () => {
           ...skipTag(),
         });
         expect(collected[1].queryRequest).to.be.undefined;
+
+        expect(collected[2].pipeline).to.equal('cdc3');
+        expect(collected[2].event.type).to.equal('override-created');
+        expect(collected[2].event.thing).to.be.undefined;
+        expect(collected[2].emit.thing).to.deep.equal({
+          id: '1',
+          name: 'Ik92ZXJyaWRlIE9uZSI=', // 'Override One'
+          description: 'This is override one',
+        });
+        expect(collected[2].emit.tags).to.deep.equal({
+          region: 'us-west-2',
+          field1: 'v1',
+          ...envTags('cdc3'),
+          ...skipTag(),
+        });
 
         // this pipeline speeds ahead since it does less async
         expect(collected[0].pipeline).to.equal('cdc2');
@@ -128,5 +159,15 @@ const rules = [
     id: 'cdc-other1',
     flavor: cdc,
     eventType: 'x9',
+  },
+  {
+    id: 'cdc3',
+    flavor: cdc,
+    toEvent,
+    eventField: 'emit',
+    eventType: /override-*/,
+    eem: {
+      fields: ['name'],
+    },
   },
 ];
