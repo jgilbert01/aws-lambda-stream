@@ -58,15 +58,7 @@ describe('sinks/claimcheck.js', () => {
         expect(collected[1]).to.deep.equal([
           {
             publishRequestEntry: { // size = 39
-              id: '3',
-              type: undefined,
-              partitionKey: undefined,
-              timestamp: undefined,
-              tags: undefined,
-              s3: {
-                bucket: 'event-lake-s3',
-                key: 'us-west-2/claimchecks/2024/8/20/17/3',
-              },
+              Detail: '{"id":"3","s3":{"bucket":"event-lake-s3","key":"us-west-2/claimchecks/2024/8/20/17/3"}}',
             },
             putClaimcheckRequest: {
               Bucket: 'event-lake-s3',
