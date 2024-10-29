@@ -17,21 +17,27 @@ describe('sinks/claimcheck.js', () => {
     const spy = sinon.spy();
     const uows = [
       {
-        publishRequestEntry: { // size = 23
-          id: '1',
-          body: 'xxx',
+        publishRequestEntry: {
+          Detail: JSON.stringify({ // size = 23
+            id: '1',
+            body: 'xxx',
+          }),
         },
       },
       {
-        publishRequestEntry: { // size = 33
-          id: '2',
-          body: 'xxxxxxxxxxxxx',
+        publishRequestEntry: {
+          Detail: JSON.stringify({ // size = 33
+            id: '2',
+            body: 'xxxxxxxxxxxxx',
+          }),
         },
       },
       {
-        publishRequestEntry: { // size = 140
-          id: '3',
-          body: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        publishRequestEntry: {
+          Detail: JSON.stringify({ // size = 140
+            id: '3',
+            body: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+          }),
         },
       },
     ];

@@ -77,8 +77,11 @@ export const batchWithSize = ({
           logMetrics([x], [size], opt);
           if (claimCheckBucketName) {
             // setup claim check
-            x[putClaimcheckRequest] = toPutClaimcheckRequest(x[opt.requestEntryField], claimCheckBucketName);
-            x[opt.requestEntryField] = toClaimcheckEvent(x[opt.requestEntryField], claimCheckBucketName);
+            x[putClaimcheckRequest] = toPutClaimcheckRequest(JSON.parse(x[opt.requestEntryField].Detail), claimCheckBucketName);
+            x[opt.requestEntryField] = toClaimcheckEvent(
+              JSON.parse(x[opt.requestEntryField].Detail),
+              claimCheckBucketName,
+            );
             size = Buffer.byteLength(JSON.stringify(x[opt.requestEntryField]));
           } else {
             const error = new Error(`Request size: ${size}, exceeded max: ${opt.maxRequestSize}`);
