@@ -57,13 +57,14 @@ describe('sinks/claimcheck.js', () => {
         expect(spy).to.not.have.been.called;
         expect(collected[1]).to.deep.equal([
           {
-            publishRequestEntry: { // size = 39
-              Detail: '{"id":"3","s3":{"bucket":"event-lake-s3","key":"us-west-2/claimchecks/2024/8/20/17/3"}}',
+            publishRequestEntry: {
+              Detail:
+                '{"id":"3","s3":{"bucket":"event-lake-s3","key":"us-west-2/claimchecks/2024/09/20/17/3"}}',
             },
             putClaimcheckRequest: {
               Bucket: 'event-lake-s3',
-              Key: 'us-west-2/claimchecks/2024/8/20/17/3',
-              Body: '{\"id\":\"3\",\"body\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}',
+              Key: 'us-west-2/claimchecks/2024/09/20/17/3',
+              Body: '{"id":"3","body":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}',
             },
           },
         ]);
