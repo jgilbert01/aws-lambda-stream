@@ -266,6 +266,10 @@ describe('flavors/job.js', () => {
             name: 'thing 3',
           },
         ],
+        LastEvaluatedKey: {
+          pk: '4',
+          sk: 'thing',
+        },
       });
 
     const events = toDynamodbRecords([
