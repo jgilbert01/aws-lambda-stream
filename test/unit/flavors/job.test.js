@@ -255,6 +255,56 @@ describe('flavors/job.js', () => {
       .done(done);
   });
 
+  it('should continue - all filtered', (done) => {
+    sinon.stub(DynamoDBConnector.prototype, 'queryPage')
+      .onCall(0)
+      .resolves({
+        Items: [
+          {
+            pk: '3',
+            sk: 'thing',
+            name: 'thing 3',
+          },
+        ],
+      });
+
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832694,
+        keys: {
+          pk: '1',
+          sk: 'job',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'job',
+          discriminator: 'job',
+          cursor: {
+            pk: '2',
+            sk: 'thing',
+          },
+        },
+        oldImage: {
+          pk: '1',
+          sk: 'job',
+          discriminator: 'job',
+        },
+      },
+    ]);
+
+    initialize({
+      ...initializeFrom([filterAllRule]),
+    }, { ...defaultOptions, AES: false })
+      .assemble(fromDynamodb(events), false)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        // unlucky filter all drops cursor
+        expect(collected.length).to.equal(0);
+      })
+      .done(done);
+  });
+
   it('should stop', (done) => {
     const events = toDynamodbRecords([
       {
@@ -344,3 +394,14 @@ const rules = [
     toCursorUpdateRequest,
   },
 ];
+
+const filterAllRule = {
+  id: 'job1-continued',
+  eventType: 'job-updated',
+  jobFilters: [(uow) => uow.event?.raw?.new?.cursor],
+  filters: [() => false],
+  flavor: job,
+  toQuerySplitRequest,
+  toEvent,
+  toCursorUpdateRequest,
+};
