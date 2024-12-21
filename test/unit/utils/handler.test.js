@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import _ from 'highland';
 import Promise from 'bluebird';
 
-import { mw, toPromise } from '../../../src/utils/handler';
+import { mw, toPromise, toFirehose } from '../../../src/utils/handler';
 
 describe('utils/handler.js', () => {
   afterEach(sinon.restore);
@@ -77,5 +77,19 @@ describe('utils/handler.js', () => {
     return handlerWithPromise({}, {})
       .then(() => Promise.reject(new Error('failed')))
       .catch((err) => ('Caught'));
+  });
+
+  it('should return firehose payload', async () => {
+    const handlerWithPromise = async (event, context) =>
+      _(event.records)
+        .through(toFirehose);
+
+    const result = await handlerWithPromise({
+      records: [{ data: 'r11' }, { data: 'r12' }],
+    }, {});
+
+    expect(result).to.deep.equal({
+      records: [{ data: 'r11' }, { data: 'r12' }],
+    });
   });
 });

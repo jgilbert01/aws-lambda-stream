@@ -3,6 +3,7 @@ export * from './correlate';
 export * from './cdc';
 export * from './evaluate';
 export * from './expired';
+export * from './firehose';
 export * from './job';
 export * from './materialize';
 export * from './materializeS3';

@@ -39,3 +39,21 @@ export const toPromise = (s) => {
     });
   }
 };
+
+export const toFirehose = (s) => new Promise((resolve, reject) => {
+  const records = [];
+  s.consume((err, x, push, next) => {
+    /* istanbul ignore if */
+    if (err) {
+      reject(err);
+    } else if (x === _.nil) {
+      resolve({
+        records,
+      });
+    } else {
+      records.push(x);
+      next();
+    }
+  })
+    .resume();
+});
