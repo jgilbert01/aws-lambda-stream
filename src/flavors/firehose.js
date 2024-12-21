@@ -17,13 +17,9 @@ export const firehoseTransform = (rule) => (s) => s
 
   .tap(printEndPipeline);
 
-export const firehoseDrop = (rules) => (opt) => {
-  console.log('%j', { opt });
-  console.log('%j', { rules });
-  return (s) => s
-    .filter((uow) => !(prefilterOnEventTypes(rules)(uow) && prefilterOnContent(rules)(uow)))
-    .tap(printEndPipeline);
-};
+export const firehoseDrop = (rules) => (opt) => (s) => s
+  .filter((uow) => !(prefilterOnEventTypes(rules)(uow) && prefilterOnContent(rules)(uow)))
+  .tap(printEndPipeline);
 
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
@@ -32,11 +28,11 @@ const spreadDateTime = (dt) => {
   const date = new Date(dt);
 
   return {
-    year: `${date.getFullYear()}`,
-    month: `${date.getMonth() + 1}`, // JavaScript months are 0-indexed
-    day: `${date.getDate()}`,
-    hour: `${date.getHours()}`,
-    minute: `${date.getMinutes()}`,
+    year: `${date.getUTCFullYear()}`,
+    month: `${date.getUTCMonth() + 1}`.padStart(2, '0'), // JavaScript months are 0-indexed
+    day: `${date.getUTCDate()}`.padStart(2, '0'),
+    hour: `${date.getUTCHours()}`.padStart(2, '0'),
+    minute: `${date.getUTCMinutes()}`.padStart(2, '0'),
   };
 };
 

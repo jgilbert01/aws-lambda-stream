@@ -62,8 +62,8 @@ describe('flavors/firehose.js', () => {
             table: 'T1',
             year: '2024',
             month: '12',
-            day: '20',
-            hour: '23',
+            day: '21',
+            hour: '04',
             minute: '18',
           },
         });
