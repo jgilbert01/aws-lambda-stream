@@ -24,7 +24,7 @@ export const firehoseDrop = (rules) => (opt) => (s) => s
 const onEventType = (rule) => faulty((uow) => filterOnEventType(rule, uow));
 const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 
-const spreadDateTime = (dt) => {
+export const spreadDateTime = (dt) => {
   const date = new Date(dt);
 
   return {
