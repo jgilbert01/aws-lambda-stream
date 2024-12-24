@@ -19,7 +19,7 @@ export const filterOnEventType = (rule, uow) => {
 
 export const prefilterOnEventTypes = (rules) =>
   (uow) =>
-    rules.reduce((a, c) => a || filterOnEventType(c, uow), false);
+    rules.reduce((a, r) => a || filterOnEventType(r, uow), false);
 
 export const filterOnContent = (rule, uow) => {
   /* istanbul ignore else */
@@ -29,3 +29,7 @@ export const filterOnContent = (rule, uow) => {
     return true;
   }
 };
+
+export const prefilterOnContent = (rules) =>
+  (uow) =>
+    rules.reduce((a, r) => a || filterOnContent(r, uow), false);
