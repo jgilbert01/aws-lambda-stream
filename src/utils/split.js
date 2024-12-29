@@ -1,11 +1,13 @@
 import isFunction from 'lodash/isFunction';
 import get from 'lodash/get';
+import omit from 'lodash/omit';
 
 import { faulty } from './faults';
 
 export const splitObject = ({ // eslint-disable-line import/prefer-default-export
   splitOn,
   splitTargetField = 'split',
+  splitOnOmitFields = [],
   ...rule
 }) => {
   if (splitOn) {
@@ -16,8 +18,11 @@ export const splitObject = ({ // eslint-disable-line import/prefer-default-expor
       return (s) => s
         .flatMap(faulty((uow) => {
           const values = get(uow, splitOn);
-          return values.map((v) => ({
-            ...uow,
+          const valuesLength = values.length;
+          return values.map((v, i) => ({
+            ...omit(uow, splitOnOmitFields),
+            splitOnTotal: valuesLength,
+            splitOnItemNumber: i + 1,
             [splitTargetField]: v,
           }));
         }));
