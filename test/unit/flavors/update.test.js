@@ -3,6 +3,9 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import { KmsConnector, MOCK_GEN_DK_RESPONSE } from 'aws-kms-ee';
+import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
+import { mockClient } from 'aws-sdk-client-mock';
 
 import {
   initialize, initializeFrom,
@@ -17,16 +20,21 @@ import {
 import {
   updateExpression, timestampCondition,
 } from '../../../src/sinks/dynamodb';
-import { DynamoDBConnector } from '../../../src/connectors';
+import { DynamoDBConnector, EventBridgeConnector } from '../../../src/connectors';
 
 import { update } from '../../../src/flavors/update';
 
 describe('flavors/update.js', () => {
+  let mockDdb;
+
   beforeEach(() => {
     sinon.stub(DynamoDBConnector.prototype, 'update').resolves({});
   });
 
-  afterEach(sinon.restore);
+  afterEach(() => {
+    sinon.restore();
+    mockDdb?.restore();
+  });
 
   it('should execute', (done) => {
     sinon.stub(DynamoDBConnector.prototype, 'query').resolves([]);
@@ -154,6 +162,54 @@ describe('flavors/update.js', () => {
         expect(collected[1].pipeline).to.equal('update2');
         expect(collected[1].queryRequest).to.not.be.undefined;
         expect(collected[1].queryResponse).to.not.be.undefined;
+      })
+      .done(done);
+  });
+
+  it('should optionally throw conditional check', (done) => {
+    sinon.restore();
+    sinon.stub(EventBridgeConnector.prototype, 'putEvents').resolves({});
+    mockDdb = mockClient(DynamoDBDocumentClient);
+    mockDdb.on(UpdateCommand).rejects(new ConditionalCheckFailedException({}));
+
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832690,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          ttl: 1549053422,
+          timestamp: 1548967022000,
+        },
+      },
+    ]);
+
+    const rule = {
+      id: 'updateThrow',
+      flavor: update,
+      eventType: /thing-*/,
+      toUpdateRequest: () => ({}),
+      throwConditionFailure: true,
+    };
+
+    initialize({
+      ...initializeFrom([
+        rule,
+      ]),
+    }, { ...defaultOptions, AES: false })
+      .assemble(fromDynamodb(events), true)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        expect(collected.length).to.equal(1);
+        expect(collected[0].event.tags.pipeline).to.equal('updateThrow');
+        expect(collected[0].event.type).to.equal('fault');
+        expect(collected[0].event.err.name).to.equal('ConditionalCheckFailedException');
       })
       .done(done);
   });

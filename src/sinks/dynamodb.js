@@ -59,11 +59,12 @@ export const updateDynamoDB = ({
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   removeUndefinedValues = true,
+  throwConditionFailure = false,
   step = 'save',
   ...opt
 } = {}) => {
   const connector = new Connector({
-    pipelineId, debug, tableName, timeout, removeUndefinedValues, ...opt,
+    pipelineId, debug, tableName, timeout, removeUndefinedValues, throwConditionFailure, ...opt,
   });
 
   const invoke = (uow) => {

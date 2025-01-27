@@ -27,6 +27,7 @@ class Connector {
     removeUndefinedValues = true,
     timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     retryConfig = defaultRetryConfig,
+    throwConditionFailure = false,
     additionalClientOpts = {},
     ...opt
   }) {
@@ -34,6 +35,7 @@ class Connector {
     this.tableName = tableName || /* istanbul ignore next */ 'undefined';
     this.client = Connector.getClient(pipelineId, debug, convertEmptyValues, removeUndefinedValues, timeout, additionalClientOpts);
     this.retryConfig = retryConfig;
+    this.throwConditionFailure = throwConditionFailure;
     this.opt = opt;
   }
 
@@ -73,7 +75,7 @@ class Connector {
     return this._sendCommand(new UpdateCommand(params), ctx)
       .catch((err) => {
         /* istanbul ignore else */
-        if (err.name === 'ConditionalCheckFailedException') {
+        if (err.name === 'ConditionalCheckFailedException' && !this.throwConditionFailure) {
           return {};
         }
         /* istanbul ignore next */
