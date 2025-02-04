@@ -21,6 +21,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   maxPublishRequestSize = Number(process.env.PUBLISH_MAX_REQ_SIZE) || Number(process.env.MAX_REQ_SIZE) || 256 * 1024,
   batchSize = Number(process.env.PUBLISH_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
   parallel = Number(process.env.PUBLISH_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  endpointId = process.env.BUS_ENDPOINT_ID,
   handleErrors = true,
   retryConfig,
   step = 'publish',
@@ -47,6 +48,9 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
       Entries: batchUow.batch
         .filter((uow) => uow[publishRequestEntryField])
         .map((uow) => uow[publishRequestEntryField]),
+      ...(endpointId && {
+        EndpointId: endpointId,
+      }),
     },
   });
 
