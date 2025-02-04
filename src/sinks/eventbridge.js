@@ -42,21 +42,17 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
     } : undefined,
   });
 
-  const toPublishRequest = (batchUow) => {
-    const Entries = batchUow.batch
-      .filter((uow) => uow[publishRequestEntryField])
-      .map((uow) => uow[publishRequestEntryField]);
-
-    return {
-      ...batchUow,
-      [publishRequestField]: endpointId ? /* istanbul ignore next */ {
-        Entries,
+  const toPublishRequest = (batchUow) => ({
+    ...batchUow,
+    [publishRequestField]: {
+      Entries: batchUow.batch
+        .filter((uow) => uow[publishRequestEntryField])
+        .map((uow) => uow[publishRequestEntryField]),
+      ...(endpointId && {
         EndpointId: endpointId,
-      } : {
-        Entries,
-      },
-    };
-  };
+      }),
+    },
+  });
 
   const putEvents = (batchUow) => {
     if (!batchUow[publishRequestField].Entries.length) {
