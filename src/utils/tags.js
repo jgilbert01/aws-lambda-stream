@@ -1,6 +1,6 @@
 import { skipTag } from '../filters';
 
-export const adornStandardTags = (eventField) => (uow) => (!uow[eventField] ? uow : ({
+export const adornStandardTags = (eventField) => (uow) => ((!uow[eventField] || Object.keys(uow[eventField]).length === 0) ? uow : ({
   ...uow,
   [eventField]: {
     ...uow[eventField],
