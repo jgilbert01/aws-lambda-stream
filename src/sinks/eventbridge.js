@@ -32,7 +32,7 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
 
   const toPublishRequestEntry = (uow) => ({
     ...uow,
-    [publishRequestEntryField]: uow[eventField] ? {
+    [publishRequestEntryField]: uow[eventField] && Object.keys(uow[eventField]).length > 0 ? {
       EventBusName: busName,
       Source: source,
       DetailType: uow[eventField].type,

@@ -105,6 +105,27 @@ describe('sinks/eventbridge.js', () => {
       .done(done);
   });
 
+  it('should not publish when emit field is empty object', (done) => {
+    const uows = [{
+      emit: {},
+    }];
+
+    _(uows)
+      .through(publish(
+        {
+          eventField: 'emit', busName: 'b1', debug: (msg, v) => console.log(msg, v), metricsEnabled: true,
+        },
+      ))
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0].publishRequestEntry).to.be.undefined;
+      })
+      .done(done);
+  });
+
   it('should reject with a fault', (done) => {
     sinon.stub(Connector.prototype, 'putEvents').rejects('test error');
 
