@@ -270,4 +270,48 @@ describe('sinks/eventbridge.js', () => {
       })
       .done(done);
   });
+
+  it('should publish to global endpoint', (done) => {
+    sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
+
+    const uows = [{
+      event: {
+        id: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+        type: 'p1',
+        partitionKey: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+      },
+    }];
+
+    _(uows)
+      .through(publish({ busName: 'b1', debug: (msg, v) => console.log(msg, v), endpointId: 'ep1' }))
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0].publishRequest).to.deep.equal({
+          EndpointId: 'ep1',
+          Entries: [{
+            EventBusName: 'b1',
+            Source: 'custom',
+            DetailType: 'p1',
+            Detail: JSON.stringify({
+              id: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+              type: 'p1',
+              partitionKey: '79a0d8f0-0eef-11ea-8d71-362b9e155667',
+              tags: {
+                account: 'undefined',
+                region: 'us-west-2',
+                stage: 'undefined',
+                source: 'undefined',
+                functionname: 'undefined',
+                pipeline: 'undefined',
+                skip: true,
+              },
+            }),
+          }],
+        });
+      })
+      .done(done);
+  });
 });
