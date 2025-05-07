@@ -87,7 +87,7 @@ const logErr = (err) => {
       console.error(JSON.stringify({
         errorMessage: err.message,
         errorType: err.name,
-        pipeline: err.uow.pipeline || 'undefined',
+        pipeline: err.uow?.pipeline || 'undefined',
         handled: err.uow !== undefined,
         retryable: err.retryable,
         stackTrace: err.stack,
