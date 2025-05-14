@@ -35,6 +35,7 @@ export const fromDynamodb = (event, {
           type: `${calculateEventTypePrefix(record, { skFn, discriminatorFn, eventTypePrefix })}-${calculateEventTypeSuffix(record)}`,
           partitionKey: record.dynamodb.Keys[pkFn].S,
           timestamp: deriveTimestamp(record),
+          approximateCreationTimestamp: ddbApproximateCreationTimestamp(record),
           tags: {
             region: record.awsRegion,
           },
@@ -89,7 +90,9 @@ const calculateEventTypeSuffix = (record) => {
 };
 
 const deriveTimestamp = (record) =>
-  record.dynamodb.NewImage?.timestamp || (record.dynamodb.ApproximateCreationDateTime * 1000);
+  parseInt(record.dynamodb.NewImage?.timestamp?.N, 10) || ddbApproximateCreationTimestamp(record);
+
+const ddbApproximateCreationTimestamp = (record) => record.dynamodb.ApproximateCreationDateTime * 1000;
 
 //--------------------------------------------
 // global table support - version: 2017.11.29

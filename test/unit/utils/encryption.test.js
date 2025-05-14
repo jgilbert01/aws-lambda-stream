@@ -62,6 +62,7 @@ describe('utils/encryption.js', () => {
             type: 'thing-created',
             partitionKey: '1',
             timestamp: 1572832690000,
+            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
@@ -394,6 +395,7 @@ describe('utils/encryption.js', () => {
             type: 'thing-created',
             partitionKey: '1',
             timestamp: 1572832690000,
+            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
@@ -475,6 +477,7 @@ describe('utils/encryption.js', () => {
             type: 'thing-updated',
             partitionKey: '1',
             timestamp: 1572832690000,
+            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
@@ -545,6 +548,7 @@ describe('utils/encryption.js', () => {
             type: 'thing-deleted',
             partitionKey: '1',
             timestamp: 1572832690000,
+            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
