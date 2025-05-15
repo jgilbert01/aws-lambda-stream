@@ -93,7 +93,6 @@ describe('from/dynamodb.js', () => {
             type: 'thing-created',
             partitionKey: '1',
             timestamp: 1572832690000,
-            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
@@ -203,7 +202,6 @@ describe('from/dynamodb.js', () => {
             type: 'thing-created',
             partitionKey: '1',
             timestamp: 1572832690001,
-            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
@@ -340,7 +338,6 @@ describe('from/dynamodb.js', () => {
             type: 'thing-updated',
             partitionKey: '1',
             timestamp: 1572832690000,
-            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
@@ -447,7 +444,6 @@ describe('from/dynamodb.js', () => {
             type: 'thing-deleted',
             partitionKey: '1',
             timestamp: 1572832690000,
-            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
@@ -557,7 +553,6 @@ describe('from/dynamodb.js', () => {
             type: 'thing-deleted',
             partitionKey: '1',
             timestamp: 1572832690000,
-            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
@@ -682,7 +677,6 @@ describe('from/dynamodb.js', () => {
             type: 'thing-undeleted',
             partitionKey: '1',
             timestamp: 1572832690000,
-            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
@@ -781,7 +775,6 @@ describe('from/dynamodb.js', () => {
             type: 'thing-deleted',
             partitionKey: '1',
             timestamp: 1573005490000,
-            approximateCreationTimestamp: 1573005490000,
             tags: {
               region: 'us-west-2',
             },
@@ -959,7 +952,6 @@ describe('from/dynamodb.js', () => {
             type: 'thing-updated',
             partitionKey: '1',
             timestamp: 1572832690000,
-            approximateCreationTimestamp: 1572832690000,
             tags: {
               region: 'us-west-2',
             },
@@ -1041,7 +1033,6 @@ describe('from/dynamodb.js', () => {
             type: 'thing-updated',
             partitionKey: '1',
             timestamp: 1572832990000,
-            approximateCreationTimestamp: 1572832990000,
             tags: {
               region: 'us-east-1',
             },
