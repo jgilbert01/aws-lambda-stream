@@ -11,6 +11,7 @@ export const fromDynamodb = (event, {
   eventTypePrefix = undefined,
   ignoreTtlExpiredEvents = false,
   ignoreReplicas = true,
+  preferApproximateTimestamp = false,
 } = {}) => // eslint-disable-line import/prefer-default-export
 
   // prepare the event stream
@@ -34,7 +35,7 @@ export const fromDynamodb = (event, {
           id: record.eventID,
           type: `${calculateEventTypePrefix(record, { skFn, discriminatorFn, eventTypePrefix })}-${calculateEventTypeSuffix(record)}`,
           partitionKey: record.dynamodb.Keys[pkFn].S,
-          timestamp: deriveTimestamp(record),
+          timestamp: deriveTimestamp(record, preferApproximateTimestamp),
           tags: {
             region: record.awsRegion,
           },
@@ -88,8 +89,13 @@ const calculateEventTypeSuffix = (record) => {
   return suffix;
 };
 
-const deriveTimestamp = (record) =>
-  parseInt(record.dynamodb.NewImage?.timestamp?.N, 10) || ddbApproximateCreationTimestamp(record);
+const deriveTimestamp = (record, preferApproximateTimestamp) => {
+  if (preferApproximateTimestamp) {
+    return ddbApproximateCreationTimestamp(record);
+  } else {
+    return parseInt(record.dynamodb.NewImage?.timestamp?.N, 10) || ddbApproximateCreationTimestamp(record);
+  }
+};
 
 export const ddbApproximateCreationTimestamp = (record) => record.dynamodb.ApproximateCreationDateTime * 1000;
 
