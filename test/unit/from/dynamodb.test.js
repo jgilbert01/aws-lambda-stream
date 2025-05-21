@@ -221,6 +221,116 @@ describe('from/dynamodb.js', () => {
       .done(done);
   });
 
+  it('should prefer approximate timestamp if flag set', (done) => {
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832690,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'n1',
+          timestamp: 1572832690001,
+          // insert in the current region will not have the awsregion field
+        },
+      },
+      // dynamodb stream emits an extra update event as it adorns the 'aws:rep' global table metadata
+      // so this extra event should be skipped
+      {
+        timestamp: 1572832690,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'n1',
+          awsregion: 'us-west-2',
+        },
+        oldImage: {
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'n1',
+          // as mentioned above there was no awsregion field on the insert event
+        },
+      },
+    ]);
+
+    fromDynamodb(events, { preferApproximateTimestamp: true })
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({
+          record: {
+            eventID: '0',
+            eventName: 'INSERT',
+            eventSource: 'aws:dynamodb',
+            awsRegion: 'us-west-2',
+            dynamodb: {
+              ApproximateCreationDateTime: 1572832690,
+              Keys: {
+                pk: {
+                  S: '1',
+                },
+                sk: {
+                  S: 'thing',
+                },
+              },
+              NewImage: {
+                pk: {
+                  S: '1',
+                },
+                sk: {
+                  S: 'thing',
+                },
+                discriminator: {
+                  S: 'thing',
+                },
+                name: {
+                  S: 'n1',
+                },
+                timestamp: {
+                  N: '1572832690001',
+                },
+              },
+              OldImage: undefined,
+              SequenceNumber: '0',
+              StreamViewType: 'NEW_AND_OLD_IMAGES',
+            },
+          },
+          event: {
+            id: '0',
+            type: 'thing-created',
+            partitionKey: '1',
+            timestamp: 1572832690000,
+            tags: {
+              region: 'us-west-2',
+            },
+            raw: {
+              new: {
+                pk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'n1',
+                timestamp: 1572832690001,
+              },
+              old: undefined,
+            },
+          },
+        });
+      })
+      .done(done);
+  });
+
   it('should parse MODIFY record', (done) => {
     const events = toDynamodbRecords([
       {
