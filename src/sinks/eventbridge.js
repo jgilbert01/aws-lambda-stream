@@ -1,3 +1,4 @@
+/* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 import _ from 'highland';
 
 import Connector from '../connectors/eventbridge';
@@ -27,6 +28,8 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   step = 'publish',
   ...opt
 } = {}) => {
+  if (endpointId) import('@aws-sdk/signature-v4-crt');
+
   const connector = new Connector({
     pipelineId, debug, retryConfig, ...opt,
   });
