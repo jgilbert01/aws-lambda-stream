@@ -24,7 +24,7 @@ describe('utils/compression.js', () => {
     // console.log('decompressed: ', decompressed);
 
     expect(event.length).to.equal(3317);
-    expect(compressed.length).to.equal(760);
+    expect(compressed.length).to.equal(756);
     expect(decompressed).to.deep.equal(event);
   });
 

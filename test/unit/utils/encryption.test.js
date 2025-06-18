@@ -252,6 +252,99 @@ describe('utils/encryption.js', () => {
         .done(done);
     });
 
+    it('should encrypt data - listener function w/ eem as function', (done) => {
+      const rule1 = {
+        id: 'e1',
+        flavor: materialize,
+        eventType: 'thing-created',
+        toUpdateRequest: async (uow, rule) => ({
+          Key: {
+            pk: uow.event.thing.id,
+            sk: 'thing',
+          },
+          ...updateExpression(await rule.encrypt({
+            ...uow.event.thing,
+            discriminator: 'thing',
+            timestamp: uow.event.timestamp,
+          })),
+        }),
+        eem: (data) => {
+          if (data.discriminator === 'thing') {
+            return {
+              fields: [
+                'name',
+                'description',
+              ],
+            };
+          } else {
+            return {
+              fields: [],
+            };
+          }
+        },
+        masterKeyAlias: 'alias/aws-kms-ee',
+        AES: false,
+      };
+
+      const events = toKinesisRecords([{
+        id: '0',
+        type: 'thing-created',
+        timestamp: 1572832690000,
+        thing: {
+          id: '1',
+          name: 'n1',
+          description: 'd1',
+          status: 's1',
+        },
+      }]);
+
+      initialize({
+        ...initializeFrom([rule1]),
+      })
+        .assemble(fromKinesis(events), false)
+        .collect()
+        .tap((collected) => {
+          // console.log(JSON.stringify(collected, null, 2));
+          expect(collected.length).to.equal(1);
+          expect(collected[0].updateRequest).to.deep.equal({
+            Key: {
+              pk: '1',
+              sk: 'thing',
+            },
+            ExpressionAttributeNames: {
+              '#id': 'id',
+              '#name': 'name',
+              '#description': 'description',
+              '#status': 'status',
+              '#discriminator': 'discriminator',
+              '#timestamp': 'timestamp',
+              '#eem': 'eem',
+            },
+            ExpressionAttributeValues: {
+              ':id': '1',
+              ':name': 'Im4xIg==',
+              ':description': 'ImQxIg==',
+              ':status': 's1',
+              ':discriminator': 'thing',
+              ':timestamp': 1572832690000,
+              ':eem': {
+                dataKeys: {
+                  'us-west-2': MOCK_GEN_DK_RESPONSE.CiphertextBlob.toString('base64'),
+                },
+                masterKeyAlias: 'alias/aws-kms-ee',
+                fields: [
+                  'name',
+                  'description',
+                ],
+              },
+            },
+            UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #status = :status, #discriminator = :discriminator, #timestamp = :timestamp, #eem = :eem',
+            ReturnValues: 'ALL_NEW',
+          });
+        })
+        .done(done);
+    });
+
     it('should decrypt data - query function', async () => {
       const encryptedQueryResults = [{
         id: '1',

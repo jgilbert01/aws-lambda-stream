@@ -166,10 +166,11 @@ export const encryptData = ({
   regions = (process.env.KMS_REGIONS && process.env.KMS_REGIONS.split(',')),
   AES = true,
 } = {}) => async (data) => {
+  const eemMetadata = typeof eem === 'function' ? eem(data) : eem;
   const result = await encryptObject(data, {
     masterKeyAlias,
     regions,
-    ...eem, // fields and overrides
+    ...eemMetadata, // fields and overrides
     AES,
   })
     // .tap(debug)
