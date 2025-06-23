@@ -15,6 +15,9 @@ const toUpdateRequest = (opt) => faulty((uow) => ({
     UUID: process.env.ESM_ID, // Ref: TriggerEventSourceMappingDynamodbEntitiesTable
     Enabled: uow.event.alarmData.state.value !== 'ALARM',
     BatchSize: uow.event.alarmData.state.value === 'INSUFFICIENT_DATA'
-      ? 1 : process.env.BATCH_SIZE || 100,
+      ? 1 : Number(opt.circuitBreakerMaxBatchSize)
+      || Number(process.env.CIRCUIT_BREAKER_MAX_BATCH_SIZE)
+      || Number(process.env.BATCH_SIZE)
+      || 100,
   },
 }));
