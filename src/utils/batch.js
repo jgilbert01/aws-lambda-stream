@@ -51,6 +51,8 @@ export const compact = (rule) => {
 export const batchWithSize = ({
   claimCheckBucketName = process.env.CLAIMCHECK_BUCKET_NAME,
   putClaimcheckRequest = 'putClaimcheckRequest',
+  // Detail handles EB, but others like SQS may need something else like 'MessageBody'
+  claimcheckEventField = 'Detail',
   ...opt
 }) => {
   let batched = [];
@@ -77,9 +79,9 @@ export const batchWithSize = ({
           logMetrics([x], [size], opt);
           if (claimCheckBucketName) {
             // setup claim check
-            x[putClaimcheckRequest] = toPutClaimcheckRequest(JSON.parse(x[opt.requestEntryField].Detail), claimCheckBucketName);
-            x[opt.requestEntryField].Detail = JSON.stringify(toClaimcheckEvent(
-              JSON.parse(x[opt.requestEntryField].Detail),
+            x[putClaimcheckRequest] = toPutClaimcheckRequest(JSON.parse(x[opt.requestEntryField][claimcheckEventField]), claimCheckBucketName);
+            x[opt.requestEntryField][claimcheckEventField] = JSON.stringify(toClaimcheckEvent(
+              JSON.parse(x[opt.requestEntryField][claimcheckEventField]),
               claimCheckBucketName,
             ));
             size = Buffer.byteLength(JSON.stringify(x[opt.requestEntryField]));

@@ -2,10 +2,11 @@ import _ from 'highland';
 
 import Connector from '../connectors/sqs';
 
-import { toBatchUow, unBatchUow } from '../utils/batch';
+import { batchWithSize, toBatchUow, unBatchUow } from '../utils/batch';
 import { ratelimit } from '../utils/ratelimit';
 import { rejectWithFault } from '../utils/faults';
 import { debug as d } from '../utils/print';
+import { storeClaimcheck } from './claimcheck';
 
 export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   id: pipelineId,
@@ -13,6 +14,7 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   queueUrl = process.env.QUEUE_URL,
   messageField = 'message',
   batchSize = Number(process.env.SQS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
+  maxPublishRequestSize = Number(process.env.PUBLISH_MAX_REQ_SIZE) || Number(process.env.MAX_REQ_SIZE) || 256 * 1024,
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
   step = 'send',
   ...opt
@@ -46,7 +48,15 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   return (s) => s
     .through(ratelimit(opt))
 
-    .batch(batchSize)
+    .consume(batchWithSize({
+      ...opt,
+      batchSize,
+      maxRequestSize: maxPublishRequestSize,
+      requestEntryField: messageField,
+      claimcheckEventField: 'MessageBody',
+      debug,
+    }))
+    .through(storeClaimcheck(opt))
     .map(toBatchUow)
 
     .map(toInputParams)
