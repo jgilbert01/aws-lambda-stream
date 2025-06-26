@@ -266,14 +266,22 @@ describe('utils/encryption.js', () => {
             ...uow.event.thing,
             discriminator: 'thing',
             timestamp: uow.event.timestamp,
+          }, {
+            event: {
+              eem: {
+                fields: [
+                  'description',
+                ],
+              },
+            },
           })),
         }),
-        eem: (data) => {
+        eem: (data, ctx) => {
           if (data.discriminator === 'thing') {
             return {
               fields: [
                 'name',
-                'description',
+                ...ctx.event.eem.fields,
               ],
             };
           } else {
