@@ -165,8 +165,8 @@ export const encryptData = ({
   masterKeyAlias = process.env.MASTER_KEY_ALIAS,
   regions = (process.env.KMS_REGIONS && process.env.KMS_REGIONS.split(',')),
   AES = true,
-} = {}) => async (data, ctx = {}) => {
-  const eemMetadata = typeof eem === 'function' ? eem(data, ctx) : eem;
+} = {}) => async (data) => {
+  const eemMetadata = typeof eem === 'function' ? eem(data) : eem;
   const result = await encryptObject(data, {
     masterKeyAlias,
     regions,
