@@ -128,10 +128,11 @@ export const encryptEvent = ({
       return _(Promise.resolve(uow));
     }
 
+    const eemMetadata = typeof eem === 'function' ? eem(uow[sourceField], uow) : eem;
     const p = encryptObject(uow[sourceField], {
       masterKeyAlias,
       regions,
-      ...eem, // fields and overrides
+      ...eemMetadata, // fields and overrides
       AES,
     })
       // .tap(debug)
