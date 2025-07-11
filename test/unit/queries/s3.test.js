@@ -12,6 +12,7 @@ import {
   toGetObjectRequest,
   toGetObjectRequest2,
   getObjectFromS3AsStream,
+  headS3Object,
 } from '../../../src/queries/s3';
 
 import Connector from '../../../src/connectors/s3';
@@ -326,6 +327,68 @@ describe('queries/s3.js', () => {
             },
           },
         });
+      })
+      .done(done);
+  });
+  it('should head object', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'headObject').resolves({
+      Metadata: {
+        testkey: '1',
+      },
+    });
+
+    const uows = [{
+      headRequest: {
+        Key: 'k1',
+      },
+    }];
+
+    _(uows)
+      .through(headS3Object())
+      .collect()
+      .tap((collected) => {
+        console.log(JSON.stringify(collected, null, 2));
+
+        expect(stub).to.have.been.calledWith({
+          Key: 'k1',
+        });
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({
+          headRequest: {
+            Key: 'k1',
+          },
+          headResponse: {
+            Metadata: {
+              testkey: '1',
+            },
+          },
+        });
+      })
+      .done(done);
+  });
+  it('should head object missing headRequestField', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'headObject').resolves({
+      Metadata: {
+        testkey: '1',
+      },
+    });
+
+    const uows = [{
+      // headRequest: {
+      //   Key: 'k1',
+      // },
+    }];
+
+    _(uows)
+      .through(headS3Object())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected[0]).to.deep.equal({});
+
+        expect(collected.length).to.equal(1);
       })
       .done(done);
   });
