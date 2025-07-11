@@ -347,7 +347,7 @@ describe('queries/s3.js', () => {
       .through(headS3Object())
       .collect()
       .tap((collected) => {
-        console.log(JSON.stringify(collected, null, 2));
+        // console.log(JSON.stringify(collected, null, 2));
 
         expect(stub).to.have.been.calledWith({
           Key: 'k1',
