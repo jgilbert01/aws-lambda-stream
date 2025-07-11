@@ -194,7 +194,7 @@ export const pageObjectsFromS3 = ({
     .parallel(parallel);
 };
 
-export const headS3Object= ({
+export const headS3Object = ({
   id: pipelineId,
   debug = d('s3'),
   bucketName = process.env.BUCKET_NAME,

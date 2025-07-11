@@ -368,7 +368,7 @@ describe('queries/s3.js', () => {
       .done(done);
   });
   it('should head object missing headRequestField', (done) => {
-    const stub = sinon.stub(Connector.prototype, 'headObject').resolves({
+    sinon.stub(Connector.prototype, 'headObject').resolves({
       Metadata: {
         testkey: '1',
       },
