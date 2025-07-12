@@ -6,7 +6,7 @@ import { Readable } from 'stream';
 import { mockClient } from 'aws-sdk-client-mock';
 import {
   CopyObjectCommand,
-  DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
+  DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
 } from '@aws-sdk/client-s3';
 import { sdkStreamMixin } from '@smithy/util-stream';
 
@@ -196,6 +196,22 @@ describe('connectors/s3.js', () => {
       Bucket: 'b1',
       Key: 'k1',
       CopySource: '/copysource/test-k1',
+    });
+    expect(data).to.deep.equal({});
+  });
+  it('should head object', async () => {
+    const spy = sinon.spy(() => ({}));
+    mockS3.on(HeadObjectCommand).callsFake(spy);
+    const inputParams = {
+      Key: 'k1',
+    };
+    const data = await new Connector({
+      debug: debug('s3'),
+      bucketName: 'b1',
+    }).headObject(inputParams);
+    expect(spy).to.have.been.calledWith({
+      Key: 'k1',
+      Bucket: 'b1',
     });
     expect(data).to.deep.equal({});
   });

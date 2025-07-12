@@ -193,3 +193,32 @@ export const pageObjectsFromS3 = ({
     .map(listObjects)
     .parallel(parallel);
 };
+
+export const headS3Object = ({
+  id: pipelineId,
+  debug = d('s3'),
+  bucketName = process.env.BUCKET_NAME,
+  headRequestField = 'headRequest',
+  headResponseField = 'headResponse',
+  parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'get',
+  ...opt
+} = {}) => {
+  const connector = new Connector({
+    pipelineId, debug, bucketName, ...opt,
+  });
+
+  const headObject = (uow) => {
+    if (!uow[headRequestField]) return _(Promise.resolve(uow));
+
+    const p = () => connector.headObject(uow[headRequestField], uow)
+      .then((headResponse) => ({ ...uow, [headResponseField]: headResponse }))
+      .catch(rejectWithFault(uow));
+
+    return _(uow.metrics?.w(p, step) || p()); // wrap promise in a stream
+  };
+
+  return (s) => s
+    .map(headObject)
+    .parallel(parallel);
+};

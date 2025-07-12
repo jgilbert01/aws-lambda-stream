@@ -3,7 +3,7 @@
 import { Readable } from 'stream';
 import {
   CopyObjectCommand,
-  DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
+  DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
 } from '@aws-sdk/client-s3';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
@@ -45,6 +45,15 @@ class Connector {
       });
     }
     return this.clients[pipelineId];
+  }
+
+  headObject(inputParams, ctx) {
+    const params = {
+      Bucket: this.bucketName,
+      ...inputParams,
+    };
+
+    return this._sendCommand(new HeadObjectCommand(params), ctx);
   }
 
   putObject(inputParams, ctx) {
