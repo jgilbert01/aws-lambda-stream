@@ -13,6 +13,7 @@ import {
   toGetObjectRequest2,
   getObjectFromS3AsStream,
   headS3Object,
+  getObjectFromS3AsByteArray,
 } from '../../../src/queries/s3';
 
 import Connector from '../../../src/connectors/s3';
@@ -50,6 +51,63 @@ describe('queries/s3.js', () => {
             Body: JSON.stringify({ f1: 'v1' }),
           },
         });
+      })
+      .done(done);
+  });
+
+  it('should get object as byte array', (done) => {
+    const hello = new Uint8Array([104, 101, 108, 108, 111]);
+    const stub = sinon.stub(Connector.prototype, 'getObjectAsByteArray').resolves({
+      Body: hello,
+    });
+
+    const uows = [{
+      getRequest: {
+        Key: 'k1',
+      },
+    }];
+
+    _(uows)
+      .through(getObjectFromS3AsByteArray())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(stub).to.have.been.calledWith({
+          Key: 'k1',
+        });
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({
+          getRequest: {
+            Key: 'k1',
+          },
+          getResponse: {
+            Body: hello,
+          },
+        });
+      })
+      .done(done);
+  });
+  it('should get object as byte array - missing get request field', (done) => {
+    const hello = new Uint8Array([104, 101, 108, 108, 111]);
+    const stub = sinon.stub(Connector.prototype, 'getObjectAsByteArray').resolves({
+      Body: hello,
+    });
+
+    const uows = [{
+      // missing get request
+    }];
+
+    _(uows)
+      .through(getObjectFromS3AsByteArray())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(stub).to.have.not.been.called;
+        expect(collected.length).to.equal(1);
+        expect(collected[0]).to.deep.equal({});
       })
       .done(done);
   });

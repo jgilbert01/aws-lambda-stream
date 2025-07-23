@@ -80,6 +80,35 @@ export const getObjectFromS3AsStream = ({
     .flatMap(getObject);
 };
 
+export const getObjectFromS3AsByteArray = ({
+  id: pipelineId,
+  debug = d('s3'),
+  bucketName = process.env.BUCKET_NAME,
+  getRequestField = 'getRequest',
+  getResponseField = 'getResponse',
+  parallel = Number(process.env.S3_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  step = 'get',
+  ...opt
+} = {}) => {
+  const connector = new Connector({
+    pipelineId, debug, bucketName, ...opt,
+  });
+
+  const getObject = (uow) => {
+    if (!uow[getRequestField]) return _(Promise.resolve(uow));
+
+    const p = () => connector.getObjectAsByteArray(uow[getRequestField], uow)
+      .then((getResponse) => ({ ...uow, [getResponseField]: getResponse })) // TODO decompress
+      .catch(rejectWithFault(uow));
+
+    return _(uow.metrics?.w(p, step) || p()); // wrap promise in a stream
+  };
+
+  return (s) => s
+    .map(getObject)
+    .parallel(parallel);
+};
+
 export const splitS3Object = ({
   delimiter = '\n',
   getResponseField = 'getResponse',

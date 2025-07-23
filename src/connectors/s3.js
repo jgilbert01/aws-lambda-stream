@@ -84,6 +84,16 @@ class Connector {
       .then(async (response) => ({ ...response, Body: await response.Body.transformToString() }));
   }
 
+  getObjectAsByteArray(inputParams, ctx) {
+    const params = {
+      Bucket: this.bucketName,
+      ...inputParams,
+    };
+
+    return this._sendCommand(new GetObjectCommand(params), ctx)
+      .then(async (response) => ({ ...response, Body: await response.Body.transformToByteArray() }));
+  }
+
   getObjectStream(inputParams, ctx) {
     const params = {
       Bucket: this.bucketName,

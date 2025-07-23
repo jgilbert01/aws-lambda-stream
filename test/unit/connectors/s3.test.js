@@ -95,6 +95,26 @@ describe('connectors/s3.js', () => {
     });
     expect(data).to.deep.equal({ Body: 'b' });
   });
+  it('should get object as byte array', async () => {
+    const arr = new Uint8Array([104, 101, 108, 108, 111]);
+    const spy = sinon.spy(() => ({ Body: sdkStreamMixin(Readable.from('hello')) }));
+    mockS3.on(GetObjectCommand).callsFake(spy);
+
+    const inputParams = {
+      Key: 'k1',
+    };
+
+    const data = await new Connector({
+      debug: debug('s3'),
+      bucketName: 'b1',
+    }).getObjectAsByteArray(inputParams);
+
+    expect(spy).to.have.been.calledWith({
+      Bucket: 'b1',
+      Key: 'k1',
+    });
+    expect(data).to.deep.equal({ Body: arr });
+  });
 
   it('should get object as stream', (done) => {
     const spy = sinon.spy(() => ({ Body: sdkStreamMixin(Readable.from(Buffer.from('data'))) }));
