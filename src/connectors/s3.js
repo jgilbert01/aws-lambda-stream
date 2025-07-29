@@ -3,7 +3,13 @@
 import { Readable } from 'stream';
 import {
   CopyObjectCommand,
-  DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  ListObjectVersionsCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
 } from '@aws-sdk/client-s3';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import Promise from 'bluebird';
@@ -104,6 +110,23 @@ class Connector {
       .then((response) => Readable.from(response.Body));
   }
 
+  getSignedUrl(operation, Key, other = {}) {
+    const params = {
+      Bucket: this.bucketName,
+      Key,
+      ...other,
+    };
+
+    return import('@aws-sdk/s3-request-presigner')
+      .then(({ getSignedUrl }) => Promise.resolve(getSignedUrl(this.client,
+        operation === 'putObject'
+          ? new PutObjectCommand(params)
+          : new GetObjectCommand(params),
+        other))
+        .tap(this.debug)
+        .tapCatch(this.debug));
+  }
+
   listObjects(inputParams, ctx) {
     const params = {
       Bucket: this.bucketName,
@@ -111,6 +134,30 @@ class Connector {
     };
 
     return this._sendCommand(new ListObjectsV2Command(params), ctx);
+  }
+
+  listObjectVersions({
+    last, limit, Bucket, Prefix,
+  }, ctx) {
+    const params = {
+      Bucket: Bucket || this.bucketName,
+      Prefix,
+      MaxKeys: limit,
+      ...(last
+        ? /* istanbul ignore next */ JSON.parse(Buffer.from(last, 'base64').toString())
+        : {}),
+    };
+
+    return this._sendCommand(new ListObjectVersionsCommand(params), ctx)
+      .then((data) => ({
+        last: data.IsTruncated
+          ? /* istanbul ignore next */ Buffer.from(JSON.stringify({
+            KeyMarker: data.NextKeyMarker,
+            VersionIdMarker: data.NextVersionIdMarker,
+          })).toString('base64')
+          : undefined,
+        data,
+      }));
   }
 
   copyObject(inputParams, ctx) {
