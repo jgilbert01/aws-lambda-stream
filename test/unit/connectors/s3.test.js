@@ -6,9 +6,16 @@ import { Readable } from 'stream';
 import { mockClient } from 'aws-sdk-client-mock';
 import {
   CopyObjectCommand,
-  DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  ListObjectsV2Command,
+  ListObjectVersionsCommand,
+  PutObjectCommand,
+  S3Client,
 } from '@aws-sdk/client-s3';
 import { sdkStreamMixin } from '@smithy/util-stream';
+import * as s3RequestPresigner from '@aws-sdk/s3-request-presigner/dist-cjs/getSignedUrl';
 
 import { v4 } from 'uuid';
 import Connector from '../../../src/connectors/s3';
@@ -25,6 +32,55 @@ describe('connectors/s3.js', () => {
   afterEach(() => {
     mockS3.restore();
     sinon.restore();
+  });
+
+  it('should get a signed url', async () => {
+    // const spy = sinon.spy(() => 'https://123/456');
+    // mockS3.on(PutObjectCommand).callsFake(spy);
+    const spy = sinon.stub(s3RequestPresigner, 'getSignedUrl').resolves('https://123/456');
+
+    const data = await new Connector({ debug: debug('s3') })
+      .getSignedUrl('putObject', '1/2');
+    expect(spy).to.have.been.calledOnce;
+    // expect(spy).to.have.been.calledWith('putObject', {
+    //   Bucket: 'b1',
+    //   Key: '1/2',
+    // });
+    expect(data).to.equal('https://123/456');
+  });
+
+  it('should get a signed url for putObject', async () => {
+    // const spy = sinon.spy(() => 'https://123/456');
+    // mockS3.on(PutObjectCommand).callsFake(spy);
+    const spy = sinon.stub(s3RequestPresigner, 'getSignedUrl').resolves('https://123/456');
+
+    const data = await new Connector({ debug: debug('s3'), bucketName: 'b1' })
+      .getSignedUrl('putObject', '1/2');
+
+    expect(spy).to.have.been.calledOnce;
+    // expect(spy).to.have.been.calledWith('putObject', {
+    //   Bucket: 'b1',
+    //   Key: '1/2',
+    //   // ContentType: 'application/pdf',
+    //   // ACL: 'private',
+    // });
+    expect(data).to.equal('https://123/456');
+  });
+
+  it('should get a signed url for getObject', async () => {
+    // const spy = sinon.spy(() => 'https://123/456');
+    // mockS3.on(GetObjectCommand).callsFake(spy);
+    const spy = sinon.stub(s3RequestPresigner, 'getSignedUrl').resolves('https://123/456');
+
+    const data = await new Connector({ debug: debug('s3'), bucketName: 'b1' })
+      .getSignedUrl('getObject', '1/2');
+
+    expect(spy).to.have.been.calledOnce;
+    // expect(spy).to.have.been.calledWith('getObject', {
+    //   Bucket: 'b1',
+    //   Key: '1/2',
+    // });
+    expect(data).to.equal('https://123/456');
   });
 
   it('should reuse client per pipeline', () => {
@@ -159,6 +215,29 @@ describe('connectors/s3.js', () => {
       // VersionId: undefined,
     });
     expect(data).to.deep.equal({ DeleteMarker: false });
+  });
+
+  it('should list object versions', async () => {
+    const spy = sinon.spy(() => [{ VersionId: 'v1' }]);
+    mockS3.on(ListObjectVersionsCommand).callsFake(spy);
+
+    const inputParams = {
+      Prefix: 'k1',
+      limit: 20,
+    };
+
+    const data = await new Connector({ debug: debug('s3'), bucketName: 'b1' })
+      .listObjectVersions(inputParams);
+
+    expect(spy).to.have.been.calledWith({
+      Bucket: 'b1',
+      Prefix: 'k1',
+      MaxKeys: 20,
+    });
+    expect(data).to.deep.equal({
+      last: undefined,
+      data: [{ VersionId: 'v1' }],
+    });
   });
 
   it('should list objects', async () => {

@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import debug from 'debug';
 import {
-  fromS3, fromSqsSnsS3, fromS3Event, toS3Records, toSqsSnsS3Records,
+  fromS3, fromSqsS3, fromSqsSnsS3, fromS3Event, toS3Records, toSqsS3Records, toSqsSnsS3Records,
 } from '../../../src/from/s3';
 
 import Connector from '../../../src/connectors/s3';
@@ -47,6 +47,36 @@ describe('from/s3s.js', () => {
               object: {
                 key: 'k1',
               },
+            },
+          },
+        });
+      })
+      .done(done);
+  });
+
+  it('should parse sqs, s3 records', (done) => {
+    const event = toSqsS3Records([{
+      bucket: {
+        name: 'mfe-main-stg-websitebucket-wrivy8kb9743',
+      },
+      object: {
+        key: 'mfe-main/stg/mfe.json',
+      },
+    }]);
+
+    fromSqsS3(event)
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(1);
+        expect(collected[0].record.s3).to.deep.equal({
+          s3: {
+            bucket: {
+              name: 'mfe-main-stg-websitebucket-wrivy8kb9743',
+            },
+            object: {
+              key: 'mfe-main/stg/mfe.json',
             },
           },
         });

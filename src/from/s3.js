@@ -15,6 +15,32 @@ export const fromS3 = (event) =>
         record,
       }));
 
+export const fromSqsS3 = (event) =>
+  _(event.Records)
+  // sqs
+    .map((record) =>
+    // create a unit-of-work for each message
+    // so we can correlate related work for error handling
+      ({
+        record: {
+          sqs: record,
+        },
+      }))
+  // s3
+    .map((uow) => ({
+      record: {
+        ...uow.record,
+        s3: JSON.parse(uow.record.sqs.body),
+      },
+    }))
+    .flatMap((uow) => fromS3(uow.record.s3)
+      .map((uow2) => ({
+        record: {
+          ...uow.record,
+          s3: uow2.record,
+        },
+      })));
+
 export const fromSqsSnsS3 = (event) =>
   _(event.Records)
     // sqs
@@ -107,6 +133,16 @@ export const toS3Records = (notifications) => ({
       // },
       },
     })),
+});
+
+export const toSqsS3Records = (notifications) => ({
+  Records: ([{
+    body: JSON.stringify({
+      Records: notifications.map((s3) => ({
+        s3,
+      })),
+    }),
+  }]),
 });
 
 export const toSqsSnsS3Records = (notifications) => ({
