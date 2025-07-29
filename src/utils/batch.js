@@ -1,5 +1,6 @@
 import _ from 'highland';
 import isFunction from 'lodash/isFunction';
+import { get } from 'lodash';
 import { toClaimcheckEvent, toPutClaimcheckRequest } from '../sinks/claimcheck';
 
 // used after highland batch step
@@ -48,6 +49,10 @@ export const compact = (rule) => {
       })));
 };
 
+/**
+ * Batch EB request entries by size to avoid writing a batch that's too large to
+ * EB.
+ */
 export const batchWithSize = ({
   claimCheckBucketName = process.env.CLAIMCHECK_BUCKET_NAME,
   putClaimcheckRequest = 'putClaimcheckRequest',
@@ -115,4 +120,59 @@ const logMetrics = (batch, sizes, opt) => {
     batch[0].metrics?.gauge('publish|stream.pipeline.batchSize.count', batch.length);
     batch[0].metrics?.gauge('publish|stream.pipeline.eventSize.bytes', sizes);
   }
+};
+
+/**
+ * Batches by aggregate payload size with a cap on payload count.
+ */
+export const batchWithPayloadSizeOrCount = ({
+  batchSize,
+  maxPayloadSize,
+  payloadField,
+  ...opt
+}) => {
+  let batched = [];
+  let sizes = [];
+
+  return (err, x, push, next) => {
+    /* istanbul ignore if */
+    if (err) {
+      push(err);
+      next();
+    } else if (x === _.nil) {
+      if (batched.length > 0) {
+        logMetrics(batched, sizes, opt);
+        push(null, batched);
+      }
+
+      push(null, _.nil);
+    } else {
+      if (!get(x, payloadField)) {
+        push(null, [x]);
+      } else {
+        const size = Buffer.byteLength(JSON.stringify(get(x, payloadField)));
+        if (size > maxPayloadSize) {
+          logMetrics([x], [size], opt);
+          const error = new Error(`Payload size: ${size}, exceeded max: ${maxPayloadSize}`);
+          error.uow = x;
+          push(error);
+          next();
+          return;
+        }
+
+        const totalSize = sizes.reduce((a, c) => a + c, size);
+        if (totalSize <= maxPayloadSize && batched.length + 1 <= batchSize) {
+          batched.push(x);
+          sizes.push(size);
+        } else {
+          logMetrics(batched, sizes, opt);
+          push(null, batched);
+          batched = [x];
+          sizes = [size];
+        }
+      }
+
+      next();
+    }
+  };
 };

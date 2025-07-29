@@ -5,6 +5,7 @@ import _ from 'highland';
 
 import {
   toBatchUow, unBatchUow, group, batchWithSize, compact,
+  batchWithPayloadSizeOrCount,
 } from '../../../src/utils';
 
 describe('utils/batch.js', () => {
@@ -438,5 +439,219 @@ describe('utils/batch.js', () => {
         ]);
       })
       .done(done);
+  });
+
+  describe('batchWithPayloadSizeOrCount', () => {
+    it('should batch on size', (done) => {
+      const uows = [
+        {
+          message: { // size = 19
+            id: 'xxxxxxxxxx',
+          },
+        },
+        {
+          message: { // size = 29
+            id: 'xxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+        {
+          message: { // size = 39
+            id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+        {
+          message: { // size = 10
+            id: 'x',
+          },
+        },
+      ];
+
+      _(uows)
+        .consume(batchWithPayloadSizeOrCount({
+          batchSize: 999,
+          maxPayloadSize: 50,
+          payloadField: 'message',
+        }))
+
+        .collect()
+        .tap((collected) => {
+          // console.log(JSON.stringify(collected, null, 2));
+
+          expect(collected.length).to.equal(2);
+          expect(collected[0]).to.deep.equal([
+            {
+              message: {
+                id: 'xxxxxxxxxx',
+              },
+            },
+            {
+              message: {
+                id: 'xxxxxxxxxxxxxxxxxxxx',
+              },
+            },
+          ]);
+          expect(collected[1]).to.deep.equal([
+            {
+              message: {
+                id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+              },
+            },
+            {
+              message: {
+                id: 'x',
+              },
+            },
+          ]);
+        })
+        .done(done);
+    });
+
+    it('should batch on count', (done) => {
+      const uows = [
+        {
+          message: { // size = 19
+            id: 'xxxxxxxxxx',
+          },
+        },
+        {
+          message: { // size = 29
+            id: 'xxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+        {
+          message: { // size = 39
+            id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+      ];
+
+      _(uows)
+        .consume(batchWithPayloadSizeOrCount({
+          batchSize: 2,
+          maxPayloadSize: 999,
+          payloadField: 'message',
+          // metricsEnabled: true,
+          // debug: (msg, v) => console.log(msg, v),
+        }))
+        .collect()
+        .tap((collected) => {
+          // console.log(JSON.stringify(collected, null, 2));
+
+          expect(collected.length).to.equal(2);
+          expect(collected[0]).to.deep.equal([
+            {
+              message: {
+                id: 'xxxxxxxxxx',
+              },
+            },
+            {
+              message: {
+                id: 'xxxxxxxxxxxxxxxxxxxx',
+              },
+            },
+          ]);
+          expect(collected[1]).to.deep.equal([
+            {
+              message: {
+                id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+              },
+            },
+          ]);
+        })
+        .done(done);
+    });
+
+    it('should handle oversized requests', (done) => {
+      const spy = sinon.spy();
+      const uows = [
+        {
+          message: { // size = 19
+            id: 'xxxxxxxxxx',
+          },
+        },
+        {
+          message: { // size = 39
+            id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+        {
+          message: { // size = 29
+            id: 'xxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+      ];
+
+      _(uows)
+        .consume(batchWithPayloadSizeOrCount({
+          batchSize: 2,
+          maxPayloadSize: 30,
+          payloadField: 'message',
+        }))
+        .errors(spy)
+        .collect()
+        .tap((collected) => {
+          // console.log(JSON.stringify(collected, null, 2));
+          expect(collected.length).to.equal(2);
+          expect(spy).to.have.been.calledWith; // (Error('Request size: 39, exceeded max: 30'));
+        })
+        .done(done);
+    });
+
+    it('should skip batching nonexist payload fields', (done) => {
+      const uows = [
+        {
+          message: { // size = 19
+            id: 'xxxxxxxxxx',
+          },
+        },
+        {
+          message: { // size = 29
+            id: 'xxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+        {
+          message: { // size = 39
+            id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+      ];
+
+      _(uows)
+        .consume(batchWithPayloadSizeOrCount({
+          batchSize: 2,
+          maxPayloadSize: 999,
+          payloadField: 'fake-field',
+          // metricsEnabled: true,
+          // debug: (msg, v) => console.log(msg, v),
+        }))
+        .collect()
+        .tap((collected) => {
+          // console.log(JSON.stringify(collected, null, 2));
+
+          expect(collected.length).to.equal(3);
+          expect(collected[0]).to.deep.equal([
+            {
+              message: {
+                id: 'xxxxxxxxxx',
+              },
+            },
+          ]);
+          expect(collected[1]).to.deep.equal([
+            {
+              message: {
+                id: 'xxxxxxxxxxxxxxxxxxxx',
+              },
+            },
+          ]);
+          expect(collected[2]).to.deep.equal([
+            {
+              message: {
+                id: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+              },
+            },
+          ]);
+        })
+        .done(done);
+    });
   });
 });
