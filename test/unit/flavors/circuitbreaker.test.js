@@ -2,7 +2,7 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { initialize } from '../../../src';
+import { initialize, initializeFrom } from '../../../src';
 
 import { fromAlarm } from '../../../src/from/cw';
 
@@ -121,6 +121,87 @@ describe('flavors/circuitbreaker.js', () => {
           UUID: 'a092f90d-9948-4964-95b5-32c46093f734',
           Enabled: true,
           BatchSize: 100,
+        });
+      })
+      .done(done);
+  });
+
+  it('should enable event source mapping with batch size from opt)', (done) => {
+    const rules = [
+      {
+        id: 'circuitBreaker',
+        flavor: circuitBreaker,
+        circuitBreakerMaxBatchSize: '10',
+      },
+    ];
+    const event = {
+      source: 'aws.cloudwatch',
+      alarmArn:
+        'arn:aws:cloudwatch:us-east-1:444455556666:alarm:lambda-demo-metric-alarm',
+      accountId: '444455556666',
+      time: '2023-08-04T12:36:15.490+0000',
+      region: 'us-east-1',
+      alarmData: {
+        alarmName: 'lambda-demo-metric-alarm',
+        state: {
+          value: 'OK',
+        },
+        previousState: {
+          value: 'INSUFFICIENT_DATA',
+        },
+      },
+    };
+
+    initialize({
+      ...initializeFrom(rules),
+    })
+      .assemble(fromAlarm(event), false)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        expect(collected.length).to.equal(1);
+        expect(collected[0].pipeline).to.equal('circuitBreaker');
+        expect(collected[0].updateRequest).to.deep.equal({
+          UUID: 'a092f90d-9948-4964-95b5-32c46093f734',
+          Enabled: true,
+          BatchSize: 10,
+        });
+      })
+      .done(done);
+  });
+  it('should enable event source mapping and force Number type for env var of CIRCUIT_BREAKER_MAX_BATCH_SIZE', (done) => {
+    process.env.CIRCUIT_BREAKER_MAX_BATCH_SIZE = '10';
+    const event = {
+      source: 'aws.cloudwatch',
+      alarmArn:
+        'arn:aws:cloudwatch:us-east-1:444455556666:alarm:lambda-demo-metric-alarm',
+      accountId: '444455556666',
+      time: '2023-08-04T12:36:15.490+0000',
+      region: 'us-east-1',
+      alarmData: {
+        alarmName: 'lambda-demo-metric-alarm',
+        state: {
+          value: 'OK',
+        },
+        previousState: {
+          value: 'INSUFFICIENT_DATA',
+        },
+      },
+    };
+
+    initialize({
+      circuitBreaker,
+    })
+      .assemble(fromAlarm(event), false)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        expect(collected.length).to.equal(1);
+        expect(collected[0].pipeline).to.equal('circuitBreaker');
+        expect(collected[0].updateRequest).to.deep.equal({
+          UUID: 'a092f90d-9948-4964-95b5-32c46093f734',
+          Enabled: true,
+          BatchSize: 10,
         });
       })
       .done(done);

@@ -91,6 +91,79 @@ describe('utils/encryption.js', () => {
         .done(done);
     });
 
+    it('should encrypt an event - trigger function w/ eem function', (done) => {
+      const events = toDynamodbRecords([
+        {
+          timestamp: 1572832690,
+          keys: {
+            pk: '1',
+            sk: 'thing',
+          },
+          newImage: {
+            pk: '1',
+            sk: 'thing',
+            discriminator: 'thing',
+            name: 'n1',
+            description: 'd1',
+            status: 's1',
+          },
+        },
+      ]);
+
+      fromDynamodb(events)
+        .through(encryptEvent({
+          eem: (event, _uow) => {
+            if (event.raw.new.discriminator === 'thing') {
+              return {
+                fields: ['name', 'description'],
+              };
+            }
+            return {
+              fields: [],
+            };
+          },
+          masterKeyAlias: 'alias/aws-kms-ee',
+          AES: false,
+        }))
+        .collect()
+        .tap((collected) => {
+          // console.log(JSON.stringify(collected, null, 2));
+
+          expect(collected.length).to.equal(1);
+          expect(collected[0].event).to.deep.equal({
+            id: '0',
+            type: 'thing-created',
+            partitionKey: '1',
+            timestamp: 1572832690000,
+            tags: {
+              region: 'us-west-2',
+            },
+            raw: {
+              new: {
+                pk: '1',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'Im4xIg==',
+                description: 'ImQxIg==',
+                status: 's1',
+              },
+              old: undefined,
+            },
+            eem: {
+              masterKeyAlias: 'alias/aws-kms-ee',
+              dataKeys: {
+                'us-west-2': MOCK_GEN_DK_RESPONSE.CiphertextBlob.toString('base64'),
+              },
+              fields: [
+                'name',
+                'description',
+              ],
+            },
+          });
+        })
+        .done(done);
+    });
+
     it('should decrypt an event - listener function', (done) => {
       const events = toKinesisRecords([
         {
@@ -188,6 +261,107 @@ describe('utils/encryption.js', () => {
             'name',
             'description',
           ],
+        },
+        masterKeyAlias: 'alias/aws-kms-ee',
+        AES: false,
+      };
+
+      const events = toKinesisRecords([{
+        id: '0',
+        type: 'thing-created',
+        timestamp: 1572832690000,
+        thing: {
+          id: '1',
+          name: 'n1',
+          description: 'd1',
+          status: 's1',
+        },
+      }]);
+
+      initialize({
+        ...initializeFrom([rule1]),
+      })
+        .assemble(fromKinesis(events), false)
+        .collect()
+        .tap((collected) => {
+          // console.log(JSON.stringify(collected, null, 2));
+          expect(collected.length).to.equal(1);
+          expect(collected[0].updateRequest).to.deep.equal({
+            Key: {
+              pk: '1',
+              sk: 'thing',
+            },
+            ExpressionAttributeNames: {
+              '#id': 'id',
+              '#name': 'name',
+              '#description': 'description',
+              '#status': 'status',
+              '#discriminator': 'discriminator',
+              '#timestamp': 'timestamp',
+              '#eem': 'eem',
+            },
+            ExpressionAttributeValues: {
+              ':id': '1',
+              ':name': 'Im4xIg==',
+              ':description': 'ImQxIg==',
+              ':status': 's1',
+              ':discriminator': 'thing',
+              ':timestamp': 1572832690000,
+              ':eem': {
+                dataKeys: {
+                  'us-west-2': MOCK_GEN_DK_RESPONSE.CiphertextBlob.toString('base64'),
+                },
+                masterKeyAlias: 'alias/aws-kms-ee',
+                fields: [
+                  'name',
+                  'description',
+                ],
+              },
+            },
+            UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #status = :status, #discriminator = :discriminator, #timestamp = :timestamp, #eem = :eem',
+            ReturnValues: 'ALL_NEW',
+          });
+        })
+        .done(done);
+    });
+
+    it('should encrypt data - listener function w/ eem as function', (done) => {
+      const rule1 = {
+        id: 'e1',
+        flavor: materialize,
+        eventType: 'thing-created',
+        toUpdateRequest: async (uow, rule) => ({
+          Key: {
+            pk: uow.event.thing.id,
+            sk: 'thing',
+          },
+          ...updateExpression(await rule.encrypt({
+            ...uow.event.thing,
+            discriminator: 'thing',
+            timestamp: uow.event.timestamp,
+          }, {
+            event: {
+              eem: {
+                fields: [
+                  'description',
+                ],
+              },
+            },
+          })),
+        }),
+        eem: (data, ctx) => {
+          if (data.discriminator === 'thing') {
+            return {
+              fields: [
+                'name',
+                ...ctx.event.eem.fields,
+              ],
+            };
+          } else {
+            return {
+              fields: [],
+            };
+          }
         },
         masterKeyAlias: 'alias/aws-kms-ee',
         AES: false,

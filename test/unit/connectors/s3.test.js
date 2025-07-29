@@ -6,7 +6,7 @@ import { Readable } from 'stream';
 import { mockClient } from 'aws-sdk-client-mock';
 import {
   CopyObjectCommand,
-  DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
+  DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client,
 } from '@aws-sdk/client-s3';
 import { sdkStreamMixin } from '@smithy/util-stream';
 
@@ -94,6 +94,26 @@ describe('connectors/s3.js', () => {
       Key: 'k1',
     });
     expect(data).to.deep.equal({ Body: 'b' });
+  });
+  it('should get object as byte array', async () => {
+    const arr = new Uint8Array([104, 101, 108, 108, 111]);
+    const spy = sinon.spy(() => ({ Body: sdkStreamMixin(Readable.from('hello')) }));
+    mockS3.on(GetObjectCommand).callsFake(spy);
+
+    const inputParams = {
+      Key: 'k1',
+    };
+
+    const data = await new Connector({
+      debug: debug('s3'),
+      bucketName: 'b1',
+    }).getObjectAsByteArray(inputParams);
+
+    expect(spy).to.have.been.calledWith({
+      Bucket: 'b1',
+      Key: 'k1',
+    });
+    expect(data).to.deep.equal({ Body: arr });
   });
 
   it('should get object as stream', (done) => {
@@ -196,6 +216,22 @@ describe('connectors/s3.js', () => {
       Bucket: 'b1',
       Key: 'k1',
       CopySource: '/copysource/test-k1',
+    });
+    expect(data).to.deep.equal({});
+  });
+  it('should head object', async () => {
+    const spy = sinon.spy(() => ({}));
+    mockS3.on(HeadObjectCommand).callsFake(spy);
+    const inputParams = {
+      Key: 'k1',
+    };
+    const data = await new Connector({
+      debug: debug('s3'),
+      bucketName: 'b1',
+    }).headObject(inputParams);
+    expect(spy).to.have.been.calledWith({
+      Key: 'k1',
+      Bucket: 'b1',
     });
     expect(data).to.deep.equal({});
   });

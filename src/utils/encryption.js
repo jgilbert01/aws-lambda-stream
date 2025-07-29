@@ -128,10 +128,11 @@ export const encryptEvent = ({
       return _(Promise.resolve(uow));
     }
 
+    const eemMetadata = typeof eem === 'function' ? eem(uow[sourceField], uow) : eem;
     const p = encryptObject(uow[sourceField], {
       masterKeyAlias,
       regions,
-      ...eem, // fields and overrides
+      ...eemMetadata, // fields and overrides
       AES,
     })
       // .tap(debug)
@@ -165,11 +166,12 @@ export const encryptData = ({
   masterKeyAlias = process.env.MASTER_KEY_ALIAS,
   regions = (process.env.KMS_REGIONS && process.env.KMS_REGIONS.split(',')),
   AES = true,
-} = {}) => async (data) => {
+} = {}) => async (data, ctx = {}) => {
+  const eemMetadata = typeof eem === 'function' ? eem(data, ctx) : eem;
   const result = await encryptObject(data, {
     masterKeyAlias,
     regions,
-    ...eem, // fields and overrides
+    ...eemMetadata, // fields and overrides
     AES,
   })
     // .tap(debug)
