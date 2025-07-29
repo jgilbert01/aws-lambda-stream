@@ -50,8 +50,7 @@ export const compact = (rule) => {
 };
 
 /**
- * Batch EB request entries by size to avoid writing a batch that's too large to
- * EB.
+ * Batch EB request entries by size to avoid writing a batch that's too large to EB.
  */
 export const batchWithSize = ({
   claimCheckBucketName = process.env.CLAIMCHECK_BUCKET_NAME,
