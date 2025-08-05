@@ -2,7 +2,7 @@ import _ from 'highland';
 
 import Connector from '../connectors/sqs';
 
-import { toBatchUow, unBatchUow } from '../utils/batch';
+import { batchWithPayloadSizeOrCount, toBatchUow, unBatchUow } from '../utils/batch';
 import { ratelimit } from '../utils/ratelimit';
 import { rejectWithFault } from '../utils/faults';
 import { debug as d } from '../utils/print';
@@ -13,6 +13,7 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   queueUrl = process.env.QUEUE_URL,
   messageField = 'message',
   batchSize = Number(process.env.SQS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
+  maxPayloadSize = Number(process.env.SQS_MAX_PAYLOAD_SIZE) || Number(process.env.MAX_PAYLOAD_SIZE) || 1024 * 1024,
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
   step = 'send',
   ...opt
@@ -46,7 +47,12 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   return (s) => s
     .through(ratelimit(opt))
 
-    .batch(batchSize)
+    .consume(batchWithPayloadSizeOrCount({
+      batchSize,
+      maxPayloadSize,
+      payloadField: messageField,
+      ...opt,
+    }))
     .map(toBatchUow)
 
     .map(toInputParams)
