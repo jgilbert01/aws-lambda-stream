@@ -13,7 +13,7 @@ export const sendToSqs = ({ // eslint-disable-line import/prefer-default-export
   queueUrl = process.env.QUEUE_URL,
   messageField = 'message',
   batchSize = Number(process.env.SQS_BATCH_SIZE) || Number(process.env.BATCH_SIZE) || 10,
-  maxPayloadSize = Number(process.env.SQS_MAX_PAYLOAD_SIZE) || Number(process.env.MAX_PAYLOAD_SIZE) || 256 * 1024,
+  maxPayloadSize = Number(process.env.SQS_MAX_PAYLOAD_SIZE) || Number(process.env.MAX_PAYLOAD_SIZE) || 1024 * 1024,
   parallel = Number(process.env.SQS_PARALLEL) || Number(process.env.PARALLEL) || 8,
   step = 'send',
   ...opt
