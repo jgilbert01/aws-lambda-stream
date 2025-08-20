@@ -71,6 +71,7 @@
     "@aws-sdk/client-sts": "^3.450.0",
     "@aws-sdk/client-timestream-write": "^3.450.0",
     "@aws-sdk/lib-dynamodb": "^3.450.0",
+    "@aws-sdk/s3-request-presigner": "3.490.0",
     "@aws-sdk/signature-v4-crt": "^3.450.0",
     "@aws-sdk/util-dynamodb": "^3.450.0",
     "@babel/cli": "^7.10.0",
