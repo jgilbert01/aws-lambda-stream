@@ -213,6 +213,80 @@ describe('flavors/update.js', () => {
       })
       .done(done);
   });
+
+  it('should fault on error', (done) => {
+    sinon.stub(DynamoDBConnector.prototype, 'query').resolves([]);
+    sinon.stub(DynamoDBConnector.prototype, 'batchGet').resolves({
+      Responses: {
+        undefined: [{
+          pk: '2',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'thing2',
+        }],
+      },
+      UnprocessedKeys: {},
+    });
+    const ebStub = sinon.stub(EventBridgeConnector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
+
+    sinon.stub(KmsConnector.prototype, 'generateDataKey').resolves(MOCK_GEN_DK_RESPONSE);
+
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832690,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'Thing One',
+          description: 'This is thing one',
+          otherThing: 'thing|2',
+          ttl: 1549053422,
+          timestamp: 1548967022000,
+        },
+      },
+    ]);
+
+    const errorRule = {
+      id: 'error-rule',
+      flavor: update,
+      eventType: /thing-*/,
+      filters: [() => true],
+      toGetRequest,
+      fks: ['otherThing'],
+      toUpdateRequest: (uow) => { throw new Error('intentional fault'); },
+    };
+
+    initialize({
+      ...initializeFrom([errorRule]),
+    }, { ...defaultOptions, AES: false })
+      .assemble(fromDynamodb(events), true)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        expect(collected.length).to.eq(1);
+        expect(collected[0].event.err.message).to.eq('intentional fault');
+        expect(ebStub).to.have.been.calledOnceWith({
+          Entries: [{
+            EventBusName: 'undefined',
+            Source: 'custom',
+            DetailType: 'fault',
+            Detail: JSON.stringify(collected[0].event),
+          }],
+        }, {
+          batch: [{
+            event: collected[0].event,
+            publishRequestEntry: collected[0].publishRequestEntry,
+          }],
+          publishRequest: collected[0].publishRequest,
+        });
+      })
+      .done(done);
+  });
 });
 
 const toUpdateRequest = (uow) => ({
