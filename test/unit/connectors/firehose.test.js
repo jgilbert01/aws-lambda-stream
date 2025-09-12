@@ -51,4 +51,117 @@ describe('connectors/firehose.js', () => {
     });
     expect(data).to.deep.equal({});
   });
+
+  it('should retry', async () => {
+    const responses = [
+      { RequestResponses: [{ SequenceNumber: '1' }, { ErrorCode: 'X' }, { ErrorCode: 'X' }], FailedPutCount: 2 },
+      { RequestResponses: [{ SequenceNumber: '2' }, { ErrorCode: 'X' }], FailedPutCount: 1 },
+      { RequestResponses: [{ SequenceNumber: '3' }], FailedPutCount: 0 },
+    ];
+
+    const spy = sinon.spy((_) => responses.shift());
+    mockFirehose.on(PutRecordBatchCommand).callsFake(spy);
+
+    const inputParams = {
+      Records: [
+        {
+          Data: Buffer.from(JSON.stringify({ type: 't1' })),
+        },
+        {
+          Data: Buffer.from(JSON.stringify({ type: 't2' })),
+        },
+        {
+          Data: Buffer.from(JSON.stringify({ type: 't3' })),
+        },
+      ],
+    };
+
+    const data = await new Connector({
+      debug: debug('firehose'),
+      deliveryStreamName: 'ds1',
+    }).putRecordBatch(inputParams);
+
+    expect(spy).to.have.been.calledWith({
+      DeliveryStreamName: 'ds1',
+      Records: [inputParams.Records[0], inputParams.Records[1], inputParams.Records[2]],
+    });
+    expect(spy).to.have.been.calledWith({
+      DeliveryStreamName: 'ds1',
+      Records: [inputParams.Records[1], inputParams.Records[2]],
+    });
+    expect(spy).to.have.been.calledWith({
+      DeliveryStreamName: 'ds1',
+      Records: [inputParams.Records[2]],
+    });
+
+    expect(data).to.deep.equal({
+      RequestResponses: [{ SequenceNumber: '1' }, { SequenceNumber: '2' }, { SequenceNumber: '3' }],
+      FailedPutCount: 0,
+      attempts: [
+        {
+          RequestResponses: [{ SequenceNumber: '1' }, { ErrorCode: 'X' }, { ErrorCode: 'X' }],
+          FailedPutCount: 2,
+        },
+        {
+          RequestResponses: [{ SequenceNumber: '2' }, { ErrorCode: 'X' }],
+          FailedPutCount: 1,
+        },
+        {
+          RequestResponses: [{ SequenceNumber: '3' }],
+          FailedPutCount: 0,
+        },
+      ],
+    });
+  });
+
+  it('should throw on max retry', async () => {
+    const responses = [
+      { RequestResponses: [{ SequenceNumber: '1' }, { ErrorCode: 'X' }, { ErrorCode: 'X' }], FailedPutCount: 2 },
+      { RequestResponses: [{ SequenceNumber: '2' }, { ErrorCode: 'X' }], FailedPutCount: 1 },
+    ];
+
+    const spy = sinon.spy((_) => responses.shift());
+    mockFirehose.on(PutRecordBatchCommand).callsFake(spy);
+
+    const inputParams = {
+      Records: [
+        {
+          Data: Buffer.from(JSON.stringify({ type: 't1' })),
+        },
+        {
+          Data: Buffer.from(JSON.stringify({ type: 't2' })),
+        },
+        {
+          Data: Buffer.from(JSON.stringify({ type: 't3' })),
+        },
+      ],
+    };
+
+    await new Connector({
+      debug: debug('firehose'),
+      deliveryStreamName: 'ds1',
+      retryConfig: {
+        maxRetries: 1,
+        retryWait: 100,
+      },
+    }).putRecordBatch(inputParams)
+      .then(() => {
+        expect.fail('should have thrown');
+      }).catch((err) => {
+        expect(spy).to.have.been.calledWith({
+          DeliveryStreamName: 'ds1',
+          Records: [inputParams.Records[0], inputParams.Records[1], inputParams.Records[2]],
+        });
+        expect(spy).to.have.been.calledWith({
+          DeliveryStreamName: 'ds1',
+          Records: [inputParams.Records[1], inputParams.Records[2]],
+        });
+        expect(spy).to.not.have.been.calledWith({
+          DeliveryStreamName: 'ds1',
+          Records: [inputParams.Records[2]],
+        });
+
+        expect(err.message).to.contain('Failed batch requests');
+      });
+  });
 });
