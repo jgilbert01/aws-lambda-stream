@@ -2,6 +2,7 @@ import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, splitObject,
   compact,
+  faultify,
 } from '../utils';
 
 import {
@@ -63,8 +64,7 @@ const toGetRequest = (rule) => faulty((uow) => ({
       : undefined,
 }));
 
-const toUpdateRequest = (rule) => faultyAsyncStream((uow) => Promise.resolve(rule.toUpdateRequest(uow, rule))
-  .then((updateRequest) => ({
-    ...uow,
-    updateRequest,
-  })));
+const toUpdateRequest = (rule) => faultyAsyncStream(async (uow) => ({
+  ...uow,
+  updateRequest: await faultify(rule.toUpdateRequest)(uow, rule),
+}));
