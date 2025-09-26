@@ -165,25 +165,14 @@ export const outGlobalTableExtraModify = (record) => {
 //--------------------------------------------
 
 export const outTtlExpiredEvents = (ignoreTtlExpiredEvents) => (record) => {
-  // this is not a REMOVE event
-  if (record.eventName !== 'REMOVE') return true;
+  const { eventName, userIdentity } = record;
+  // this is not a REMOVE event or we're not ignoring the ttl expired events anyway.
+  if (eventName !== 'REMOVE' || !ignoreTtlExpiredEvents) return true;
 
-  const { OldImage } = record.dynamodb;
-
-  // this record does not have ttl
-  if (!OldImage.ttl || !OldImage.timestamp) return true;
-
-  // ttl has not expired
-  if (Number(OldImage.ttl.N) * 1000 > Number(OldImage.timestamp.N)) return true;
-
-  // this is a ttl expired event
-  // should we ignore it
-  /* istanbul ignore else */
-  if (ignoreTtlExpiredEvents) {
-    return false;
-  } else {
-    return true;
-  }
+  // See https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_streams_Record.html
+  // We trust dynamodb that the ttl expired if its a remove and has the ttl expiry indicating
+  // identity attributes.
+  return !(userIdentity?.type === 'Service' && userIdentity?.principalId === 'dynamodb.amazonaws.com');
 };
 
 // test helper
@@ -206,6 +195,12 @@ export const toDynamodbRecords = (events, { removeUndefinedValues = true } = {})
         StreamViewType: 'NEW_AND_OLD_IMAGES',
       },
       // eventSourceARN: 'arn:aws:dynamodb:us-west-2:123456789012:table/myservice-entities/stream/2016-11-16T20:42:48.104',
+      ...(e.ttlDelete && {
+        userIdentity: {
+          principalId: 'dynamodb.amazonaws.com',
+          type: 'Service',
+        },
+      }),
     })),
 });
 

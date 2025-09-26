@@ -919,9 +919,10 @@ describe('from/dynamodb.js', () => {
           ttl: 1573005490,
           timestamp: 1573005490000,
         },
+        ttlDelete: true,
       },
       {
-        timestamp: 1573005490,
+        timestamp: 1573005490000,
         keys: {
           pk: '1',
           sk: 'thing',
@@ -930,7 +931,7 @@ describe('from/dynamodb.js', () => {
           pk: '1',
           sk: 'thing',
           name: 'N1',
-          ttl: 1573015490, // hasn't expired yet
+          ttl: 1573015490, // has expired, but event is not a ddb ttl remove
           timestamp: 1573005490000,
         },
       },
