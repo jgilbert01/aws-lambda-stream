@@ -165,14 +165,23 @@ export const outGlobalTableExtraModify = (record) => {
 //--------------------------------------------
 
 export const outTtlExpiredEvents = (ignoreTtlExpiredEvents) => (record) => {
-  const { eventName, userIdentity } = record;
+  const { eventName, userIdentity, dynamodb: { OldImage, ApproximateCreationDateTime } } = record;
   // this is not a REMOVE event or we're not ignoring the ttl expired events anyway.
   if (eventName !== 'REMOVE' || !ignoreTtlExpiredEvents) return true;
 
-  // See https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_streams_Record.html
-  // We trust dynamodb that the ttl expired if its a remove and has the ttl expiry indicating
-  // identity attributes.
-  return !(userIdentity?.type === 'Service' && userIdentity?.principalId === 'dynamodb.amazonaws.com');
+  if (userIdentity) {
+    // See https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_streams_Record.html
+    // We trust dynamodb that the ttl expired if its a remove and has the ttl expiry indicating
+    // identity attributes.
+    return !(userIdentity?.type === 'Service' && userIdentity?.principalId === 'dynamodb.amazonaws.com');
+  } else if (OldImage.ttl?.N) {
+    // If no user identity attribute is present, this may be a replicated TTL delete, but we still
+    // want to honor it because filtering out replica region events may be disabled.
+    const ttlSec = Number(OldImage.ttl.N);
+    return !(ttlSec <= ApproximateCreationDateTime);
+  } else {
+    return true;
+  }
 };
 
 // test helper
@@ -185,6 +194,9 @@ export const toDynamodbRecords = (events, { removeUndefinedValues = true } = {})
       eventSource: 'aws:dynamodb',
       awsRegion: e.newImage?.awsregion || process.env.AWS_REGION || /* istanbul ignore next */ 'us-west-2',
       dynamodb: {
+        // TODO - Fix this in next major version bump. ApproximateCreationDateTime is meant to be in seconds, not millis.
+        // Didn't want to fix until a major version bump to avoid compatibility issues for consumers
+        // upgrading the lib. This should be e.timestamp / 1000
         ApproximateCreationDateTime: e.timestamp,
         Keys: e.keys ? marshall(e.keys, { removeUndefinedValues }) : /* istanbul ignore next */ undefined,
         NewImage: e.newImage ? marshall(e.newImage, { removeUndefinedValues }) : undefined,
