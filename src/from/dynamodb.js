@@ -194,9 +194,6 @@ export const toDynamodbRecords = (events, { removeUndefinedValues = true } = {})
       eventSource: 'aws:dynamodb',
       awsRegion: e.newImage?.awsregion || process.env.AWS_REGION || /* istanbul ignore next */ 'us-west-2',
       dynamodb: {
-        // TODO - Fix this in next major version bump. ApproximateCreationDateTime is meant to be in seconds, not millis.
-        // Didn't want to fix until a major version bump to avoid compatibility issues for consumers
-        // upgrading the lib. This should be e.timestamp / 1000
         ApproximateCreationDateTime: e.timestamp,
         Keys: e.keys ? marshall(e.keys, { removeUndefinedValues }) : /* istanbul ignore next */ undefined,
         NewImage: e.newImage ? marshall(e.newImage, { removeUndefinedValues }) : undefined,
