@@ -907,7 +907,7 @@ describe('from/dynamodb.js', () => {
   it('should ignore expired ttl', (done) => {
     const events = toDynamodbRecords([
       {
-        timestamp: 1573005490000,
+        timestamp: 1573005490,
         keys: {
           pk: '1',
           sk: 'thing',
@@ -922,7 +922,7 @@ describe('from/dynamodb.js', () => {
         ttlDelete: true,
       },
       {
-        timestamp: 1573005490000,
+        timestamp: 1573005490,
         keys: {
           pk: '1',
           sk: 'thing',
@@ -931,7 +931,7 @@ describe('from/dynamodb.js', () => {
           pk: '1',
           sk: 'thing',
           name: 'N1',
-          ttl: 1573015490, // has expired, but event is not a ddb ttl remove
+          ttl: 1573015491,
           timestamp: 1573005490000,
         },
       },
@@ -983,6 +983,45 @@ describe('from/dynamodb.js', () => {
       .tap((collected) => {
         // console.log(JSON.stringify(collected, null, 2));
         expect(collected.length).to.equal(1);
+      })
+      .done(done);
+  });
+
+  it('should passes through record with no ttl if ignore ttl events is true', (done) => {
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1573005491,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        oldImage: {
+          pk: '1',
+          sk: 'thing',
+          name: 'N1',
+          timestamp: 1573005490000,
+        },
+      },
+      {
+        timestamp: 1573005490,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        oldImage: {
+          pk: '1',
+          sk: 'thing',
+          name: 'N1',
+          timestamp: 1573005490000,
+        },
+      },
+    ]);
+
+    fromDynamodb(events, { ignoreTtlExpiredEvents: true })
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+        expect(collected.length).to.equal(2);
       })
       .done(done);
   });
