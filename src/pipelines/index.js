@@ -49,8 +49,8 @@ export const initializeFrom = (rules) => rules.reduce(
 );
 
 const assemble = (opt) => (head, includeFaultHandler = true) => {
-  const enabledPipelines = (opt.ENABLED_PIPELINES || process.env.ENABLED_PIPELINES)?.split(',');
-  const disabledPipelines = (opt.DISABLED_PIPELINES || process.env.DISABLED_PIPELINES)?.split(',');
+  const enabledPipelines = (opt.ENABLED_PIPELINES || process.env.ENABLED_PIPELINES)?.split(',').map((pipeline) => pipeline.trim());
+  const disabledPipelines = (opt.DISABLED_PIPELINES || process.env.DISABLED_PIPELINES)?.split(',').map((pipeline) => pipeline.trim());
   const keys = Object.keys(thePipelines)
     .filter((k) => !disabledPipelines?.includes(k))
     .filter((k) =>

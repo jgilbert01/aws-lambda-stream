@@ -52,7 +52,7 @@ describe('pipelines/index.js', () => {
   });
 
   it('should only run enabled pipelines - string', (done) => {
-    process.env.ENABLED_PIPELINES = 'p1,p1b';
+    process.env.ENABLED_PIPELINES = 'p1,p1b '; // extra space on purpose
     let counter = 0;
 
     const count = (uow) => {
