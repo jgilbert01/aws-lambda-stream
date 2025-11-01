@@ -23,7 +23,7 @@ jobs:
         run: npm install -g npm@latest          
       - run: npm ci
       - run: npm test
-      - run: npm publish
+      # - run: npm publish
       - uses: sergeysova/jq-action@v2
         name: Derive Version
         id: version
