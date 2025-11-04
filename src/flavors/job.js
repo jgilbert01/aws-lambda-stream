@@ -142,9 +142,6 @@ export const flushCursor = (rule) => (s) => {
   /* istanbul ignore else */
   if (rule.toCursorUpdateRequest) {
     return s
-      // Compact explicitly on PK here since we want to capture just the last event per PK in this
-      // invocation after the query split. This handles the case where multiple cursor events
-      // ended up in a single lambda invocation.
       .through(compact({
         ...rule,
         compact: {
