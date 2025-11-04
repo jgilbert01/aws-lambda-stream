@@ -132,13 +132,25 @@ export const toCursorUpdateRequest = (rule) => faulty((uow) => ({
 }));
 
 export const flushCursor = (rule) => (s) => {
+  const {
+    // By default group on a stringified version of the full key. If the key structure
+    // differs in a users particular implementation or they want to group by something
+    // else they can simply override this fn in their rule.
+    cursorKeyFn = (uow) => `pk:${uow.event.raw.new.pk}|sk:${uow.event.raw.new.sk}`,
+  } = rule;
+
   /* istanbul ignore else */
   if (rule.toCursorUpdateRequest) {
     return s
       // Compact explicitly on PK here since we want to capture just the last event per PK in this
       // invocation after the query split. This handles the case where multiple cursor events
       // ended up in a single lambda invocation.
-      .through(compact({ ...rule, compact: true }))
+      .through(compact({
+        ...rule,
+        compact: {
+          group: (uow) => cursorKeyFn(uow),
+        },
+      }))
       .map(toCursorUpdateRequest(rule))
       .through(updateDynamoDB({
         ...rule,
