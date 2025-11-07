@@ -5,9 +5,9 @@ on:
   # push:
   #   branches: [ master ]
 
-# permissions:
-#   id-token: write  # Required for OIDC
-#   contents: read
+permissions:
+  id-token: write  # Required for OIDC
+  contents: write # Read required for OIDC but write required for release tagging
 
 jobs:
   publish:
@@ -23,7 +23,7 @@ jobs:
         run: npm install -g npm@latest          
       - run: npm ci
       - run: npm test
-      # - run: npm publish
+      - run: npm publish
       - uses: sergeysova/jq-action@v2
         name: Derive Version
         id: version
