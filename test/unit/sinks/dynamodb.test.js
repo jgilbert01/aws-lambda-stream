@@ -58,6 +58,90 @@ describe('sinks/dynamodb.js', () => {
     });
   });
 
+  it('should calculate updateExpression adding values to a set', () => {
+    const result = updateExpression({
+      tags: new Set(['a', 'b']),
+    });
+
+    expect(normalizeObj(result)).to.deep.equal({
+      ExpressionAttributeNames: {
+        '#tags': 'tags',
+      },
+      ExpressionAttributeValues: {
+        ':tags': ['a', 'b'],
+      },
+      UpdateExpression: 'ADD #tags :tags',
+      ReturnValues: 'ALL_NEW',
+    });
+  });
+
+  it('should calculate updateExpression removing values from a set', () => {
+    const result = updateExpression({
+      tags_delete: new Set(['x', 'y']),
+    });
+
+    expect(normalizeObj(result)).to.deep.equal({
+      ExpressionAttributeNames: {
+        '#tags': 'tags',
+      },
+      ExpressionAttributeValues: {
+        ':tags_delete': ['x', 'y'],
+      },
+      UpdateExpression: 'DELETE #tags :tags_delete',
+      ReturnValues: 'ALL_NEW',
+    });
+  });
+
+  it('should wrap calculate updateExpression wrapping a delete set value in a set', () => {
+    const result = updateExpression({
+      tags_delete: 'x',
+    });
+
+    expect(normalizeObj(result)).to.deep.equal({
+      ExpressionAttributeNames: {
+        '#tags': 'tags',
+      },
+      ExpressionAttributeValues: {
+        ':tags_delete': ['x'],
+      },
+      UpdateExpression: 'DELETE #tags :tags_delete',
+      ReturnValues: 'ALL_NEW',
+    });
+  });
+
+  it('should calculate complex updateExpression using SET, REMOVE, ADD, and DELETE', () => {
+    const result = updateExpression({
+      id: '123',
+      name: 'Complex Thing',
+      description: null,
+      tags: new Set(['blue', 'green']),
+      categories: new Set(['a', 'b']),
+      tags_delete: 'red',
+      categories_delete: new Set(['x', 'y']),
+      ignoredField: undefined,
+    });
+
+    expect(normalizeObj(result)).to.deep.equal({
+      ExpressionAttributeNames: {
+        '#id': 'id',
+        '#name': 'name',
+        '#description': 'description',
+        '#tags': 'tags',
+        '#categories': 'categories',
+      },
+      ExpressionAttributeValues: {
+        ':id': '123',
+        ':name': 'Complex Thing',
+        ':tags': ['blue', 'green'],
+        ':categories': ['a', 'b'],
+        ':tags_delete': ['red'],
+        ':categories_delete': ['x', 'y'],
+      },
+      UpdateExpression: 'SET #id = :id, #name = :name REMOVE #description ADD #tags :tags, #categories :categories DELETE #tags :tags_delete, #categories :categories_delete',
+      ReturnValues: 'ALL_NEW',
+    });
+  });
+
   it('should calculate timestampCondition', () => {
     expect(timestampCondition()).to.deep.equal({
       ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
@@ -134,3 +218,8 @@ describe('sinks/dynamodb.js', () => {
       .done(done);
   });
 });
+
+// Chai doesn't like sets...we can convert them to arrays to help it out.
+const normalizeObj = (obj) =>
+  JSON.parse(JSON.stringify(obj, (thisArg, value) =>
+    (value instanceof Set ? [...value] : value)));
