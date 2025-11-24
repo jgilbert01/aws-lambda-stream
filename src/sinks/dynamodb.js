@@ -1,5 +1,4 @@
 import _ from 'highland';
-import merge from 'lodash/merge';
 
 import Connector from '../connectors/dynamodb';
 
@@ -8,35 +7,58 @@ import { debug as d } from '../utils/print';
 import { ratelimit } from '../utils/ratelimit';
 
 export const updateExpression = (Item) => {
-  const keys = Object.keys(Item);
+  const exprAttributes = Object.entries(Item)
+    .filter(([key, value]) => value !== undefined)
+    .reduce((acc, [key, value]) => {
+      // If this attribute ends with '_delete'...assume we're deleting values from a set.
+      const isDeleteSet = key.endsWith('_delete');
+      const baseKey = isDeleteSet ? key.replace(/_delete$/, '') : key;
+      acc.ExpressionAttributeNames[`#${baseKey}`] = baseKey;
 
-  const ExpressionAttributeNames = keys
-    .filter((attrName) => Item[attrName] !== undefined)
-    .map((attrName) => ({ [`#${attrName}`]: attrName }))
-    .reduce(merge, {});
+      if (value === null) {
+        acc.removeClauses.push(`#${baseKey}`);
+        return acc;
+      }
 
-  const ExpressionAttributeValues = keys
-    .filter((attrName) => Item[attrName] !== undefined && Item[attrName] !== null)
-    .map((attrName) => ({ [`:${attrName}`]: Item[attrName] }))
-    .reduce(merge, {});
+      if (isDeleteSet) {
+        let setValue = value;
+        if (!(setValue instanceof Set)) {
+          setValue = new Set([setValue]);
+        }
+        acc.ExpressionAttributeValues[`:${key}`] = setValue;
+        acc.deleteClauses.push(`#${baseKey} :${key}`);
+        return acc;
+      }
 
-  let UpdateExpression = `SET ${keys
-    .filter((attrName) => Item[attrName] !== undefined && Item[attrName] !== null)
-    .map((attrName) => `#${attrName} = :${attrName}`)
-    .join(', ')}`;
+      if (value instanceof Set) {
+        acc.ExpressionAttributeValues[`:${key}`] = value;
+        acc.addClauses.push(`#${key} :${key}`);
+        return acc;
+      }
 
-  const UpdateExpressionRemove = keys
-    .filter((attrName) => Item[attrName] === null)
-    .map((attrName) => `#${attrName}`)
-    .join(', ');
+      acc.ExpressionAttributeValues[`:${key}`] = value;
+      acc.setClauses.push(`#${key} = :${key}`);
+      return acc;
+    }, {
+      ExpressionAttributeNames: {},
+      ExpressionAttributeValues: {},
+      setClauses: [],
+      addClauses: [],
+      deleteClauses: [],
+      removeClauses: [],
+    });
 
-  if (UpdateExpressionRemove.length) {
-    UpdateExpression = `${UpdateExpression} REMOVE ${UpdateExpressionRemove}`;
-  }
+  // Construct UpdateExpression
+  const updateExpressionParts = [];
+  if (exprAttributes.setClauses.length) updateExpressionParts.push(`SET ${exprAttributes.setClauses.join(', ')}`);
+  if (exprAttributes.removeClauses.length) updateExpressionParts.push(`REMOVE ${exprAttributes.removeClauses.join(', ')}`);
+  if (exprAttributes.addClauses.length) updateExpressionParts.push(`ADD ${exprAttributes.addClauses.join(', ')}`);
+  if (exprAttributes.deleteClauses.length) updateExpressionParts.push(`DELETE ${exprAttributes.deleteClauses.join(', ')}`);
+  const UpdateExpression = updateExpressionParts.join(' ');
 
   return {
-    ExpressionAttributeNames,
-    ExpressionAttributeValues,
+    ExpressionAttributeNames: exprAttributes.ExpressionAttributeNames,
+    ExpressionAttributeValues: exprAttributes.ExpressionAttributeValues,
     UpdateExpression,
     ReturnValues: 'ALL_NEW',
   };
