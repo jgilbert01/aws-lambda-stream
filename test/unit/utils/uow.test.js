@@ -31,6 +31,7 @@ describe('utils/uow.js', () => {
       inputParams: {
         f2: 'v2',
       },
+      arrayBuffer: new Uint8Array([0]),
     };
 
     expect(trimAndRedact(uow)).to.deep.equal({
@@ -53,6 +54,7 @@ describe('utils/uow.js', () => {
       inputParams: {
         f2: '[REDACTED]',
       },
+      arrayBuffer: '[TYPED_ARRAY: 1]',
     });
   });
 });
