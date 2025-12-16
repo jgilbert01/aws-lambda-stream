@@ -4,7 +4,6 @@ import sinon from 'sinon';
 
 import {
   initialize, initializeFrom,
-  ttl,
 } from '../../../src';
 
 import { toKinesisRecords, fromKinesis } from '../../../src/from/kinesis';
