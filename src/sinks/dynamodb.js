@@ -187,20 +187,6 @@ export const deleteFromSet = (value) => (attributeKey) => ({
   deleteFragment: `#${attributeKey} :${attributeKey}__delete`,
 });
 
-export const addAndDeleteFromSet = (addValues, deleteValues) => (attributeKey) => {
-  const { addFragment, valueFragment: vfAdd } = addToSet(addValues)(attributeKey);
-  const { deleteFragment, valueFragment: vfDelete, nameFragment } = deleteFromSet(deleteValues)(attributeKey);
-  return {
-    nameFragment,
-    addFragment,
-    deleteFragment,
-    valueFragment: {
-      ...vfAdd,
-      ...vfDelete,
-    },
-  };
-};
-
 /* Operand resolvers */
 export const ifNotExists = (value) => ({
   __isResolver__: true,

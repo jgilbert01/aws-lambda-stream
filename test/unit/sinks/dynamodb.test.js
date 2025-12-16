@@ -16,7 +16,6 @@ import {
   removeValue,
   addToSet,
   deleteFromSet,
-  addAndDeleteFromSet,
   updateExpressionFromFragments,
   ifNotExists,
   setNestedValue,
@@ -337,7 +336,6 @@ describe('sinks/dynamodb.js', () => {
         name: setValue('Complex Thing'),
         description: removeValue(),
         'nested.removal': removeNestedValue(),
-        tags: addAndDeleteFromSet(new Set(['blue', 'green']), new Set(['red'])),
         categories: addToSet(new Set(['a', 'b'])),
         letters: deleteFromSet(new Set(['x', 'y'])),
         ignoredField: undefined,
@@ -348,7 +346,6 @@ describe('sinks/dynamodb.js', () => {
           '#id': 'id',
           '#name': 'name',
           '#description': 'description',
-          '#tags': 'tags',
           '#categories': 'categories',
           '#letters': 'letters',
           '#nested': 'nested',
@@ -357,13 +354,11 @@ describe('sinks/dynamodb.js', () => {
         ExpressionAttributeValues: {
           ':id': '123',
           ':name': 'Complex Thing',
-          ':tags__add': ['blue', 'green'],
-          ':tags__delete': ['red'],
           ':categories__add': ['a', 'b'],
           ':letters__delete': ['x', 'y'],
         },
         UpdateExpression:
-          'SET #id = :id, #name = :name REMOVE #description, #nested.#removal ADD #tags :tags__add, #categories :categories__add DELETE #tags :tags__delete, #letters :letters__delete',
+          'SET #id = :id, #name = :name REMOVE #description, #nested.#removal ADD #categories :categories__add DELETE #letters :letters__delete',
         ReturnValues: 'ALL_NEW',
       });
     });
