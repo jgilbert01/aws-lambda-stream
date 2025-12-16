@@ -431,7 +431,7 @@ describe('sinks/dynamodb.js', () => {
           ':listAttributeB': [7, 8, 9],
           ':list.nested.prepend': [10, 11, 12],
         },
-        'UpdateExpression': 'SET #createdAt = if_not_exists(#createdAt, :createdAt), #obj.#nested.#createdAt = if_not_exists(#obj.#nested.#createdAt), :obj.nested.createdAt, #incrementValue = #incrementValue + :incrementValue, #obj.#increment.#value = #obj.#increment.#value + :obj.increment.value, #decrementValue = #decrementValue - :decrementValue, #obj.#decrement.#value = #obj.#decrement.#value - :obj.decrement.value, #listAttributeA = list_append(#listAttributeA, :listAttributeA, #list.#nested.#append = list_append(#list.#nested.#append, :list.nested.append), #listAttributeB = list_append(:listAttributeB, #listAttributeB), #list.#nested.#prepend = list_append(:list.nested.prepend, #list.#nested.#prepend)',
+        'UpdateExpression': 'SET #createdAt = if_not_exists(#createdAt, :createdAt), #obj.#nested.#createdAt = if_not_exists(#obj.#nested.#createdAt, :obj.nested.createdAt), #incrementValue = #incrementValue + :incrementValue, #obj.#increment.#value = #obj.#increment.#value + :obj.increment.value, #decrementValue = #decrementValue - :decrementValue, #obj.#decrement.#value = #obj.#decrement.#value - :obj.decrement.value, #listAttributeA = list_append(#listAttributeA, :listAttributeA), #list.#nested.#append = list_append(#list.#nested.#append, :list.nested.append), #listAttributeB = list_append(:listAttributeB, #listAttributeB), #list.#nested.#prepend = list_append(:list.nested.prepend, #list.#nested.#prepend)',
         'ReturnValues': 'ALL_NEW',
       });
     });

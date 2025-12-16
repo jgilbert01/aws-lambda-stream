@@ -192,7 +192,7 @@ export const ifNotExists = (value) => ({
   __isResolver__: true,
   resolvedValue: value,
   top: (attributeKey) => `if_not_exists(#${attributeKey}, :${attributeKey})`,
-  nested: (attributeKey) => `if_not_exists(${attributeKey.split('.').map((ak) => `#${ak}`).join('.')}), :${attributeKey}`,
+  nested: (attributeKey) => `if_not_exists(${attributeKey.split('.').map((ak) => `#${ak}`).join('.')}, :${attributeKey})`,
 });
 
 export const incrementBy = (value) => ({
@@ -212,7 +212,7 @@ export const decrementBy = (value) => ({
 export const append = (value) => ({
   __isResolver__: true,
   resolvedValue: [].concat(value),
-  top: (attributeKey) => `list_append(#${attributeKey}, :${attributeKey}`,
+  top: (attributeKey) => `list_append(#${attributeKey}, :${attributeKey})`,
   nested: (attributeKey) => `list_append(${attributeKey.split('.').map((ak) => `#${ak}`).join('.')}, :${attributeKey})`,
 });
 
