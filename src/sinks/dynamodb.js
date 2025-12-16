@@ -72,6 +72,171 @@ export const pkCondition = (fieldName = 'pk') => ({
   ConditionExpression: `attribute_not_exists(${fieldName})`,
 });
 
+/**
+ * A more flexible (but verbose) variant of updateExpression.
+ * Requires providing an Item in the form of 'item fragments' which are
+ * functions supporting the varying DDB operations. This function makes no assumptions
+ * about your incoming values (except for removing undefined). If you need to remove
+ * a value for example, you need to specify remove.
+ */
+export const updateExpressionFromFragments = (ItemFragments) => {
+  const exprAttributes = Object.entries(ItemFragments)
+    .filter(([, fragmentGenerator]) => fragmentGenerator !== undefined)
+    .reduce((acc, [key, fragmentGenerator]) => {
+      const {
+        nameFragment,
+        valueFragment,
+        setFragment,
+        removeFragment,
+        addFragment,
+        deleteFragment,
+      } = fragmentGenerator(key);
+
+      return {
+        ExpressionAttributeNames: {
+          ...acc.ExpressionAttributeNames,
+          ...nameFragment,
+        },
+        ExpressionAttributeValues: {
+          ...acc.ExpressionAttributeValues,
+          ...valueFragment,
+        },
+        setFragments: setFragment ? [...acc.setFragments, setFragment] : acc.setFragments,
+        addFragments: addFragment ? [...acc.addFragments, addFragment] : acc.addFragments,
+        deleteFragments: deleteFragment ? [...acc.deleteFragments, deleteFragment] : acc.deleteFragments,
+        removeFragments: removeFragment ? [...acc.removeFragments, removeFragment] : acc.removeFragments,
+      };
+    }, {
+      ExpressionAttributeNames: {},
+      ExpressionAttributeValues: {},
+      setFragments: [],
+      addFragments: [],
+      deleteFragments: [],
+      removeFragments: [],
+    });
+
+  // Construct UpdateExpression
+  const updateExpressionParts = [];
+  if (exprAttributes.setFragments.length) updateExpressionParts.push(`SET ${exprAttributes.setFragments.join(', ')}`);
+  if (exprAttributes.removeFragments.length) updateExpressionParts.push(`REMOVE ${exprAttributes.removeFragments.join(', ')}`);
+  if (exprAttributes.addFragments.length) updateExpressionParts.push(`ADD ${exprAttributes.addFragments.join(', ')}`);
+  if (exprAttributes.deleteFragments.length) updateExpressionParts.push(`DELETE ${exprAttributes.deleteFragments.join(', ')}`);
+  const UpdateExpression = updateExpressionParts.join(' ');
+
+  return {
+    ExpressionAttributeNames: exprAttributes.ExpressionAttributeNames,
+    ExpressionAttributeValues: exprAttributes.ExpressionAttributeValues,
+    UpdateExpression,
+    ReturnValues: 'ALL_NEW',
+  };
+};
+
+/**
+ * Fragment generators.
+ * Only set and setNested support operand resolvers.
+ */
+export const setValue = (value, { atIndex } = {}) => (attributeKey) => {
+  const isResolver = value.__isResolver__;
+  const resolvedValue = isResolver ? value.resolvedValue : value;
+  const setFragmentValue = isResolver ? value.top(attributeKey) : `:${attributeKey}`;
+
+  return {
+    nameFragment: {
+      [`#${attributeKey}`]: attributeKey,
+    },
+    valueFragment: {
+      [`:${attributeKey}`]: resolvedValue,
+    },
+    setFragment: `#${attributeKey}${atIndex !== undefined ? `[${atIndex}]` : ''} = ${setFragmentValue}`,
+  };
+};
+
+export const setNestedValue = (value, { atIndex } = {}) => (attributeKey) => {
+  const isResolver = value.__isResolver__;
+  const resolvedValue = isResolver ? value.resolvedValue : value;
+  const setFragmentValue = isResolver ? value.nested(attributeKey) : `:${attributeKey}`;
+
+  return {
+    nameFragment: Object.fromEntries(attributeKey.split('.').map((kp) => [`#${kp}`, kp])),
+    valueFragment: {
+      [`:${attributeKey}`]: resolvedValue,
+    },
+    setFragment: `${attributeKey.split('.').map((kp) => `#${kp}`).join('.')}${atIndex !== undefined ? `[${atIndex}]` : ''} = ${setFragmentValue}`,
+  };
+};
+
+export const removeValue = ({ atIndex } = {}) => (attributeKey) => ({
+  nameFragment: { [`#${attributeKey}`]: attributeKey },
+  removeFragment: `#${attributeKey}${atIndex !== undefined ? `[${atIndex}]` : ''}`,
+});
+
+export const removeNestedValue = ({ atIndex } = {}) => (attributeKey) => ({
+  nameFragment: Object.fromEntries(attributeKey.split('.').map((ak) => [`#${ak}`, ak])),
+  removeFragment: `${attributeKey.split('.').map((ak) => `#${ak}`).join('.')}${atIndex !== undefined ? `[${atIndex}]` : ''}`,
+});
+
+export const addToSet = (value) => (attributeKey) => ({
+  nameFragment: { [`#${attributeKey}`]: attributeKey },
+  valueFragment: { [`:${attributeKey}__add`]: value },
+  addFragment: `#${attributeKey} :${attributeKey}__add`,
+});
+
+export const deleteFromSet = (value) => (attributeKey) => ({
+  nameFragment: { [`#${attributeKey}`]: attributeKey },
+  valueFragment: { [`:${attributeKey}__delete`]: value },
+  deleteFragment: `#${attributeKey} :${attributeKey}__delete`,
+});
+
+export const addAndDeleteFromSet = (addValues, deleteValues) => (attributeKey) => {
+  const { addFragment, valueFragment: vfAdd } = addToSet(addValues)(attributeKey);
+  const { deleteFragment, valueFragment: vfDelete, nameFragment } = deleteFromSet(deleteValues)(attributeKey);
+  return {
+    nameFragment,
+    addFragment,
+    deleteFragment,
+    valueFragment: {
+      ...vfAdd,
+      ...vfDelete,
+    },
+  };
+};
+
+/* Operand resolvers */
+export const ifNotExists = (value) => ({
+  __isResolver__: true,
+  resolvedValue: value,
+  top: (attributeKey) => `if_not_exists(#${attributeKey}, :${attributeKey})`,
+  nested: (attributeKey) => `if_not_exists(${attributeKey.split('.').map((ak) => `#${ak}`).join('.')}), :${attributeKey}`,
+});
+
+export const incrementBy = (value) => ({
+  __isResolver__: true,
+  resolvedValue: value,
+  top: (attributeKey) => `#${attributeKey} + :${attributeKey}`,
+  nested: (attributeKey) => `${attributeKey.split('.').map((ak) => `#${ak}`).join('.')} + :${attributeKey}`,
+});
+
+export const decrementBy = (value) => ({
+  __isResolver__: true,
+  resolvedValue: value,
+  top: (attributeKey) => `#${attributeKey} - :${attributeKey}`,
+  nested: (attributeKey) => `${attributeKey.split('.').map((ak) => `#${ak}`).join('.')} - :${attributeKey}`,
+});
+
+export const append = (value) => ({
+  __isResolver__: true,
+  resolvedValue: [].concat(value),
+  top: (attributeKey) => `list_append(#${attributeKey}, :${attributeKey}`,
+  nested: (attributeKey) => `list_append(${attributeKey.split('.').map((ak) => `#${ak}`).join('.')}, :${attributeKey})`,
+});
+
+export const prepend = (value) => ({
+  __isResolver__: true,
+  resolvedValue: [].concat(value),
+  top: (attributeKey) => `list_append(:${attributeKey}, #${attributeKey})`,
+  nested: (attributeKey) => `list_append(:${attributeKey}, ${attributeKey.split('.').map((ak) => `#${ak}`).join('.')})`,
+});
+
 export const updateDynamoDB = ({
   id: pipelineId,
   debug = d('dynamodb'),
