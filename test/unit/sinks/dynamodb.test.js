@@ -39,9 +39,8 @@ describe('sinks/dynamodb.js', () => {
         '#id': 'id',
         '#latched': 'latched',
         '#name': 'name',
-        '#some_unsafe_att_name': 'some unsafe att name',
-        '#some_unsafe_att_name_to_delete': 'some unsafe att name to delete',
-        // '#status': 'status',
+        '#some_x20_unsafe_x20_att_x20_name': 'some unsafe att name',
+        '#some_x20_unsafe_x20_att_x20_name_x20_to_x20_delete': 'some unsafe att name to delete',
         '#status2': 'status2',
         '#timestamp': 'timestamp',
         '#ttl': 'ttl',
@@ -52,13 +51,11 @@ describe('sinks/dynamodb.js', () => {
         ':id': '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
         ':latched': true,
         ':name': 'Thing One',
-        ':some_unsafe_att_name': true,
-        // ':status': undefined,
-        // ':status2': null,
+        ':some_x20_unsafe_x20_att_x20_name': true,
         ':timestamp': 1540454400000,
         ':ttl': 1543046400,
       },
-      UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp, #some_unsafe_att_name = :some_unsafe_att_name REMOVE #status2, #some_unsafe_att_name_to_delete',
+      UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp, #some_x20_unsafe_x20_att_x20_name = :some_x20_unsafe_x20_att_x20_name REMOVE #status2, #some_x20_unsafe_x20_att_x20_name_x20_to_x20_delete',
       ReturnValues: 'ALL_NEW',
     });
   });
@@ -100,16 +97,28 @@ describe('sinks/dynamodb.js', () => {
   it('should calculate updateExpression removing values from a set when attribute names have illegal characters if used as an alias', () => {
     const result = updateExpression({
       'some|tags_delete': new Set(['x', 'y']),
+      'a-b': true,
+      'a--b': false,
+      'a|b': 1,
     });
 
     expect(normalizeObj(result)).to.deep.equal({
       ExpressionAttributeNames: {
-        '#some_tags': 'some|tags',
+        '#some_x7c_tags': 'some|tags',
+        '#a_x2d_b': 'a-b',
+        '#a_x2d__x2d_b': 'a--b',
+        '#a_x7c_b': 'a|b',
       },
       ExpressionAttributeValues: {
-        ':some_tags_delete': ['x', 'y'],
+        ':some_x7c_tags_delete': [
+          'x',
+          'y',
+        ],
+        ':a_x2d_b': true,
+        ':a_x2d__x2d_b': false,
+        ':a_x7c_b': 1,
       },
-      UpdateExpression: 'DELETE #some_tags :some_tags_delete',
+      UpdateExpression: 'SET #a_x2d_b = :a_x2d_b, #a_x2d__x2d_b = :a_x2d__x2d_b, #a_x7c_b = :a_x7c_b DELETE #some_x7c_tags :some_x7c_tags_delete',
       ReturnValues: 'ALL_NEW',
     });
   });

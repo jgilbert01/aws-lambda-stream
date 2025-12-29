@@ -13,7 +13,8 @@ export const updateExpression = (Item) => {
       // If this attribute ends with '_delete'...assume we're deleting values from a set.
       const isDeleteSet = key.endsWith('_delete');
       const baseKey = isDeleteSet ? key.replace(/_delete$/, '') : key;
-      const alias = baseKey.replace(/([^a-z0-9_]+)/gi, '_');
+      const alias = baseKey.replace(/([^a-z0-9_])/gi, (char) =>
+        `_x${char.charCodeAt(0).toString(16)}_`);
 
       acc.ExpressionAttributeNames[`#${alias}`] = baseKey;
 
