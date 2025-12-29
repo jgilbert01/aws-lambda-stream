@@ -13,12 +13,12 @@ export const updateExpression = (Item) => {
       // If this attribute ends with '_delete'...assume we're deleting values from a set.
       const isDeleteSet = key.endsWith('_delete');
       const baseKey = isDeleteSet ? key.replace(/_delete$/, '') : key;
-      const keyNameSafe = baseKey.replace(/[^a-zA-Z0-9_\-.]/g, '_');
+      const alias = baseKey.replace(/([^a-z0-9_]+)/gi, '_');
 
-      acc.ExpressionAttributeNames[`#${keyNameSafe}`] = baseKey;
+      acc.ExpressionAttributeNames[`#${alias}`] = baseKey;
 
       if (value === null) {
-        acc.removeClauses.push(`#${keyNameSafe}`);
+        acc.removeClauses.push(`#${alias}`);
         return acc;
       }
 
@@ -27,19 +27,19 @@ export const updateExpression = (Item) => {
         if (!(setValue instanceof Set)) {
           setValue = new Set([setValue]);
         }
-        acc.ExpressionAttributeValues[`:${keyNameSafe}_delete`] = setValue;
-        acc.deleteClauses.push(`#${keyNameSafe} :${keyNameSafe}_delete`);
+        acc.ExpressionAttributeValues[`:${alias}_delete`] = setValue;
+        acc.deleteClauses.push(`#${alias} :${alias}_delete`);
         return acc;
       }
 
       if (value instanceof Set) {
-        acc.ExpressionAttributeValues[`:${keyNameSafe}`] = value;
-        acc.addClauses.push(`#${keyNameSafe} :${keyNameSafe}`);
+        acc.ExpressionAttributeValues[`:${alias}`] = value;
+        acc.addClauses.push(`#${alias} :${alias}`);
         return acc;
       }
 
-      acc.ExpressionAttributeValues[`:${keyNameSafe}`] = value;
-      acc.setClauses.push(`#${keyNameSafe} = :${keyNameSafe}`);
+      acc.ExpressionAttributeValues[`:${alias}`] = value;
+      acc.setClauses.push(`#${alias} = :${alias}`);
       return acc;
     }, {
       ExpressionAttributeNames: {},
