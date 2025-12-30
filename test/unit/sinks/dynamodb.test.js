@@ -21,15 +21,17 @@ describe('sinks/dynamodb.js', () => {
 
   it('should calculate updateExpression', () => {
     expect(updateExpression({
-      id: '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
-      name: 'Thing One',
-      description: 'This is thing one.',
-      status: undefined,
-      status2: null,
-      discriminator: 'thing',
-      latched: true,
-      ttl: ttl(1540454400000, 30),
-      timestamp: 1540454400000,
+      'id': '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
+      'name': 'Thing One',
+      'description': 'This is thing one.',
+      'status': undefined,
+      'status2': null,
+      'discriminator': 'thing',
+      'latched': true,
+      'ttl': ttl(1540454400000, 30),
+      'timestamp': 1540454400000,
+      'some unsafe att name': true,
+      'some unsafe att name to delete': null,
     })).to.deep.equal({
       ExpressionAttributeNames: {
         '#description': 'description',
@@ -37,7 +39,8 @@ describe('sinks/dynamodb.js', () => {
         '#id': 'id',
         '#latched': 'latched',
         '#name': 'name',
-        // '#status': 'status',
+        '#some_x20_unsafe_x20_att_x20_name': 'some unsafe att name',
+        '#some_x20_unsafe_x20_att_x20_name_x20_to_x20_delete': 'some unsafe att name to delete',
         '#status2': 'status2',
         '#timestamp': 'timestamp',
         '#ttl': 'ttl',
@@ -48,12 +51,11 @@ describe('sinks/dynamodb.js', () => {
         ':id': '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
         ':latched': true,
         ':name': 'Thing One',
-        // ':status': undefined,
-        // ':status2': null,
+        ':some_x20_unsafe_x20_att_x20_name': true,
         ':timestamp': 1540454400000,
         ':ttl': 1543046400,
       },
-      UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp REMOVE #status2',
+      UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp, #some_x20_unsafe_x20_att_x20_name = :some_x20_unsafe_x20_att_x20_name REMOVE #status2, #some_x20_unsafe_x20_att_x20_name_x20_to_x20_delete',
       ReturnValues: 'ALL_NEW',
     });
   });
@@ -88,6 +90,35 @@ describe('sinks/dynamodb.js', () => {
         ':tags_delete': ['x', 'y'],
       },
       UpdateExpression: 'DELETE #tags :tags_delete',
+      ReturnValues: 'ALL_NEW',
+    });
+  });
+
+  it('should calculate updateExpression removing values from a set when attribute names have illegal characters if used as an alias', () => {
+    const result = updateExpression({
+      'some|tags_delete': new Set(['x', 'y']),
+      'a-b': true,
+      'a--b': false,
+      'a|b': 1,
+    });
+
+    expect(normalizeObj(result)).to.deep.equal({
+      ExpressionAttributeNames: {
+        '#some_x7c_tags': 'some|tags',
+        '#a_x2d_b': 'a-b',
+        '#a_x2d__x2d_b': 'a--b',
+        '#a_x7c_b': 'a|b',
+      },
+      ExpressionAttributeValues: {
+        ':some_x7c_tags_delete': [
+          'x',
+          'y',
+        ],
+        ':a_x2d_b': true,
+        ':a_x2d__x2d_b': false,
+        ':a_x7c_b': 1,
+      },
+      UpdateExpression: 'SET #a_x2d_b = :a_x2d_b, #a_x2d__x2d_b = :a_x2d__x2d_b, #a_x7c_b = :a_x7c_b DELETE #some_x7c_tags :some_x7c_tags_delete',
       ReturnValues: 'ALL_NEW',
     });
   });
