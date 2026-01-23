@@ -64,7 +64,7 @@ class Connector {
         RoleArn: inputParams.Target.RoleArn || this.roleArn,
       },
       ActionAfterCompletion: ActionAfterCompletion.DELETE,
-      KmsKeyArn: params.KmsKeyArn || this.kmsKeyArn,
+      KmsKeyArn: inputParams.KmsKeyArn || this.kmsKeyArn,
     };
 
     return this._sendCommand(new CreateScheduleCommand(params), ctx);
