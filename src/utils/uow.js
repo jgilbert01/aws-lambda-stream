@@ -23,6 +23,9 @@ export const trimAndRedact = (_uow) => { // eslint-disable-line import/prefer-de
           cache.push(value);
         }
       }
+      if (ArrayBuffer.isView(value)) {
+        return `[TYPED_ARRAY: ${value.byteLength}]`;
+      }
     }
     return undefined;
   };

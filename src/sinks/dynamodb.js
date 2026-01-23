@@ -1,5 +1,4 @@
 import _ from 'highland';
-import merge from 'lodash/merge';
 
 import Connector from '../connectors/dynamodb';
 
@@ -8,35 +7,61 @@ import { debug as d } from '../utils/print';
 import { ratelimit } from '../utils/ratelimit';
 
 export const updateExpression = (Item) => {
-  const keys = Object.keys(Item);
+  const exprAttributes = Object.entries(Item)
+    .filter(([key, value]) => value !== undefined)
+    .reduce((acc, [key, value]) => {
+      // If this attribute ends with '_delete'...assume we're deleting values from a set.
+      const isDeleteSet = key.endsWith('_delete');
+      const baseKey = isDeleteSet ? key.replace(/_delete$/, '') : key;
+      const alias = baseKey.replace(/([^a-z0-9_])/gi, (char) =>
+        `_x${char.charCodeAt(0).toString(16)}_`);
 
-  const ExpressionAttributeNames = keys
-    .filter((attrName) => Item[attrName] !== undefined)
-    .map((attrName) => ({ [`#${attrName}`]: attrName }))
-    .reduce(merge, {});
+      acc.ExpressionAttributeNames[`#${alias}`] = baseKey;
 
-  const ExpressionAttributeValues = keys
-    .filter((attrName) => Item[attrName] !== undefined && Item[attrName] !== null)
-    .map((attrName) => ({ [`:${attrName}`]: Item[attrName] }))
-    .reduce(merge, {});
+      if (value === null) {
+        acc.removeClauses.push(`#${alias}`);
+        return acc;
+      }
 
-  let UpdateExpression = `SET ${keys
-    .filter((attrName) => Item[attrName] !== undefined && Item[attrName] !== null)
-    .map((attrName) => `#${attrName} = :${attrName}`)
-    .join(', ')}`;
+      if (isDeleteSet) {
+        let setValue = value;
+        if (!(setValue instanceof Set)) {
+          setValue = new Set([setValue]);
+        }
+        acc.ExpressionAttributeValues[`:${alias}_delete`] = setValue;
+        acc.deleteClauses.push(`#${alias} :${alias}_delete`);
+        return acc;
+      }
 
-  const UpdateExpressionRemove = keys
-    .filter((attrName) => Item[attrName] === null)
-    .map((attrName) => `#${attrName}`)
-    .join(', ');
+      if (value instanceof Set) {
+        acc.ExpressionAttributeValues[`:${alias}`] = value;
+        acc.addClauses.push(`#${alias} :${alias}`);
+        return acc;
+      }
 
-  if (UpdateExpressionRemove.length) {
-    UpdateExpression = `${UpdateExpression} REMOVE ${UpdateExpressionRemove}`;
-  }
+      acc.ExpressionAttributeValues[`:${alias}`] = value;
+      acc.setClauses.push(`#${alias} = :${alias}`);
+      return acc;
+    }, {
+      ExpressionAttributeNames: {},
+      ExpressionAttributeValues: {},
+      setClauses: [],
+      addClauses: [],
+      deleteClauses: [],
+      removeClauses: [],
+    });
+
+  // Construct UpdateExpression
+  const updateExpressionParts = [];
+  if (exprAttributes.setClauses.length) updateExpressionParts.push(`SET ${exprAttributes.setClauses.join(', ')}`);
+  if (exprAttributes.removeClauses.length) updateExpressionParts.push(`REMOVE ${exprAttributes.removeClauses.join(', ')}`);
+  if (exprAttributes.addClauses.length) updateExpressionParts.push(`ADD ${exprAttributes.addClauses.join(', ')}`);
+  if (exprAttributes.deleteClauses.length) updateExpressionParts.push(`DELETE ${exprAttributes.deleteClauses.join(', ')}`);
+  const UpdateExpression = updateExpressionParts.join(' ');
 
   return {
-    ExpressionAttributeNames,
-    ExpressionAttributeValues,
+    ExpressionAttributeNames: exprAttributes.ExpressionAttributeNames,
+    ExpressionAttributeValues: exprAttributes.ExpressionAttributeValues,
     UpdateExpression,
     ReturnValues: 'ALL_NEW',
   };

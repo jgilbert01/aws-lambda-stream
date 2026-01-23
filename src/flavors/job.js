@@ -1,8 +1,8 @@
-import _ from 'highland';
 import {
   printStartPipeline, printEndPipeline,
   faulty, faultyAsyncStream, faultify,
   splitObject, encryptEvent,
+  compact,
 } from '../utils';
 import {
   scanSplitDynamoDB, querySplitDynamoDB, queryAllDynamoDB, batchGetDynamoDB,
@@ -132,35 +132,36 @@ export const toCursorUpdateRequest = (rule) => faulty((uow) => ({
 }));
 
 export const flushCursor = (rule) => (s) => {
-  let lastUow;
-
-  const cursorStream = () => _([lastUow])
-    .map(toCursorUpdateRequest(rule))
-    .through(updateDynamoDB({
-      ...rule,
-      updateRequestField: 'cursorUpdateRequest',
-      updateResponseField: 'cursorUpdateResponse',
-    }));
+  const {
+    // By default group on a stringified version of the full key. If the key structure
+    // differs in a users particular implementation or they want to group by something
+    // else they can simply override this fn in their rule.
+    cursorKeyFn = (uow) => `pk:${uow.event.raw.new.pk}|sk:${uow.event.raw.new.sk}`,
+  } = rule;
 
   /* istanbul ignore else */
   if (rule.toCursorUpdateRequest) {
     return s
-      .consume((err, x, push, next) => {
-        /* istanbul ignore if */
-        if (err) {
-          push(err);
-          next();
-        } else if (x === _.nil) {
-          if (lastUow) {
-            next(cursorStream());
-          } else {
-            push(null, x);
-          }
-        } else {
-          lastUow = x;
-          push(null, x);
-          next();
-        }
+      .through(compact({
+        ...rule,
+        compact: {
+          group: (uow) => cursorKeyFn(uow),
+        },
+      }))
+      .map(toCursorUpdateRequest(rule))
+      .through(updateDynamoDB({
+        ...rule,
+        updateRequestField: 'cursorUpdateRequest',
+        updateResponseField: 'cursorUpdateResponse',
+      }))
+      // Maintains backwards compatibility with how this used to manipulate the UOWs,
+      // duping the last uow.
+      .flatMap((uow) => {
+        const { batch, ...lastUow } = uow;
+        return [
+          ...batch,
+          lastUow,
+        ];
       });
   } else {
     return s;

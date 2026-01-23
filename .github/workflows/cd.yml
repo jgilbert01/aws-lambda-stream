@@ -5,6 +5,10 @@ on:
   # push:
   #   branches: [ master ]
 
+permissions:
+  id-token: write  # Required for OIDC
+  contents: write # Read required for OIDC but write required for release tagging
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -12,13 +16,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 24.x
           registry-url: https://registry.npmjs.org/
+      # Ensure npm 11.5.1 or later is installed
+      - name: Update npm
+        run: npm install -g npm@latest          
       - run: npm ci
       - run: npm test
       - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
       - uses: sergeysova/jq-action@v2
         name: Derive Version
         id: version

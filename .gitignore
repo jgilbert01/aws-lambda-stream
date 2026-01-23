@@ -6,3 +6,4 @@ lib
 coverage
 .npmrc
 *.tgz
+.nvmrc
