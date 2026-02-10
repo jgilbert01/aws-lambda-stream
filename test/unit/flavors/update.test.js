@@ -287,6 +287,40 @@ describe('flavors/update.js', () => {
       })
       .done(done);
   });
+
+  it('should skip processing if latched', (done) => {
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832690,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'Thing One',
+          description: 'This is thing one',
+          otherThing: 'thing|2',
+          latched: true,
+          ttl: 1549053422,
+          timestamp: 1548967022000,
+        },
+      },
+    ]);
+
+    initialize({
+      ...initializeFrom(rules),
+    }, { ...defaultOptions, AES: false })
+      .assemble(fromDynamodb(events), false)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        expect(collected.length).to.equal(0);
+      })
+      .done(done);
+  });
 });
 
 const toUpdateRequest = (uow) => ({
