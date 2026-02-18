@@ -2,6 +2,7 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
+import { cloneDeep } from 'lodash';
 import {
   initialize, initializeFrom,
   ttl,
@@ -89,6 +90,99 @@ describe('flavors/materialize.js', () => {
         expect(collected[2].updateRequest.Key.pk).to.equal('3');
         expect(collected[3].updateRequest.Key.pk).to.equal('2');
         expect(collected[4].updateRequest.Key.pk).to.equal('3');
+      })
+      .done(done);
+  });
+
+  it('should optionally call the fallback update request', (done) => {
+    const events = toKinesisRecords([
+      {
+        type: 'm1',
+        timestamp: 1548967022000,
+        thing: {
+          id: '1',
+          name: 'Thing One',
+          description: 'This is thing one',
+        },
+      },
+      {
+        type: 'split',
+        timestamp: 1548967022000,
+        root: {
+          things: [{
+            id: '2',
+            name: 'Thing One',
+            description: 'This is thing one',
+          }, {
+            id: '3',
+            name: 'Thing One',
+            description: 'This is thing one',
+          }],
+        },
+      },
+    ]);
+
+    const ruleWithFallbackUpdateRequest = cloneDeep(rules[0]);
+    ruleWithFallbackUpdateRequest.toFallbackUpdateRequest = (uow) => ({
+      Key: {
+        pk: uow.event.thing.id,
+        sk: 'thing',
+      },
+      ...updateExpression({
+        fallbackUpdate: true,
+      }),
+    });
+
+    initialize({
+      ...initializeFrom([ruleWithFallbackUpdateRequest]),
+    })
+      .assemble(fromKinesis(events), false)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        expect(collected.length).to.equal(1);
+        expect(collected[0].pipeline).to.equal('mv1');
+        expect(collected[0].event.type).to.equal('m1');
+        expect(collected[0].updateRequest).to.deep.equal({
+          Key: {
+            pk: '1',
+            sk: 'thing',
+          },
+          ExpressionAttributeNames: {
+            '#id': 'id',
+            '#name': 'name',
+            '#description': 'description',
+
+            '#discriminator': 'discriminator',
+            '#ttl': 'ttl',
+            '#timestamp': 'timestamp',
+          },
+          ExpressionAttributeValues: {
+            ':id': '1',
+            ':name': 'Thing One',
+            ':description': 'This is thing one',
+            ':discriminator': 'thing',
+            ':ttl': 1549053422,
+            ':timestamp': 1548967022000,
+          },
+          UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #discriminator = :discriminator, #ttl = :ttl, #timestamp = :timestamp',
+          ReturnValues: 'ALL_NEW',
+          ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
+        });
+        expect(collected[0].fallbackUpdateRequest).to.deep.equal({
+          Key: {
+            pk: '1',
+            sk: 'thing',
+          },
+          ExpressionAttributeNames: {
+            '#fallbackUpdate': 'fallbackUpdate',
+          },
+          ExpressionAttributeValues: {
+            ':fallbackUpdate': true,
+          },
+          UpdateExpression: 'SET #fallbackUpdate = :fallbackUpdate',
+          ReturnValues: 'ALL_NEW',
+        });
       })
       .done(done);
   });
