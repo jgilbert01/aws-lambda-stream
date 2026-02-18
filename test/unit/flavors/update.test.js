@@ -7,6 +7,7 @@ import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 
+import { cloneDeep } from 'lodash';
 import {
   initialize, initializeFrom,
 } from '../../../src';
@@ -28,7 +29,10 @@ describe('flavors/update.js', () => {
   let mockDdb;
 
   beforeEach(() => {
-    sinon.stub(DynamoDBConnector.prototype, 'update').resolves({});
+    sinon.stub(DynamoDBConnector.prototype, 'update')
+      .onFirstCall().resolves({})
+      .onSecondCall()
+      .resolves({});
   });
 
   afterEach(() => {
@@ -210,6 +214,158 @@ describe('flavors/update.js', () => {
         expect(collected[0].event.tags.pipeline).to.equal('updateThrow');
         expect(collected[0].event.type).to.equal('fault');
         expect(collected[0].event.err.name).to.equal('ConditionalCheckFailedException');
+      })
+      .done(done);
+  });
+
+  it('should optionally run fallback update request', (done) => {
+    sinon.stub(DynamoDBConnector.prototype, 'query').resolves([]);
+    sinon.stub(DynamoDBConnector.prototype, 'batchGet').resolves({
+      Responses: {
+        undefined: [{
+          pk: '2',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'thing2',
+        }],
+      },
+      UnprocessedKeys: {},
+    });
+
+    sinon.stub(KmsConnector.prototype, 'generateDataKey').resolves(MOCK_GEN_DK_RESPONSE);
+
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832690,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'Thing One',
+          description: 'This is thing one',
+          otherThing: 'thing|2',
+          ttl: 1549053422,
+          timestamp: 1548967022000,
+        },
+      },
+      {
+        timestamp: 1572832690,
+        keys: {
+          pk: '1',
+          sk: 'other',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'other',
+          discriminator: 'other',
+          name: 'Other One',
+          description: 'This is other one',
+          ttl: 1549053422,
+          timestamp: 1548967022000,
+        },
+      },
+    ]);
+    const rulesWithFallbackUpdateRequest = cloneDeep([rules[0]]);
+    rulesWithFallbackUpdateRequest[0].toFallbackUpdateRequest = (uow) => ({
+      Key: {
+        pk: uow.event.raw.new.pk,
+        sk: uow.event.raw.new.sk,
+      },
+      ...updateExpression({
+        fallbackUpdate: true,
+      }),
+    });
+
+    initialize({
+      ...initializeFrom(rulesWithFallbackUpdateRequest),
+    }, { ...defaultOptions, AES: false })
+      .assemble(fromDynamodb(events), false)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        expect(collected.length).to.equal(1);
+        expect(collected[0].pipeline).to.equal('update1');
+        expect(collected[0].event.type).to.equal('thing-created');
+        expect(collected[0].batchGetRequest).to.deep.equal({
+          RequestItems: {
+            undefined: {
+              Keys: [{
+                pk: '2',
+                sk: 'thing',
+              }],
+            },
+          },
+        });
+        expect(collected[0].batchGetResponse).to.deep.equal({
+          Responses: {
+            undefined: [
+              {
+                pk: '2',
+                sk: 'thing',
+                discriminator: 'thing',
+                name: 'thing2',
+              },
+            ],
+          },
+          UnprocessedKeys: {},
+        });
+        expect(collected[0].updateRequest).to.deep.equal({
+          Key: {
+            pk: '1',
+            sk: 'thing',
+          },
+          ExpressionAttributeNames: {
+            '#pk': 'pk',
+            '#sk': 'sk',
+            '#discriminator': 'discriminator',
+            '#name': 'name',
+            '#description': 'description',
+            '#otherThing': 'otherThing',
+            '#ttl': 'ttl',
+            '#timestamp': 'timestamp',
+          },
+          ExpressionAttributeValues: {
+            ':pk': '1',
+            ':sk': 'thing',
+            ':discriminator': 'thing',
+            ':name': 'Thing One',
+            ':description': 'This is thing one',
+            ':ttl': 1549053422,
+            ':timestamp': 1548967022000,
+            ':otherThing': {
+              pk: '2',
+              sk: 'thing',
+              discriminator: 'thing',
+              name: 'thing2',
+            },
+          },
+          UpdateExpression: 'SET #pk = :pk, #sk = :sk, #discriminator = :discriminator, #name = :name, #description = :description, #otherThing = :otherThing, #ttl = :ttl, #timestamp = :timestamp',
+          ReturnValues: 'ALL_NEW',
+          ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
+        });
+
+        expect(collected[0].fallbackUpdateRequest).to.deep.equal({
+          Key: {
+            pk: '1',
+            sk: 'thing',
+          },
+          ExpressionAttributeNames: {
+            '#fallbackUpdate': 'fallbackUpdate',
+          },
+          ExpressionAttributeValues: {
+            ':fallbackUpdate': true,
+          },
+          UpdateExpression: 'SET #fallbackUpdate = :fallbackUpdate',
+          ReturnValues: 'ALL_NEW',
+        });
+
+        expect(collected[0].updateResponse).to.deep.equal({});
+        expect(collected[0].queryRequest).to.be.undefined;
+        expect(collected[0].getRequest).to.be.undefined;
       })
       .done(done);
   });

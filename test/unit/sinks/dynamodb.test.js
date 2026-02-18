@@ -19,157 +19,159 @@ describe('sinks/dynamodb.js', () => {
     expect(ttl(1540454400000, 30)).to.equal(1543046400);
   });
 
-  it('should calculate updateExpression', () => {
-    expect(updateExpression({
-      'id': '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
-      'name': 'Thing One',
-      'description': 'This is thing one.',
-      'status': undefined,
-      'status2': null,
-      'discriminator': 'thing',
-      'latched': true,
-      'ttl': ttl(1540454400000, 30),
-      'timestamp': 1540454400000,
-      'some unsafe att name': true,
-      'some unsafe att name to delete': null,
-    })).to.deep.equal({
-      ExpressionAttributeNames: {
-        '#description': 'description',
-        '#discriminator': 'discriminator',
-        '#id': 'id',
-        '#latched': 'latched',
-        '#name': 'name',
-        '#some_x20_unsafe_x20_att_x20_name': 'some unsafe att name',
-        '#some_x20_unsafe_x20_att_x20_name_x20_to_x20_delete': 'some unsafe att name to delete',
-        '#status2': 'status2',
-        '#timestamp': 'timestamp',
-        '#ttl': 'ttl',
-      },
-      ExpressionAttributeValues: {
-        ':description': 'This is thing one.',
-        ':discriminator': 'thing',
-        ':id': '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
-        ':latched': true,
-        ':name': 'Thing One',
-        ':some_x20_unsafe_x20_att_x20_name': true,
-        ':timestamp': 1540454400000,
-        ':ttl': 1543046400,
-      },
-      UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp, #some_x20_unsafe_x20_att_x20_name = :some_x20_unsafe_x20_att_x20_name REMOVE #status2, #some_x20_unsafe_x20_att_x20_name_x20_to_x20_delete',
-      ReturnValues: 'ALL_NEW',
-    });
-  });
-
-  it('should calculate updateExpression adding values to a set', () => {
-    const result = updateExpression({
-      tags: new Set(['a', 'b']),
+  describe('updateExpression', () => {
+    it('should calculate updateExpression', () => {
+      expect(updateExpression({
+        'id': '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
+        'name': 'Thing One',
+        'description': 'This is thing one.',
+        'status': undefined,
+        'status2': null,
+        'discriminator': 'thing',
+        'latched': true,
+        'ttl': ttl(1540454400000, 30),
+        'timestamp': 1540454400000,
+        'some unsafe att name': true,
+        'some unsafe att name to delete': null,
+      })).to.deep.equal({
+        ExpressionAttributeNames: {
+          '#description': 'description',
+          '#discriminator': 'discriminator',
+          '#id': 'id',
+          '#latched': 'latched',
+          '#name': 'name',
+          '#some_x20_unsafe_x20_att_x20_name': 'some unsafe att name',
+          '#some_x20_unsafe_x20_att_x20_name_x20_to_x20_delete': 'some unsafe att name to delete',
+          '#status2': 'status2',
+          '#timestamp': 'timestamp',
+          '#ttl': 'ttl',
+        },
+        ExpressionAttributeValues: {
+          ':description': 'This is thing one.',
+          ':discriminator': 'thing',
+          ':id': '2f8ac025-d9e3-48f9-ba80-56487ddf0b89',
+          ':latched': true,
+          ':name': 'Thing One',
+          ':some_x20_unsafe_x20_att_x20_name': true,
+          ':timestamp': 1540454400000,
+          ':ttl': 1543046400,
+        },
+        UpdateExpression: 'SET #id = :id, #name = :name, #description = :description, #discriminator = :discriminator, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp, #some_x20_unsafe_x20_att_x20_name = :some_x20_unsafe_x20_att_x20_name REMOVE #status2, #some_x20_unsafe_x20_att_x20_name_x20_to_x20_delete',
+        ReturnValues: 'ALL_NEW',
+      });
     });
 
-    expect(normalizeObj(result)).to.deep.equal({
-      ExpressionAttributeNames: {
-        '#tags': 'tags',
-      },
-      ExpressionAttributeValues: {
-        ':tags': ['a', 'b'],
-      },
-      UpdateExpression: 'ADD #tags :tags',
-      ReturnValues: 'ALL_NEW',
-    });
-  });
+    it('should calculate updateExpression adding values to a set', () => {
+      const result = updateExpression({
+        tags: new Set(['a', 'b']),
+      });
 
-  it('should calculate updateExpression removing values from a set', () => {
-    const result = updateExpression({
-      tags_delete: new Set(['x', 'y']),
-    });
-
-    expect(normalizeObj(result)).to.deep.equal({
-      ExpressionAttributeNames: {
-        '#tags': 'tags',
-      },
-      ExpressionAttributeValues: {
-        ':tags_delete': ['x', 'y'],
-      },
-      UpdateExpression: 'DELETE #tags :tags_delete',
-      ReturnValues: 'ALL_NEW',
-    });
-  });
-
-  it('should calculate updateExpression removing values from a set when attribute names have illegal characters if used as an alias', () => {
-    const result = updateExpression({
-      'some|tags_delete': new Set(['x', 'y']),
-      'a-b': true,
-      'a--b': false,
-      'a|b': 1,
+      expect(normalizeObj(result)).to.deep.equal({
+        ExpressionAttributeNames: {
+          '#tags': 'tags',
+        },
+        ExpressionAttributeValues: {
+          ':tags': ['a', 'b'],
+        },
+        UpdateExpression: 'ADD #tags :tags',
+        ReturnValues: 'ALL_NEW',
+      });
     });
 
-    expect(normalizeObj(result)).to.deep.equal({
-      ExpressionAttributeNames: {
-        '#some_x7c_tags': 'some|tags',
-        '#a_x2d_b': 'a-b',
-        '#a_x2d__x2d_b': 'a--b',
-        '#a_x7c_b': 'a|b',
-      },
-      ExpressionAttributeValues: {
-        ':some_x7c_tags_delete': [
-          'x',
-          'y',
-        ],
-        ':a_x2d_b': true,
-        ':a_x2d__x2d_b': false,
-        ':a_x7c_b': 1,
-      },
-      UpdateExpression: 'SET #a_x2d_b = :a_x2d_b, #a_x2d__x2d_b = :a_x2d__x2d_b, #a_x7c_b = :a_x7c_b DELETE #some_x7c_tags :some_x7c_tags_delete',
-      ReturnValues: 'ALL_NEW',
-    });
-  });
+    it('should calculate updateExpression removing values from a set', () => {
+      const result = updateExpression({
+        tags_delete: new Set(['x', 'y']),
+      });
 
-  it('should wrap calculate updateExpression wrapping a delete set value in a set', () => {
-    const result = updateExpression({
-      tags_delete: 'x',
+      expect(normalizeObj(result)).to.deep.equal({
+        ExpressionAttributeNames: {
+          '#tags': 'tags',
+        },
+        ExpressionAttributeValues: {
+          ':tags_delete': ['x', 'y'],
+        },
+        UpdateExpression: 'DELETE #tags :tags_delete',
+        ReturnValues: 'ALL_NEW',
+      });
     });
 
-    expect(normalizeObj(result)).to.deep.equal({
-      ExpressionAttributeNames: {
-        '#tags': 'tags',
-      },
-      ExpressionAttributeValues: {
-        ':tags_delete': ['x'],
-      },
-      UpdateExpression: 'DELETE #tags :tags_delete',
-      ReturnValues: 'ALL_NEW',
-    });
-  });
+    it('should calculate updateExpression removing values from a set when attribute names have illegal characters if used as an alias', () => {
+      const result = updateExpression({
+        'some|tags_delete': new Set(['x', 'y']),
+        'a-b': true,
+        'a--b': false,
+        'a|b': 1,
+      });
 
-  it('should calculate complex updateExpression using SET, REMOVE, ADD, and DELETE', () => {
-    const result = updateExpression({
-      id: '123',
-      name: 'Complex Thing',
-      description: null,
-      tags: new Set(['blue', 'green']),
-      categories: new Set(['a', 'b']),
-      tags_delete: 'red',
-      categories_delete: new Set(['x', 'y']),
-      ignoredField: undefined,
+      expect(normalizeObj(result)).to.deep.equal({
+        ExpressionAttributeNames: {
+          '#some_x7c_tags': 'some|tags',
+          '#a_x2d_b': 'a-b',
+          '#a_x2d__x2d_b': 'a--b',
+          '#a_x7c_b': 'a|b',
+        },
+        ExpressionAttributeValues: {
+          ':some_x7c_tags_delete': [
+            'x',
+            'y',
+          ],
+          ':a_x2d_b': true,
+          ':a_x2d__x2d_b': false,
+          ':a_x7c_b': 1,
+        },
+        UpdateExpression: 'SET #a_x2d_b = :a_x2d_b, #a_x2d__x2d_b = :a_x2d__x2d_b, #a_x7c_b = :a_x7c_b DELETE #some_x7c_tags :some_x7c_tags_delete',
+        ReturnValues: 'ALL_NEW',
+      });
     });
 
-    expect(normalizeObj(result)).to.deep.equal({
-      ExpressionAttributeNames: {
-        '#id': 'id',
-        '#name': 'name',
-        '#description': 'description',
-        '#tags': 'tags',
-        '#categories': 'categories',
-      },
-      ExpressionAttributeValues: {
-        ':id': '123',
-        ':name': 'Complex Thing',
-        ':tags': ['blue', 'green'],
-        ':categories': ['a', 'b'],
-        ':tags_delete': ['red'],
-        ':categories_delete': ['x', 'y'],
-      },
-      UpdateExpression: 'SET #id = :id, #name = :name REMOVE #description ADD #tags :tags, #categories :categories DELETE #tags :tags_delete, #categories :categories_delete',
-      ReturnValues: 'ALL_NEW',
+    it('should wrap calculate updateExpression wrapping a delete set value in a set', () => {
+      const result = updateExpression({
+        tags_delete: 'x',
+      });
+
+      expect(normalizeObj(result)).to.deep.equal({
+        ExpressionAttributeNames: {
+          '#tags': 'tags',
+        },
+        ExpressionAttributeValues: {
+          ':tags_delete': ['x'],
+        },
+        UpdateExpression: 'DELETE #tags :tags_delete',
+        ReturnValues: 'ALL_NEW',
+      });
+    });
+
+    it('should calculate complex updateExpression using SET, REMOVE, ADD, and DELETE', () => {
+      const result = updateExpression({
+        id: '123',
+        name: 'Complex Thing',
+        description: null,
+        tags: new Set(['blue', 'green']),
+        categories: new Set(['a', 'b']),
+        tags_delete: 'red',
+        categories_delete: new Set(['x', 'y']),
+        ignoredField: undefined,
+      });
+
+      expect(normalizeObj(result)).to.deep.equal({
+        ExpressionAttributeNames: {
+          '#id': 'id',
+          '#name': 'name',
+          '#description': 'description',
+          '#tags': 'tags',
+          '#categories': 'categories',
+        },
+        ExpressionAttributeValues: {
+          ':id': '123',
+          ':name': 'Complex Thing',
+          ':tags': ['blue', 'green'],
+          ':categories': ['a', 'b'],
+          ':tags_delete': ['red'],
+          ':categories_delete': ['x', 'y'],
+        },
+        UpdateExpression: 'SET #id = :id, #name = :name REMOVE #description ADD #tags :tags, #categories :categories DELETE #tags :tags_delete, #categories :categories_delete',
+        ReturnValues: 'ALL_NEW',
+      });
     });
   });
 
@@ -210,6 +212,140 @@ describe('sinks/dynamodb.js', () => {
           Key: {
             pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
             sk: 'thing',
+          },
+        });
+        expect(collected[0].updateResponse).to.deep.equal({});
+      })
+      .done(done);
+  });
+
+  it('should call fallback update after conditional update failure if provided', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'update')
+      .onFirstCall().resolves({})
+      .onSecondCall()
+      .resolves({
+        pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+        sk: 'thing2',
+      });
+
+    const uows = [{
+      updateRequest: {
+        Key: {
+          pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+          sk: 'thing',
+        },
+      },
+      fallbackUpdateRequest: {
+        Key: {
+          pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+          sk: 'thing2',
+        },
+      },
+    }, {
+      updateRequest: undefined,
+    }];
+
+    _(uows)
+      .through(updateDynamoDB())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(2);
+        expect(stub).to.have.been.calledWith({
+          Key: {
+            pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+            sk: 'thing',
+          },
+        });
+        expect(stub).to.have.been.calledWith({
+          Key: {
+            pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+            sk: 'thing2',
+          },
+        });
+        expect(collected[0].updateResponse).to.deep.equal({
+          pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+          sk: 'thing2',
+        });
+      })
+      .done(done);
+  });
+
+  it('should call not fallback update after conditional update failure if not provided', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'update')
+      .onFirstCall().resolves({});
+
+    const uows = [{
+      updateRequest: {
+        Key: {
+          pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+          sk: 'thing',
+        },
+      },
+    }, {
+      updateRequest: undefined,
+    }];
+
+    _(uows)
+      .through(updateDynamoDB())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(2);
+        expect(stub).to.have.callCount(1);
+        expect(stub).to.have.been.calledWith({
+          Key: {
+            pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+            sk: 'thing',
+          },
+        });
+        expect(collected[0].updateResponse).to.deep.equal({});
+      })
+      .done(done);
+  });
+
+  it('should return {} if both update request and fallback update request fail due to conditional update failures', (done) => {
+    const stub = sinon.stub(Connector.prototype, 'update')
+      .onFirstCall().resolves({})
+      .onSecondCall()
+      .resolves({});
+
+    const uows = [{
+      updateRequest: {
+        Key: {
+          pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+          sk: 'thing',
+        },
+      },
+      fallbackUpdateRequest: {
+        Key: {
+          pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+          sk: 'thing2',
+        },
+      },
+    }, {
+      updateRequest: undefined,
+    }];
+
+    _(uows)
+      .through(updateDynamoDB())
+      .collect()
+      .tap((collected) => {
+        // console.log(JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(2);
+        expect(stub).to.have.been.calledWith({
+          Key: {
+            pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+            sk: 'thing',
+          },
+        });
+        expect(stub).to.have.been.calledWith({
+          Key: {
+            pk: '72363701-fd38-4887-94b9-e8f8aecf6208',
+            sk: 'thing2',
           },
         });
         expect(collected[0].updateResponse).to.deep.equal({});
