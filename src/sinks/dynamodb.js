@@ -102,7 +102,7 @@ export const updateDynamoDB = ({
         if (isEmpty(updateResponse) && uow[fallbackUpdateRequestField] && !isFallback) {
           // If its empty, that indicates a conditional write failure, in that case we want to run the fallback
           // update, if present.
-          return p(uow[fallbackUpdateRequestField], true)();
+          return uow.metrics?.w(p(uow[fallbackUpdateRequestField], true)) || p(uow[fallbackUpdateRequestField], true)();
         } else {
           return { ...uow, [updateResponseField]: updateResponse };
         }
