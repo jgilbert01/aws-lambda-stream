@@ -26,6 +26,9 @@ export const materialize = (rule) => (s) => s // eslint-disable-line import/pref
   .map(toUpdateRequest(rule))
   .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
 
+  .map(toFallbackUpdateRequest(rule))
+  .parallel(rule.parallel || Number(process.env.PARALLEL) || 4)
+
   .through(updateDynamoDB(rule))
 
   .tap(printEndPipeline);
@@ -36,4 +39,9 @@ const onContent = (rule) => faulty((uow) => filterOnContent(rule, uow));
 const toUpdateRequest = (rule) => faultyAsyncStream(async (uow) => ({
   ...uow,
   updateRequest: await faultify(rule.toUpdateRequest)(uow, rule),
+}));
+
+const toFallbackUpdateRequest = (rule) => faultyAsyncStream(async (uow) => ({
+  ...uow,
+  fallbackUpdateRequest: rule.toFallbackUpdateRequest ? await faultify(rule.toFallbackUpdateRequest)(uow, rule) : undefined,
 }));

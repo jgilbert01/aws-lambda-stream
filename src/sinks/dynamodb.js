@@ -1,5 +1,6 @@
 import _ from 'highland';
 
+import { isEmpty } from 'lodash';
 import Connector from '../connectors/dynamodb';
 
 import { rejectWithFault } from '../utils/faults';
@@ -81,6 +82,7 @@ export const updateDynamoDB = ({
   tableName = process.env.ENTITY_TABLE_NAME || process.env.EVENT_TABLE_NAME,
   updateRequestField = 'updateRequest',
   updateResponseField = 'updateResponse',
+  fallbackUpdateRequestField = 'fallbackUpdateRequest',
   parallel = Number(process.env.UPDATE_PARALLEL) || Number(process.env.PARALLEL) || 4,
   timeout = Number(process.env.DYNAMODB_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
   removeUndefinedValues = true,
@@ -95,11 +97,19 @@ export const updateDynamoDB = ({
   const invoke = (uow) => {
     if (!uow[updateRequestField]) return _(Promise.resolve(uow));
 
-    const p = () => connector.update(uow[updateRequestField], uow)
-      .then((updateResponse) => ({ ...uow, [updateResponseField]: updateResponse }))
+    const p = (updateRequest, isFallback) => () => connector.update(updateRequest, uow)
+      .then((updateResponse) => {
+        if (isEmpty(updateResponse) && uow[fallbackUpdateRequestField] && !isFallback) {
+          // If its empty, that indicates a conditional write failure, in that case we want to run the fallback
+          // update, if present.
+          return uow.metrics?.w(p(uow[fallbackUpdateRequestField], true)) || p(uow[fallbackUpdateRequestField], true)();
+        } else {
+          return { ...uow, [updateResponseField]: updateResponse };
+        }
+      })
       .catch(rejectWithFault(uow));
 
-    return _(uow.metrics?.w(p, step) || p()); // wrap promise in a stream
+    return _(uow.metrics?.w(p(uow[updateRequestField], false), step) || p(uow[updateRequestField], false)()); // wrap promise in a stream
   };
 
   return (s) => s
