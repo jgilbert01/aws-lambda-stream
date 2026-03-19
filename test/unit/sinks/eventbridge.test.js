@@ -8,6 +8,11 @@ import { publishToEventBridge as publish } from '../../../src/sinks/eventbridge'
 import Connector from '../../../src/connectors/eventbridge';
 
 describe('sinks/eventbridge.js', () => {
+  const origBatchSize = process.env.BATCH_SIZE;
+  afterEach(() => {
+    // set back to state specified in package.json
+    process.env.BATCH_SIZE = origBatchSize;
+  });
   afterEach(sinon.restore);
 
   it('should batch and publish', (done) => {
