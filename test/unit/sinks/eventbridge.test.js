@@ -109,7 +109,7 @@ describe('sinks/eventbridge.js', () => {
       .through(publish({ busName: 'b1', debug: (msg, v) => console.log(msg, v), metricsEnabled: true }))
       .collect()
       .tap((collected) => {
-        console.log('C', JSON.stringify(collected, null, 2));
+        // console.log(JSON.stringify(collected, null, 2));
 
         expect(collected.length).to.equal(15);
         collected.forEach((c) => {
