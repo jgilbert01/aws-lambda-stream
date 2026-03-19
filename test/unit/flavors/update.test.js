@@ -477,6 +477,100 @@ describe('flavors/update.js', () => {
       })
       .done(done);
   });
+
+  it('should execute if latched but skipLatched flag is set', (done) => {
+    sinon.stub(DynamoDBConnector.prototype, 'query').resolves([]);
+    sinon.stub(DynamoDBConnector.prototype, 'batchGet').resolves({
+      Responses: {
+        undefined: [{
+          pk: '2',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'thing2',
+        }],
+      },
+      UnprocessedKeys: {},
+    });
+
+    sinon.stub(KmsConnector.prototype, 'generateDataKey').resolves(MOCK_GEN_DK_RESPONSE);
+    const events = toDynamodbRecords([
+      {
+        timestamp: 1572832690,
+        keys: {
+          pk: '1',
+          sk: 'thing',
+        },
+        newImage: {
+          pk: '1',
+          sk: 'thing',
+          discriminator: 'thing',
+          name: 'Thing One',
+          description: 'This is thing one',
+          otherThing: 'thing|2',
+          latched: true,
+          ttl: 1549053422,
+          timestamp: 1548967022000,
+        },
+      },
+    ]);
+
+    initialize({
+      ...initializeFrom([
+        {
+          id: 'update1',
+          flavor: update,
+          eventType: /thing-*/,
+          filters: [() => true],
+          toGetRequest,
+          fks: ['otherThing'],
+          toUpdateRequest,
+          skipLatched: true,
+        }]),
+    }, { ...defaultOptions, AES: false })
+      .assemble(fromDynamodb(events), false)
+      .collect()
+      // .tap((collected) => console.log(JSON.stringify(collected, null, 2)))
+      .tap((collected) => {
+        expect(collected.length).to.equal(1);
+        expect(collected[0].updateRequest).to.deep.equal({
+          Key: {
+            pk: '1',
+            sk: 'thing',
+          },
+          ExpressionAttributeNames: {
+            '#pk': 'pk',
+            '#sk': 'sk',
+            '#discriminator': 'discriminator',
+            '#name': 'name',
+            '#description': 'description',
+            '#otherThing': 'otherThing',
+            '#latched': 'latched',
+            '#ttl': 'ttl',
+            '#timestamp': 'timestamp',
+          },
+          ExpressionAttributeValues: {
+            ':pk': '1',
+            ':sk': 'thing',
+            ':discriminator': 'thing',
+            ':name': 'Thing One',
+            ':description': 'This is thing one',
+            ':otherThing': {
+              pk: '2',
+              sk: 'thing',
+              discriminator: 'thing',
+              name: 'thing2',
+            },
+            ':latched': true,
+            ':ttl': 1549053422,
+            ':timestamp': 1548967022000,
+          },
+          UpdateExpression: 'SET #pk = :pk, #sk = :sk, #discriminator = :discriminator, #name = :name, #description = :description, #otherThing = :otherThing, #latched = :latched, #ttl = :ttl, #timestamp = :timestamp',
+          ReturnValues: 'ALL_NEW',
+          ConditionExpression: 'attribute_not_exists(#timestamp) OR #timestamp < :timestamp',
+        });
+      })
+      .done(done);
+  });
 });
 
 const toUpdateRequest = (uow) => ({
