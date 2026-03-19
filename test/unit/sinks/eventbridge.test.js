@@ -2,7 +2,7 @@ import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import _ from 'highland';
-
+import { v4 } from 'uuid';
 import { publishToEventBridge as publish } from '../../../src/sinks/eventbridge';
 
 import Connector from '../../../src/connectors/eventbridge';
@@ -84,6 +84,36 @@ describe('sinks/eventbridge.js', () => {
             }],
           },
           publishResponse: { FailedEntryCount: 0 },
+        });
+      })
+      .done(done);
+  });
+
+  it('should batch and publish, multiple', (done) => {
+    process.env.BATCH_SIZE = 100;
+    sinon.stub(Connector.prototype, 'putEvents').resolves({ FailedEntryCount: 0 });
+
+    const uows = [];
+    for (let i = 1; i <= 15; i += 1) {
+      const id = v4();
+      uows.push({
+        event: {
+          id,
+          type: `p${i}`,
+          partitionKey: id,
+        },
+      });
+    }
+
+    _(uows)
+      .through(publish({ busName: 'b1', debug: (msg, v) => console.log(msg, v), metricsEnabled: true }))
+      .collect()
+      .tap((collected) => {
+        console.log('C', JSON.stringify(collected, null, 2));
+
+        expect(collected.length).to.equal(15);
+        collected.forEach((c) => {
+          expect(c.publishRequest.Entries.length < 11).to.be.true;
         });
       })
       .done(done);
