@@ -57,6 +57,7 @@
     "url": "https://github.com/jgilbert01/aws-lambda-stream.git"
   },
   "devDependencies": {
+    "@aws-sdk/client-athena": "^3.450.0",
     "@aws-sdk/client-cloudwatch": "^3.450.0",
     "@aws-sdk/client-dynamodb": "^3.450.0",
     "@aws-sdk/client-eventbridge": "^3.450.0",
