@@ -38,6 +38,8 @@ module.exports = {
     "class-methods-use-this": 0,
     "implicit-arrow-linebreak": 0,
     "import/prefer-default-export": 0,
+    "no-nested-ternary": 0,
+    "prefer-destructuring": 0,
   },
   "globals": {
     "fetch": false,
