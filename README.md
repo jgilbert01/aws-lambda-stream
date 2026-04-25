@@ -462,6 +462,12 @@ These features are intended for implementing intra-service logic. They are frequ
 * `Connector` - connector for the SQS SDK
 * `sendToSqs` - stream steps to send a message to a queue
 
+## WebSocket Support
+These features are intended for broadcasting events to connected WebSocket clients via API Gateway WebSocket API. Useful for lightweight real-time notifications (e.g. job completion, status updates) as an alternative to polling or SQS-based live data.
+* `Connector` - connector for the API Gateway Management API SDK (`PostToConnectionCommand`)
+* `publishToConnections` - stream steps to post a message to connected WebSocket clients
+* `broadcastToWebSocket` - a flavor that composes the full pipeline: filter on event type → format message via `rule.toMessage` → resolve target connections via `rule.toConnections` → fan out and publish to each connection
+
 ## Encryption Support
 * https://github.com/jgilbert01/aws-lambda-stream/issues/20
 

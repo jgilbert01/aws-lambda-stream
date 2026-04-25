@@ -9,3 +9,4 @@ export * from './materialize';
 export * from './materializeS3';
 export * from './sendMessages';
 export * from './update';
+export * from './websocket';

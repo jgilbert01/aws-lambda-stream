@@ -8,3 +8,4 @@ export { default as SecretsMgrConnector } from './secretsmgr';
 export { default as S3Connector } from './s3';
 export { default as SnsConnector } from './sns';
 export { default as SqsConnector } from './sqs';
+export { default as WebSocketConnector } from './websocket';
