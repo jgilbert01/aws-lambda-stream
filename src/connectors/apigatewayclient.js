@@ -19,7 +19,7 @@ class Connector {
     debug,
     pipelineId,
     endpoint = process.env.WEBSOCKET_ENDPOINT,
-    timeout = Number(process.env.WS_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
+    timeout = Number(process.env.WEBSOCKET_TIMEOUT) || Number(process.env.TIMEOUT) || 1000,
     additionalClientOpts = {},
     ...opt
   }) {

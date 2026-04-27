@@ -11,7 +11,7 @@ export const publishToConnections = ({
   debug = d('ws'),
   endpoint = process.env.WEBSOCKET_ENDPOINT,
   messageField = 'message',
-  parallel = Number(process.env.WS_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  parallel = Number(process.env.WEBSOCKET_PARALLEL) || Number(process.env.PARALLEL) || 8,
   step = 'postToConnection',
   ...opt
 } = {}) => {
@@ -45,7 +45,7 @@ export const disconnectConnections = ({
   id: pipelineId,
   debug = d('ws'),
   endpoint = process.env.WEBSOCKET_ENDPOINT,
-  parallel = Number(process.env.WS_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  parallel = Number(process.env.WEBSOCKET_PARALLEL) || Number(process.env.PARALLEL) || 8,
   step = 'deleteConnection',
   ...opt
 } = {}) => {

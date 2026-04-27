@@ -11,7 +11,7 @@ export const queryConnection = ({ // eslint-disable-line import/prefer-default-e
   debug = d('ws'),
   endpoint = process.env.WEBSOCKET_ENDPOINT,
   getConnectionResponseField = 'getConnectionResponse',
-  parallel = Number(process.env.WS_PARALLEL) || Number(process.env.PARALLEL) || 8,
+  parallel = Number(process.env.WEBSOCKET_PARALLEL) || Number(process.env.PARALLEL) || 8,
   step = 'getConnection',
   ...opt
 } = {}) => {
