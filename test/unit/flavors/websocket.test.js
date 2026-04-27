@@ -7,13 +7,13 @@ import { initialize, initializeFrom } from '../../../src';
 import { toDynamodbRecords, fromDynamodb } from '../../../src/from/dynamodb';
 
 import { defaultOptions } from '../../../src/utils/opt';
-import { WebSocketConnector } from '../../../src/connectors';
+import { ApiGatewayClientConnector } from '../../../src/connectors';
 
 import { broadcastToWebSocket } from '../../../src/flavors/websocket';
 
 describe('flavors/websocket.js', () => {
   beforeEach(() => {
-    sinon.stub(WebSocketConnector.prototype, 'postToConnection').resolves({});
+    sinon.stub(ApiGatewayClientConnector.prototype, 'postToConnection').resolves({});
   });
 
   afterEach(sinon.restore);
@@ -121,7 +121,7 @@ describe('flavors/websocket.js', () => {
       .tap((collected) => {
         expect(collected.length).to.equal(1);
         expect(collected[0].connectionId).to.be.undefined;
-        expect(collected[0].postResponse).to.deep.equal({});
+        expect(collected[0].postResponse).to.be.undefined;
       })
       .done(done);
   });

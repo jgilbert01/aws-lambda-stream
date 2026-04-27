@@ -2,7 +2,12 @@
 
 import Promise from 'bluebird';
 
-import { ApiGatewayManagementApiClient, PostToConnectionCommand } from '@aws-sdk/client-apigatewaymanagementapi';
+import {
+  ApiGatewayManagementApiClient,
+  DeleteConnectionCommand,
+  GetConnectionCommand,
+  PostToConnectionCommand,
+} from '@aws-sdk/client-apigatewaymanagementapi';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfiguredRetryStrategy } from '@smithy/util-retry';
 import { omit, pick } from 'lodash';
@@ -53,6 +58,14 @@ class Connector {
     };
 
     return this._sendCommand(new PostToConnectionCommand(params), ctx);
+  }
+
+  getConnection(connectionId, ctx) {
+    return this._sendCommand(new GetConnectionCommand({ ConnectionId: connectionId }), ctx);
+  }
+
+  deleteConnection(connectionId, ctx) {
+    return this._sendCommand(new DeleteConnectionCommand({ ConnectionId: connectionId }), ctx);
   }
 
   _sendCommand(command, ctx) {
