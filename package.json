@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-stream",
-  "version": "1.1.20",
+  "version": "1.2.0",
   "description": "Create stream processors with AWS Lambda functions.",
   "keywords": [
     "aws",
@@ -64,6 +64,7 @@
     "@aws-sdk/client-kinesis": "^3.450.0",
     "@aws-sdk/client-kms": "^3.450.0",
     "@aws-sdk/client-lambda": "^3.450.0",
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.450.0",
     "@aws-sdk/client-s3": "^3.450.0",
     "@aws-sdk/client-secrets-manager": "^3.450.0",
     "@aws-sdk/client-scheduler": "^3.450.0",
