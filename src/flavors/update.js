@@ -12,12 +12,13 @@ import {
   updateDynamoDB,
 } from '../sinks/dynamodb';
 
-import { filterOnEventType, filterOnContent } from '../filters';
+import { filterOnEventType, filterOnContent, outLatched } from '../filters';
 
 import { normalize } from './correlate';
 
 export const update = (rule) => (s) => s // eslint-disable-line import/prefer-default-export
   // reacting to collected events vs change events
+  .filter((uow) => (rule.skipLatched ? true : outLatched(uow)))
   .map((uow) => (uow.record.eventName === 'INSERT' && uow.record.dynamodb.Keys.sk.S === 'EVENT' ? /* istanbul ignore next */ normalize(uow) : uow))
 
   .filter(onEventType(rule))
