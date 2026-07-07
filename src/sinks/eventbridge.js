@@ -28,6 +28,10 @@ export const publishToEventBridge = ({ // eslint-disable-line import/prefer-defa
   step = 'publish',
   ...opt
 } = {}) => {
+  // EB Batchsize can not exceed 10 - since BATCH_SIZE is used in many places, we should reduce it to 10 here.
+  if (batchSize > 10) {
+    batchSize = 10;
+  }
   if (endpointId) import('@aws-sdk/signature-v4-crt');
 
   const connector = new Connector({
