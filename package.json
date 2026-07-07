@@ -103,13 +103,13 @@
     "lint-staged": "^9.4.3",
     "lodash": "^4.17.15",
     "memory-cache": "^0.2.0",
-    "mocha": "^10.2.0",
+    "mocha": "^10.8.0",
     "nock": "^13.5.4",
     "node-fetch": "^2.7.0",
     "nyc": "^14.1.1",
     "sinon": "^17.0.1",
     "sinon-chai": "^3.7.0",
-    "uuid": "^9.0.1"
+    "uuid": "^11.1.1"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x",
@@ -124,7 +124,7 @@
     "highland": "2.x",
     "lodash": "4.x",
     "memory-cache": "0.x",
-    "uuid": "9.x"
+    "uuid": "11.x"
   },
   "dependencies": {
     "object-sizeof": "^2.6.0"
