@@ -32,10 +32,6 @@ describe('connectors/scheduler.js', () => {
   });
 
   it('should create schedule', async () => {
-    process.env.SCHEDULER_ROLE_ARN = 'scheduler-arn';
-    process.env.BUS_ARN = 'bus-arn';
-    process.env.MASTER_KEY_ARN = 'kms-arn';
-
     const spy = sinon.spy((_) => ({
       ScheduleArn: `arn:aws:scheduler:${process.env.AWS_REGION}:123456789012:schedule/default/${params.Name}`,
     }));
