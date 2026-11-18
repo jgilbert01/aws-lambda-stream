@@ -11,4 +11,11 @@ export const skipTag = () => ({
 });
 
 // use this filter in your pipelines to ignore these test events
-export const outSkip = (uow) => (!uow.event.tags || !uow.event.tags.skip);
+export const outSkip = (uow) => {
+  const keep = (!uow.event.tags || !uow.event.tags.skip);
+  const isTestMode = process.env.NODE_ENV === 'test';
+  if (!keep && isTestMode) {
+    console.log('Ignoring event because of skip flag. Ensure this is intentional.');
+  }
+  return keep;
+};
