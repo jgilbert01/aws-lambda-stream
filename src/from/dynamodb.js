@@ -122,19 +122,28 @@ export const outReplicas = (ignoreReplicas) => (record) => {
   if (!ignoreReplicas) return true;
 
   const image = record.dynamodb.NewImage || record.dynamodb.OldImage;
+  const isTestMode = process.env.NODE_ENV === 'test';
 
   // is this a global table event
   // v2
   if (image.awsregion) {
     // only process events from the current region
-    return image.awsregion.S === process.env.AWS_REGION;
+    const keep = image.awsregion.S === process.env.AWS_REGION;
+    if (!keep && isTestMode) {
+      console.log('Ignoring event because of aws region mismatch. Ensure this is intentional.');
+    }
+    return keep;
   }
 
   // v1
   /* istanbul ignore next */
   if (image['aws:rep:updateregion']) {
     // only process events from the current region
-    return image['aws:rep:updateregion'].S === process.env.AWS_REGION;
+    const keep = image['aws:rep:updateregion'].S === process.env.AWS_REGION;
+    if (!keep && isTestMode) {
+      console.log('Ignoring event because of aws region mismatch. Ensure this is intentional.');
+    }
+    return keep;
   }
 
   return true;
